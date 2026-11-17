@@ -2,6 +2,9 @@
 .env
 .env.*
 
+# Raw provider responses saved by scripts (LocalRawStore)
+.raw/
+
 # macOS
 .DS_Store
 
