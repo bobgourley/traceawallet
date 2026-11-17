@@ -1,0 +1,87 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(.venv/bin/python *)",
+      "Bash(pytest)",
+      "Bash(pytest *)",
+      "Bash(.venv/bin/pytest *)",
+
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+
+      "Bash(gh auth status *)",
+      "Bash(gh repo view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr status *)",
+      "Bash(gh issue list *)",
+      "Bash(gh issue view *)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)",
+      "Bash(gh workflow list *)",
+      "Bash(gh workflow view *)",
+      "Bash(gh release list *)",
+      "Bash(gh release view *)",
+
+      "Bash(railway --version)",
+      "Bash(railway whoami *)",
+      "Bash(railway status *)",
+      "Bash(railway list *)",
+      "Bash(railway logs *)",
+      "Bash(railway service list *)",
+      "Bash(railway service status *)"
+    ],
+    "ask": [
+      "Bash(git push)",
+      "Bash(git push *)",
+
+      "Bash(railway variables)",
+      "Bash(railway variables *)",
+      "Bash(railway variable *)",
+
+      "Bash(rm *)",
+      "Bash(git rm *)",
+      "Bash(git clean *)",
+      "Bash(git reset --hard *)",
+      "Bash(git branch -D *)",
+      "Bash(git checkout -- *)",
+      "Bash(git restore *)",
+      "Bash(railway delete *)",
+      "Bash(railway down *)",
+      "Bash(railway volume *)",
+      "Bash(railway bucket *)",
+      "Bash(railway connect *)",
+      "Bash(psql *)",
+      "Bash(gh repo delete *)",
+      "Bash(gh release delete *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Bash(cat *.env*)",
+      "Bash(head *.env*)",
+      "Bash(tail *.env*)",
+      "Bash(less *.env*)",
+      "Bash(grep * .env*)",
+
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push * +*)"
+    ]
+  }
+}
