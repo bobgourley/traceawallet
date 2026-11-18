@@ -123,6 +123,11 @@ class RawIntegrityError(RuntimeError):
     """A stored body no longer matches the sha256 it was saved under."""
 
 
+class RawMissing(LookupError):
+    """A response is indexed but its body is not in storage. Callers may fetch it
+    again; saving the same body restores the object under the same key."""
+
+
 @runtime_checkable
 class RawStore(Protocol):
     def save(self, source_slug: str, request_url: str, params: Mapping[str, Any] | None,
@@ -229,7 +234,10 @@ class LocalRawStore:
         return found
 
     def body(self, sha: str) -> bytes:
-        data = (self.root / bucket_key_for(sha)).read_bytes()
+        try:
+            data = (self.root / bucket_key_for(sha)).read_bytes()
+        except FileNotFoundError as exc:
+            raise RawMissing(f"stored body {sha} is missing") from exc
         if sha256_hex(data) != sha:
             raise RawIntegrityError(f"stored body {sha} does not match its hash")
         return data
@@ -310,7 +318,13 @@ class BucketRawStore:
         return row[1]
 
     def body(self, sha: str) -> bytes:
-        data = self.s3.get_object(Bucket=self.bucket, Key=bucket_key_for(sha))["Body"].read()
+        try:
+            data = self.s3.get_object(Bucket=self.bucket, Key=bucket_key_for(sha))["Body"].read()
+        except Exception as exc:
+            code = (getattr(exc, "response", None) or {}).get("Error", {}).get("Code")
+            if code in ("NoSuchKey", "404", "NotFound"):
+                raise RawMissing(f"bucket object {bucket_key_for(sha)} is missing") from exc
+            raise
         if sha256_hex(data) != sha:
             raise RawIntegrityError(f"bucket object {bucket_key_for(sha)} does not match its hash")
         return data

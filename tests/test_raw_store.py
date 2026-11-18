@@ -131,6 +131,29 @@ def test_bucket_store_find_and_body():
         store.body(SHA)
 
 
+def test_missing_bodies_raise_raw_missing(tmp_path):
+    from taw.adapters.base import RawMissing
+    with pytest.raises(RawMissing):
+        LocalRawStore(tmp_path).body(SHA)
+
+    class Missing(Exception):
+        response = {"Error": {"Code": "NoSuchKey"}}
+
+    class Other(Exception):
+        response = {"Error": {"Code": "AccessDenied"}}
+
+    class S3:
+        def __init__(self, exc):
+            self.exc = exc
+
+        def get_object(self, **kw):
+            raise self.exc
+    with pytest.raises(RawMissing):
+        BucketRawStore(FakeConn(), s3_client=S3(Missing()), bucket="b").body(SHA)
+    with pytest.raises(Other):                                         # anything else is not hidden
+        BucketRawStore(FakeConn(), s3_client=S3(Other()), bucket="b").body(SHA)
+
+
 def test_bucket_store_unknown_source():
     class NoSource(FakeConn):
         def execute(self, sql, params=()):

@@ -27,15 +27,26 @@ ACTOR = "worker:test"
 
 
 @pytest.fixture(scope="session")
-def db_url():
-    name = f"taw_test_{uuid.uuid4().hex[:8]}"
+def template_db():
+    """One database with every migration applied, copied for each test."""
+    name = f"taw_tmpl_{uuid.uuid4().hex[:8]}"
     with psycopg.connect(ADMIN_URL, autocommit=True) as admin:
         admin.execute(f'CREATE DATABASE "{name}"')
-    url = psycopg.conninfo.make_conninfo(ADMIN_URL, dbname=name)
-    with psycopg.connect(url, autocommit=True) as conn:
+    with psycopg.connect(psycopg.conninfo.make_conninfo(ADMIN_URL, dbname=name), autocommit=True) as conn:
         for path in sorted(MIGRATIONS.glob("*.sql")):
             conn.execute(path.read_text())
-    yield url
+    yield name
+    with psycopg.connect(ADMIN_URL, autocommit=True) as admin:
+        admin.execute(f'DROP DATABASE "{name}" WITH (FORCE)')
+
+
+@pytest.fixture
+def db_url(template_db):
+    """A fresh, fully migrated database for this test alone."""
+    name = f"taw_test_{uuid.uuid4().hex[:8]}"
+    with psycopg.connect(ADMIN_URL, autocommit=True) as admin:
+        admin.execute(f'CREATE DATABASE "{name}" TEMPLATE "{template_db}"')
+    yield psycopg.conninfo.make_conninfo(ADMIN_URL, dbname=name)
     with psycopg.connect(ADMIN_URL, autocommit=True) as admin:
         admin.execute(f'DROP DATABASE "{name}" WITH (FORCE)')
 
@@ -49,6 +60,14 @@ def conns(db_url):
     raw.close()
 
 
+class NoSuchKey(Exception):
+    """Shaped like botocore's ClientError for a missing object."""
+
+    def __init__(self, key):
+        super().__init__(key)
+        self.response = {"Error": {"Code": "NoSuchKey"}}
+
+
 class FakeS3:
     def __init__(self):
         self.objects = {}
@@ -57,6 +76,8 @@ class FakeS3:
         self.objects[Key] = Body
 
     def get_object(self, Bucket, Key):
+        if Key not in self.objects:
+            raise NoSuchKey(Key)
         return {"Body": io.BytesIO(self.objects[Key])}
 
 
@@ -98,6 +119,21 @@ def test_lookup_is_idempotent(conns):
     assert count(data, "SELECT count(*) FROM transfer t JOIN raw_response r ON r.id = t.raw_response_id"
                        " JOIN source s ON s.id = r.source_id WHERE s.slug = 'trongrid'") == transfers
     assert count(data, "SELECT event_log_verify() IS NULL") is True
+
+
+def test_missing_bucket_object_is_fetched_again_and_restored(conns):
+    data, raw = conns
+    s3 = FakeS3()
+    lookup_once(data, raw, s3)
+    events_keys = [k for k in s3.objects
+                   if b'"event_name"' in s3.objects[k]]                # the saved events bodies
+    lost = events_keys[0]
+    del s3.objects[lost]                                               # the bucket lost one file
+
+    second, adapter = lookup_once(data, raw, s3)
+    assert second.transfers_new == 0
+    assert (adapter.request_count, adapter.reused_count) == (6, 24)    # 5 as usual + the lost one
+    assert lost in s3.objects                                          # restored under the same key
 
 
 def test_snapshot_rests_on_stored_responses(conns):

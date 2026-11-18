@@ -129,6 +129,19 @@ def test_second_run_reuses_saved_transaction_events(tmp_path, replay):
     assert batch2.transfers == batch1.transfers
 
 
+def test_missing_saved_body_is_fetched_again(tmp_path, replay):
+    store = LocalRawStore(tmp_path / "raw")
+    clock = FakeClock()
+    TronGridAdapter(store, None, http=replay.client(), clock=clock.clock, sleep=clock.sleep).fetch_transfers(ADDR)
+    one_events_body = next(p for p in (tmp_path / "raw" / "raw").rglob("*") if p.is_file()
+                           and b'"event_name"' in p.read_bytes())
+    one_events_body.unlink()
+    again = TronGridAdapter(store, None, http=replay.client(), clock=clock.clock, sleep=clock.sleep)
+    again.fetch_transfers(ADDR)
+    assert (again.request_count, again.reused_count) == (3, 24)
+    assert one_events_body.exists()                                    # saved again, same name
+
+
 def test_saved_empty_events_are_fetched_again(tmp_path):
     tx = "f" * 64
     store = LocalRawStore(tmp_path / "raw")

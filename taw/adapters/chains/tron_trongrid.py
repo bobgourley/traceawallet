@@ -41,8 +41,8 @@ from typing import Any, Callable
 
 import httpx
 
-from taw.adapters.base import (AddressSnapshot, RawStore, ReusableRawStore, TokenBalance,
-                               TransferBatch, TransferRecord)
+from taw.adapters.base import (AddressSnapshot, RawMissing, RawStore, ReusableRawStore,
+                               TokenBalance, TransferBatch, TransferRecord)
 from taw.adapters.chains.tron_address import to_base58
 
 SOURCE = "trongrid"
@@ -139,7 +139,11 @@ class TronGridAdapter:
         sha = self.raw_store.find(SOURCE, url, stored)
         if sha is None:
             return None
-        data = json.loads(self.raw_store.body(sha))
+        try:
+            body = self.raw_store.body(sha)
+        except RawMissing:
+            return None                     # fetch again; saving it restores the object
+        data = json.loads(body)
         if not (isinstance(data, dict) and data.get("data")):
             return None                     # an empty answer may have been a lagging node; ask again
         self.reused_count += 1
