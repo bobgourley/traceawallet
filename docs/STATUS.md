@@ -7,7 +7,26 @@ Last updated 2026-11-17. Design choices and their reasons are in
 
 - `traceawallet-web` and `traceawallet-worker` run on Railway (project "adaptable-connection").
 - `/healthz` reports 8 chains (six EVM chains, Tron, Bitcoin).
-- Migrations 0001 to 0003 are applied; 0004 (`address_snapshot`) is applied on the next deploy.
+- Migrations 0001 to 0004 are applied.
+- The worker handles `address_lookup` jobs for Tron. Nothing queues them automatically yet.
+
+## Live check (2026-11-18, production database and bucket)
+
+Three lookups of `TL7me8SQkNmieVngj9sPQGG2PSMENASHug`, queued with `scripts/enqueue.py` through
+`railway ssh` and processed by the deployed worker. The tables started empty.
+
+| | Job 1 (02:16) | Job 2 (02:16, 35 s later) | Job 3 (02:27, after 10 min) |
+|---|---|---|---|
+| Outcome | full fetch, 14 s | reused snapshot 1, 2 s | full fetch, 9 s |
+| address rows | 20 | 20 | 20 |
+| transfer rows | 35 (35 new) | 35 | 35 (0 new) |
+| duplicate transfer keys | 0 | 0 | 0 |
+| raw_response rows | 30 | 30 | 35 (events reused) |
+| bucket objects | 30 | 30 | 34 (one body identical to run 1) |
+| address_snapshot rows | 1 | 1 | 2 |
+| `event_log_verify()` | NULL (intact) | NULL | NULL |
+
+Every job finished on attempt 1 with no `last_error`. The payload held only chain and address.
 
 ## Worker: `address_lookup` jobs (Tron only so far)
 
