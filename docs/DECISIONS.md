@@ -3,6 +3,23 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-18: settings move to the dashboard; one region
+
+**Railway settings live in the dashboard, not the repo.** This supersedes the
+`railway.json` entry below. Before the 2026-12-01 cutoff, the start command
+(`sh start.sh`), restart policy (On Failure) and watch paths were set in each
+service's dashboard settings and `railway.json` was removed. Infrastructure as
+Code (`.railway/railway.ts`) was not adopted: it is applied by hand with
+`railway config apply`, deletes resources it leaves out, does not document
+watch paths yet, and needs a newer CLI than this machine has. A test fails if a
+`railway.json` or `railway.toml` comes back, since it would override the
+dashboard.
+
+**Everything in US East.** Postgres was in Europe (`europe-west4`) while the web
+service was in US East, so every web request crossed the Atlantic (`/healthz`
+took 1 to 4 s). The database, its volume, the web service, the worker and the
+bucket (`iad`) are now all in US East; `/healthz` takes about 0.25 s.
+
 ## 2026-11-18: watch paths, and the Config as Code cutoff
 
 **Docs and Markdown do not deploy.** `railway.json` has `build.watchPatterns`

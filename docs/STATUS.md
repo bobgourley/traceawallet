@@ -87,11 +87,20 @@ Address `TL7me8SQkNmieVngj9sPQGG2PSMENASHug` at block 88,091,753. TRX and USDT c
 first and last activity and the top destinations all matched. Tronscan also shows four TRC-10
 airdrop tokens, which we do not read yet. The 0.69 TRX gap between TRX in and out is network fees.
 
-## Before 2026-12-01
+## Railway settings (dashboard, not repo)
 
-Railway stops reading `railway.json` on 2026-12-01. It holds the start command and watch paths
-for both services. Move both to each service's dashboard settings, or migrate to
-`.railway/railway.ts`, before then. See DECISIONS.md.
+There is no `railway.json`; Railway stopped supporting it on 2026-12-01. Both `traceawallet-web`
+and `traceawallet-worker` must have these in their dashboard settings:
+
+| Setting | Value |
+|---|---|
+| Deploy → Custom Start Command | `sh start.sh` |
+| Deploy → Restart Policy | On Failure |
+| Deploy → Regions | US East (Virginia) |
+| Build → Watch Paths | `**`, `!/docs/**`, `!/*.md`, `!/**/*.md` (one per line) |
+
+Postgres, its volume and the bucket are in US East too. Check with
+`railway environment config --json`.
 
 ## Known gaps
 
