@@ -24,10 +24,11 @@ Not covered yet:
     on success.
 
 event_index: TRX transfers use 0 (a Tron transaction holds one contract call).
-TRC-20 transfers use the log index from the events endpoint. If no event in the
-transaction matches a listed transfer, the record keeps the block number from
-the events response and uses the transfer's position within the transaction as
-listed by TronGrid, as the schema allows.
+TRC-20 transfers use the log index from the events endpoint; identical transfers
+in one transaction each claim their own event. If no event matches a listed
+transfer, the record keeps the block number from the events response and gets
+an index numbered after the transaction's highest real log index, so it can
+never collide with a matched transfer under the table's unique key.
 """
 from __future__ import annotations
 
@@ -323,7 +324,7 @@ class TronGridAdapter:
     def _token_records(self, items: list[tuple[dict, str]]) -> list[TransferRecord]:
         """Add block number and log index from the events endpoint, one call per transaction."""
         events_by_tx: dict[str, tuple[list[dict], str]] = {}
-        position: dict[str, int] = {}
+        fallback_next: dict[str, int] = {}     # next unused index for unmatched transfers, per tx
         out = []
         for item, page_sha in items:
             tx = item["transaction_id"].lower()
@@ -352,11 +353,15 @@ class TronGridAdapter:
                 match["_used"] = True
                 block, index, sha = int(match["block_number"]), int(match["event_index"]), events_sha
             elif events:
+                # Numbered after the transaction's highest real log index, so a
+                # fallback index can never equal a matched one.
                 block, sha = int(events[0]["block_number"]), page_sha
-                index = position.get(tx, 0)
+                if tx not in fallback_next:
+                    fallback_next[tx] = 1 + max(int(ev.get("event_index") or 0) for ev in events)
+                index = fallback_next[tx]
+                fallback_next[tx] += 1
             else:
                 raise TronGridError(f"no confirmed events for transaction {tx}")
-            position[tx] = position.get(tx, 0) + 1
 
             decimals = info.get("decimals")
             symbol = info.get("symbol")

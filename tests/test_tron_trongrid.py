@@ -224,6 +224,56 @@ def test_trc20_paging_and_log_index(tmp_path):
     assert batch.truncated is False
 
 
+def test_identical_transfers_in_one_transaction_stay_separate(tmp_path):
+    """Two transfers with the same token, from, to and amount in one transaction
+    are two movements of value. Each must keep its own log index."""
+    tx = "c" * 64
+    http, seen = scripted([
+        json_response({"success": True, "data": [], "meta": {}}),
+        json_response({"success": True, "data": [trc20_item(tx, 3000, 9), trc20_item(tx, 3000, 9)], "meta": {}}),
+        json_response(events(tx, 777, [
+            (0, "Approval", positional(A, B, 9)),
+            (3, "Transfer", positional(A, B, 9)),
+            (5, "Transfer", positional(A, B, 9)),
+        ])),
+    ])
+    batch = make_adapter(tmp_path, http).fetch_transfers(A)
+    assert len(batch.transfers) == 2
+    assert sorted(r.event_index for r in batch.transfers) == [3, 5]
+    assert {r.block_number for r in batch.transfers} == {777}
+    assert sum(1 for r in seen if r.url.path.endswith("/events")) == 1     # one events call per transaction
+    keys = {(r.chain, r.tx_hash, r.kind, r.event_index) for r in batch.transfers}
+    assert len(keys) == 2                                                  # distinct under the table's unique key
+
+
+def test_identical_transfers_without_matching_events_stay_separate(tmp_path):
+    """Fallback path: when no event matches, positions within the transaction are used."""
+    tx = "d" * 64
+    http, _ = scripted([
+        json_response({"success": True, "data": [], "meta": {}}),
+        json_response({"success": True, "data": [trc20_item(tx, 3000, 9), trc20_item(tx, 3000, 9)], "meta": {}}),
+        json_response(events(tx, 778, [(0, "Approval", positional(A, B, 9))])),
+    ])
+    batch = make_adapter(tmp_path, http).fetch_transfers(A)
+    # numbered after the highest real log index (0), never reusing it
+    assert sorted(r.event_index for r in batch.transfers) == [1, 2]
+
+
+def test_fallback_index_never_collides_with_a_matched_one(tmp_path):
+    """One transfer matches log index 1; the other has no event and falls back.
+    The fallback must not also be 1, or the database would merge them."""
+    tx = "e" * 64
+    http, _ = scripted([
+        json_response({"success": True, "data": [], "meta": {}}),
+        json_response({"success": True, "data": [trc20_item(tx, 3000, 9), trc20_item(tx, 3000, 4)], "meta": {}}),
+        json_response(events(tx, 779, [(0, "Approval", positional(A, B, 9)),
+                                       (1, "Transfer", positional(A, B, 9))])),
+    ])
+    batch = make_adapter(tmp_path, http).fetch_transfers(A)
+    by_amount = {r.amount_raw: r.event_index for r in batch.transfers}
+    assert by_amount == {9: 1, 4: 2}
+
+
 def test_failed_and_non_transfer_trx_transactions_are_skipped(tmp_path):
     def tx(txid, kind, ret):
         return {"txID": txid, "blockNumber": 9, "block_timestamp": 1000, "ret": [{"contractRet": ret}],
