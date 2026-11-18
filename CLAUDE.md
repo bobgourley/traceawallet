@@ -28,6 +28,16 @@ you can do it.
 No LLM-written text in reports. Report prose comes from templates over structured data.
 No secrets in the repo. Settings come from environment variables (see `env.example`).
 
+## How changes ship
+
+Railway deploys whatever lands on `main`, so nothing goes to `main` directly.
+
+1. Work on a new branch and push the branch.
+2. GitHub Actions (`.github/workflows/tests.yml`) runs every test, including the
+   database tests against a throwaway Postgres with all migrations applied. A
+   skipped test counts as a failure. Fix and push again until the run is green.
+3. Show the owner the passing run and ask before merging to `main`.
+
 ## Stack
 
 - Railway: `web` and `worker` services from this repo, Postgres, a bucket.
