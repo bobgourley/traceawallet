@@ -3,6 +3,24 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-17: shipping through CI
+
+**Branch, green CI, then ask.** Railway deploys `main`, so changes go to a
+branch first. GitHub Actions runs every test against a throwaway Postgres 16
+with all migrations applied (by the production runner, then again to prove it
+is a no-op). A skipped test fails the run. Merging to `main` waits for the
+owner. The rule is in CLAUDE.md. This supersedes the "store tests need a real
+Postgres" note below: they now run in CI.
+
+**Snapshots follow the evidence-table rules.** An audit of 0004 before it
+shipped found that its list of responses was a `bigint[]`, and Postgres cannot
+enforce foreign keys on an array. `address_snapshot` now has `raw_response_id
+NOT NULL` (the balance response), like `transfer`. The full set of responses is
+in `address_snapshot_response`, with foreign keys at both ends. Both tables
+block UPDATE, DELETE and TRUNCATE and grant only SELECT and INSERT to
+`taw_app`. Database tests check these rules on every evidence table the worker
+writes.
+
 ## 2026-11-17: worker and store
 
 **Snapshots get their own table (`address_snapshot`, migration 0004).**

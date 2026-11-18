@@ -49,8 +49,9 @@ What a job does:
 
     .venv/bin/python -m pytest
 
-56 tests run anywhere, without network access. 6 more (`tests/test_store_pg.py`) need a real
-Postgres through `TEST_DATABASE_URL` and are skipped without one. They have not run yet.
+56 tests run anywhere, without network access. 18 more (`tests/test_store_pg.py`) need a real
+Postgres through `TEST_DATABASE_URL`. They are skipped locally and run in GitHub Actions
+(`.github/workflows/tests.yml`) against a throwaway Postgres 16, where a skipped test fails the run.
 
 The tests cover:
 
@@ -73,7 +74,6 @@ airdrop tokens, which we do not read yet. The 0.69 TRX gap between TRX in and ou
 - Only Tron has an adapter. EVM and Bitcoin jobs fail with "not built yet".
 - Nothing creates `lookup` rows or updates `lookup_count` yet. The website does not queue jobs yet.
 - Services connect as the database owner; the restricted `taw_app` role is unused.
-- The store's database tests have not run (no test database yet).
 
 ## Next
 
