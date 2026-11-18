@@ -87,6 +87,12 @@ Address `TL7me8SQkNmieVngj9sPQGG2PSMENASHug` at block 88,091,753. TRX and USDT c
 first and last activity and the top destinations all matched. Tronscan also shows four TRC-10
 airdrop tokens, which we do not read yet. The 0.69 TRX gap between TRX in and out is network fees.
 
+## Before 2026-12-01
+
+Railway stops reading `railway.json` on 2026-12-01. It holds the start command and watch paths
+for both services. Move both to each service's dashboard settings, or migrate to
+`.railway/railway.ts`, before then. See DECISIONS.md.
+
 ## Known gaps
 
 - TRC-10 tokens, TRX moved by contracts (internal transactions) and fees are not read.

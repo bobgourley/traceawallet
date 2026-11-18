@@ -3,6 +3,27 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-18: watch paths, and the Config as Code cutoff
+
+**Docs and Markdown do not deploy.** `railway.json` has `build.watchPatterns`
+`["**", "!/docs/**", "!/*.md", "!/**/*.md"]`. Railway skips a deploy when no
+changed file matches. Negations only work after an including rule, hence the
+leading `**`. Both services read the same root `railway.json`.
+
+**Deadline: 2026-12-01.** Railway has deprecated Config as Code. `railway.json`
+keeps working for existing services until 2026-12-01, then stops being read.
+It holds the start command (`sh start.sh`, which picks web or worker and runs
+migrations) as well as the watch paths, so something must replace it before
+then. The replacement, `.railway/railway.ts` (Infrastructure as Code), is not
+read on deploy; it is applied with `railway config apply`, and per Railway's
+docs a resource left out of it is deleted. Its reference does not yet document
+watch paths. Not decided yet: see STATUS.md.
+
+**Every completed lookup writes a `lookup_completed` event.** The payload holds
+chain, address, snapshot id, as_of_block, `transfers_saved` (new rows),
+`transfers_reused` (already stored) and `snapshot_reused`. A full lookup writes
+it in the same transaction as its data. It holds nothing about who asked.
+
 ## 2026-11-17: shipping through CI
 
 **Branch, green CI, then ask.** Railway deploys `main`, so changes go to a
