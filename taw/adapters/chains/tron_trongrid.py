@@ -41,8 +41,8 @@ from typing import Any, Callable
 
 import httpx
 
-from taw.adapters.base import (AddressSnapshot, RawStore, TokenBalance, TransferBatch,
-                               TransferRecord)
+from taw.adapters.base import (AddressSnapshot, RawStore, ReusableRawStore, TokenBalance,
+                               TransferBatch, TransferRecord)
 from taw.adapters.chains.tron_address import to_base58
 
 SOURCE = "trongrid"
@@ -126,14 +126,33 @@ class TronGridAdapter:
         self._sleep = sleep
         self._pacer = _Pacer(per_second, clock, sleep)
         self._token_meta: dict[str, tuple[int | None, str | None]] = {}
-        self.request_count = 0
+        self.request_count = 0          # HTTP requests sent
+        self.reused_count = 0           # saved responses used instead of a request
 
     # -- HTTP --------------------------------------------------------------
 
+    def _reuse(self, url: str, stored: dict | None) -> _Response | None:
+        """A saved copy of this exact request, when the store keeps them and the
+        copy holds data. Only used for responses that cannot change."""
+        if not isinstance(self.raw_store, ReusableRawStore):
+            return None
+        sha = self.raw_store.find(SOURCE, url, stored)
+        if sha is None:
+            return None
+        data = json.loads(self.raw_store.body(sha))
+        if not (isinstance(data, dict) and data.get("data")):
+            return None                     # an empty answer may have been a lagging node; ask again
+        self.reused_count += 1
+        return _Response(data, sha)
+
     def _request(self, method: str, path: str, *, query: dict | None = None,
-                 body: dict | None = None) -> _Response:
+                 body: dict | None = None, reuse: bool = False) -> _Response:
         url = self.base_url + path
         stored = {k: v for k, v in (("query", query), ("body", body)) if v is not None} or None
+        if reuse:
+            saved = self._reuse(url, stored)
+            if saved is not None:
+                return saved
         for attempt in range(1, self.max_attempts + 1):
             self._pacer.wait()
             self.request_count += 1
@@ -329,7 +348,9 @@ class TronGridAdapter:
         for item, page_sha in items:
             tx = item["transaction_id"].lower()
             if tx not in events_by_tx:
-                r = self._request("GET", f"/v1/transactions/{tx}/events", query={"only_confirmed": "true"})
+                # A confirmed transaction's events never change: reuse a saved copy.
+                r = self._request("GET", f"/v1/transactions/{tx}/events",
+                                  query={"only_confirmed": "true"}, reuse=True)
                 events_by_tx[tx] = (list(r.data.get("data") or []), r.sha)
             events, events_sha = events_by_tx[tx]
 

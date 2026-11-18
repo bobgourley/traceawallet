@@ -119,11 +119,32 @@ class SecretLeak(RuntimeError):
     """Raised instead of storing a request that still contains a secret."""
 
 
+class RawIntegrityError(RuntimeError):
+    """A stored body no longer matches the sha256 it was saved under."""
+
+
 @runtime_checkable
 class RawStore(Protocol):
     def save(self, source_slug: str, request_url: str, params: Mapping[str, Any] | None,
              status: int, body_bytes: bytes) -> str:
         """Store one response body and its request. Returns the body's sha256 (hex)."""
+        ...
+
+
+@runtime_checkable
+class ReusableRawStore(RawStore, Protocol):
+    """A RawStore that can hand back a response it saved earlier.
+
+    Adapters use this only for responses that cannot change, such as the
+    events of a confirmed transaction.
+    """
+
+    def find(self, source_slug: str, request_url: str, params: Mapping[str, Any] | None) -> str | None:
+        """sha256 of the newest saved HTTP 200 response to exactly this request, or None."""
+        ...
+
+    def body(self, sha: str) -> bytes:
+        """The stored body, checked against its sha256."""
         ...
 
 
@@ -194,8 +215,24 @@ class LocalRawStore:
             fh.write(json.dumps(entry, sort_keys=True) + "\n")
         return sha
 
+    def find(self, source_slug: str, request_url: str, params: Mapping[str, Any] | None) -> str | None:
+        index = self.root / "index.jsonl"
+        if not index.exists():
+            return None
+        url, clean = clean_request(request_url, params)
+        found = None
+        for line in index.read_text(encoding="utf-8").splitlines():
+            e = json.loads(line)
+            if (e["source"] == source_slug and e["request_url"] == url
+                    and e["request_params"] == clean and e["http_status"] == 200):
+                found = e["sha256"]
+        return found
+
     def body(self, sha: str) -> bytes:
-        return (self.root / bucket_key_for(sha)).read_bytes()
+        data = (self.root / bucket_key_for(sha)).read_bytes()
+        if sha256_hex(data) != sha:
+            raise RawIntegrityError(f"stored body {sha} does not match its hash")
+        return data
 
 
 class BucketRawStore:
@@ -255,3 +292,25 @@ class BucketRawStore:
         ).fetchone()
         self.row_ids[sha] = row[0]
         return sha
+
+    def find(self, source_slug: str, request_url: str, params: Mapping[str, Any] | None) -> str | None:
+        url, clean = clean_request(request_url, params)
+        if clean is None:
+            sql, args = ("SELECT id, sha256 FROM raw_response WHERE source_id = %s AND request_url = %s"
+                         " AND request_params IS NULL AND http_status = 200 ORDER BY id DESC LIMIT 1",
+                         (self._source_id(source_slug), url))
+        else:
+            sql, args = ("SELECT id, sha256 FROM raw_response WHERE source_id = %s AND request_url = %s"
+                         " AND request_params = %s::jsonb AND http_status = 200 ORDER BY id DESC LIMIT 1",
+                         (self._source_id(source_slug), url, json.dumps(clean, sort_keys=True)))
+        row = self.conn.execute(sql, args).fetchone()
+        if row is None:
+            return None
+        self.row_ids[row[1]] = row[0]
+        return row[1]
+
+    def body(self, sha: str) -> bytes:
+        data = self.s3.get_object(Bucket=self.bucket, Key=bucket_key_for(sha))["Body"].read()
+        if sha256_hex(data) != sha:
+            raise RawIntegrityError(f"bucket object {bucket_key_for(sha)} does not match its hash")
+        return data

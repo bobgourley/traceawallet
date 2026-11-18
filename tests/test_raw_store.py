@@ -1,9 +1,11 @@
 import hashlib
+import io
 import json
 
 import pytest
 
-from taw.adapters.base import BucketRawStore, LocalRawStore, RawStore, SecretLeak, clean_request
+from taw.adapters.base import (BucketRawStore, LocalRawStore, RawIntegrityError, RawStore,
+                               ReusableRawStore, SecretLeak, clean_request)
 
 BODY = b'{"hello": "world"}'
 SHA = hashlib.sha256(BODY).hexdigest()
@@ -39,12 +41,39 @@ def test_secret_value_anywhere_is_refused(tmp_path, monkeypatch):
     assert not (tmp_path / "index.jsonl").exists()
 
 
+def test_local_store_finds_saved_requests(tmp_path):
+    store = LocalRawStore(tmp_path)
+    assert isinstance(store, ReusableRawStore)
+    url, q = "https://api.trongrid.io/v1/transactions/aa/events", {"query": {"only_confirmed": "true"}}
+    assert store.find("trongrid", url, q) is None
+    store.save("trongrid", url, q, 503, b"busy")
+    assert store.find("trongrid", url, q) is None                  # only HTTP 200 counts
+    store.save("trongrid", url, q, 200, BODY)
+    assert store.find("trongrid", url, q) == SHA
+    assert store.find("trongrid", url, {"query": {"only_confirmed": "false"}}) is None
+    assert store.find("other", url, q) is None
+    assert store.body(SHA) == BODY
+
+
+def test_tampered_body_is_refused(tmp_path):
+    store = LocalRawStore(tmp_path)
+    store.save("trongrid", "https://x.y/z", None, 200, BODY)
+    (tmp_path / "raw" / SHA[:2] / SHA).write_bytes(b"changed")
+    with pytest.raises(RawIntegrityError):
+        store.body(SHA)
+
+
 class FakeS3:
     def __init__(self):
         self.puts = []
+        self.objects = {}
 
     def put_object(self, **kw):
         self.puts.append(kw)
+        self.objects[kw["Key"]] = kw["Body"]
+
+    def get_object(self, Bucket, Key):
+        return {"Body": io.BytesIO(self.objects[Key])}
 
 
 class FakeConn:
@@ -75,6 +104,31 @@ def test_bucket_store_puts_object_and_inserts_row():
     assert store.row_ids[SHA] == 99
     store.save("trongrid", "https://api.trongrid.io/y", None, 200, BODY)
     assert sum(1 for sql, _ in conn.calls if sql.startswith("SELECT id FROM source")) == 1   # cached
+
+
+def test_bucket_store_find_and_body():
+    class FindConn(FakeConn):
+        def execute(self, sql, params=()):
+            self.calls.append((sql, params))
+            result = (7,) if sql.startswith("SELECT id FROM source") else (42, SHA)
+
+            class R:
+                def fetchone(self_inner):
+                    return result
+            return R()
+    s3, conn = FakeS3(), FindConn()
+    s3.objects[f"raw/{SHA[:2]}/{SHA}"] = BODY
+    store = BucketRawStore(conn, s3_client=s3, bucket="b")
+    assert isinstance(store, ReusableRawStore)
+    assert store.find("trongrid", "https://api.trongrid.io/v1/x", {"query": {"only_confirmed": "true"}}) == SHA
+    sql, args = conn.calls[-1]
+    assert "request_params = %s::jsonb" in sql and "http_status = 200" in sql
+    assert args == (7, "https://api.trongrid.io/v1/x", '{"query": {"only_confirmed": "true"}}')
+    assert store.row_ids[SHA] == 42
+    assert store.body(SHA) == BODY
+    s3.objects[f"raw/{SHA[:2]}/{SHA}"] = b"changed"
+    with pytest.raises(RawIntegrityError):
+        store.body(SHA)
 
 
 def test_bucket_store_unknown_source():

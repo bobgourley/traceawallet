@@ -114,6 +114,38 @@ def test_every_response_is_stored_and_key_is_not(tmp_path, replay, monkeypatch):
     assert "test-key-not-real" not in index
 
 
+def test_second_run_reuses_saved_transaction_events(tmp_path, replay):
+    store = LocalRawStore(tmp_path / "raw")
+    clock = FakeClock()
+    first = TronGridAdapter(store, "k" * 20, http=replay.client(), clock=clock.clock, sleep=clock.sleep)
+    batch1 = first.fetch_transfers(ADDR)
+    assert (first.request_count, first.reused_count) == (27, 0)
+
+    replay.calls.clear()
+    second = TronGridAdapter(store, "k" * 20, http=replay.client(), clock=clock.clock, sleep=clock.sleep)
+    batch2 = second.fetch_transfers(ADDR)
+    assert (second.request_count, second.reused_count) == (2, 25)   # only the two list pages
+    assert not any(c.endswith("/events") for c in replay.calls)
+    assert batch2.transfers == batch1.transfers
+
+
+def test_saved_empty_events_are_fetched_again(tmp_path):
+    tx = "f" * 64
+    store = LocalRawStore(tmp_path / "raw")
+    store.save("trongrid", f"https://api.trongrid.io/v1/transactions/{tx}/events",
+               {"query": {"only_confirmed": "true"}}, 200, b'{"success": true, "data": []}')
+    http, seen = scripted([
+        json_response({"success": True, "data": [], "meta": {}}),
+        json_response({"success": True, "data": [trc20_item(tx, 3000, 9)], "meta": {}}),
+        json_response(events(tx, 780, [(0, "Transfer", positional(A, B, 9))])),
+    ])
+    clock = FakeClock()
+    adapter = TronGridAdapter(store, None, http=http, clock=clock.clock, sleep=clock.sleep)
+    batch = adapter.fetch_transfers(A)
+    assert adapter.reused_count == 0 and len(seen) == 3
+    assert batch.transfers[0].block_number == 780
+
+
 def test_rate_stays_under_ten_per_second(tmp_path, replay):
     clock = FakeClock()
     adapter = make_adapter(tmp_path, replay.client(), clock=clock)
