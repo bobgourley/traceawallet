@@ -52,7 +52,7 @@ class AddressSnapshot:
     is_contract: bool
     truncated: bool               # True when token_balances is incomplete (see the adapter)
     source_slug: str
-    raw_sha256: tuple[str, ...]   # every response this snapshot was built from
+    raw_sha256: tuple[str, ...]   # every response this snapshot was built from; balance response first
 
     def native_balance(self) -> Decimal:
         return Decimal(self.native_balance_raw).scaleb(-self.native_decimals)

@@ -171,18 +171,30 @@ def insert_transfers(conn, records: Sequence[TransferRecord], address_ids: Mappi
 
 def save_snapshot(conn, snap: AddressSnapshot, address_id: int, batch: TransferBatch,
                   raw_ids: Mapping[str, int]) -> int:
+    """Insert the snapshot row and link every response it was built from.
+
+    The adapter lists the balance response first in raw_sha256; that one is
+    the snapshot row's own raw_response_id.
+    """
+    if not snap.raw_sha256:
+        raise ValueError("a snapshot must rest on at least one stored response")
     tokens = [{"contract": b.contract, "amount_raw": str(b.amount_raw), "decimals": b.decimals,
                "symbol": b.symbol} for b in snap.token_balances]
     row = conn.execute(
         "INSERT INTO address_snapshot (chain, address_id, as_of_block, as_of_time, native_balance_raw,"
         " native_decimals, token_balances, is_contract, tokens_truncated, transfer_count,"
-        " transfers_truncated, source_id, raw_response_ids)"
+        " transfers_truncated, source_id, raw_response_id)"
         " VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s) RETURNING id",
         (snap.chain, address_id, snap.as_of_block, snap.as_of_time, snap.native_balance_raw,
          snap.native_decimals, json.dumps(tokens), snap.is_contract, snap.truncated,
          len(batch.transfers), batch.truncated, source_id(conn, snap.source_slug),
-         sorted({raw_ids[s] for s in snap.raw_sha256})),
+         raw_ids[snap.raw_sha256[0]]),
     ).fetchone()
+    conn.execute(
+        "INSERT INTO address_snapshot_response (snapshot_id, raw_response_id)"
+        " SELECT %s, r FROM unnest(%s::bigint[]) AS r",
+        (row[0], sorted({raw_ids[s] for s in snap.raw_sha256})),
+    )
     return row[0]
 
 

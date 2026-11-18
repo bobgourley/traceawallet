@@ -100,6 +100,60 @@ def test_lookup_is_idempotent(conns):
     assert count(data, "SELECT event_log_verify() IS NULL") is True
 
 
+def test_snapshot_rests_on_stored_responses(conns):
+    data, raw = conns
+    saved, _ = lookup_once(data, raw, FakeS3())
+    raw_id, source = data.execute(
+        "SELECT s.raw_response_id, src.slug FROM address_snapshot s JOIN source src ON src.id = s.source_id"
+        " WHERE s.id = %s", (saved.snapshot_id,)).fetchone()
+    assert source == "trongrid"
+    assert "/v1/accounts/" in count(data, "SELECT request_url FROM raw_response WHERE id = %s", raw_id)
+    linked = [r[0] for r in data.execute(
+        "SELECT r.request_url FROM address_snapshot_response l JOIN raw_response r ON r.id = l.raw_response_id"
+        " WHERE l.snapshot_id = %s", (saved.snapshot_id,))]
+    assert len(linked) == 3 and any("getblock" in u for u in linked)
+
+
+# table -> a column to "update" to itself
+EVIDENCE_TABLES = {"address_snapshot": "id", "address_snapshot_response": "snapshot_id",
+                   "transfer": "id", "raw_response": "id", "address": "id"}
+
+
+@pytest.mark.parametrize("table", EVIDENCE_TABLES)
+def test_evidence_tables_are_append_only(conns, table):
+    data, raw = conns
+    lookup_once(data, raw, FakeS3())
+    assert count(data, f"SELECT count(*) FROM {table}") > 0
+    column = EVIDENCE_TABLES[table]
+    for statement in (f"UPDATE {table} SET {column} = {column}",
+                      f"DELETE FROM {table}",
+                      f"TRUNCATE {table} CASCADE"):
+        with pytest.raises(psycopg.errors.RaiseException, match="append-only"):
+            data.execute(statement)
+
+
+@pytest.mark.parametrize("table", EVIDENCE_TABLES)
+def test_app_role_may_read_and_insert_only(conns, table):
+    data, _ = conns
+    can = {p: count(data, "SELECT has_table_privilege('taw_app', %s, %s)", table, p)
+           for p in ("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE")}
+    assert can == {"SELECT": True, "INSERT": True, "UPDATE": False, "DELETE": False, "TRUNCATE": False}
+
+
+def test_snapshot_foreign_keys(conns):
+    data, _ = conns
+    refs = {(r[0], r[1]) for r in data.execute(
+        "SELECT conrelid::regclass::text, confrelid::regclass::text FROM pg_constraint"
+        " WHERE contype = 'f' AND conrelid::regclass::text IN ('address_snapshot', 'address_snapshot_response')")}
+    assert ("address_snapshot", "raw_response") in refs
+    assert ("address_snapshot", "source") in refs
+    assert ("address_snapshot", "address") in refs
+    assert ("address_snapshot_response", "raw_response") in refs
+    assert ("address_snapshot_response", "address_snapshot") in refs
+    assert count(data, "SELECT is_nullable FROM information_schema.columns"
+                       " WHERE table_name = 'address_snapshot' AND column_name = 'raw_response_id'") == "NO"
+
+
 def test_fresh_snapshot_window(conns):
     data, raw = conns
     lookup_once(data, raw, FakeS3())
