@@ -21,9 +21,13 @@ class FakeStore:
         self.fresh = None
         self.transfers = set()
         self.snapshots = []
+        self.reused_events = []
 
     def fresh_snapshot(self, conn, chain, address):
         return self.fresh
+
+    def record_reused_lookup(self, conn, actor, chain, address, fresh):
+        self.reused_events.append((actor, chain, address, fresh.id))
 
     def save_lookup(self, conn, actor, snap, batch):
         keys = {(t.chain, t.tx_hash, t.kind, t.event_index, t.source_slug) for t in batch.transfers}
@@ -96,13 +100,14 @@ def test_second_lookup_adds_nothing(tmp_path):
 
 def test_recent_fetch_is_reused_without_calling_the_provider(tmp_path):
     fake = FakeStore()
-    fake.fresh = store.FreshSnapshot(5, 88_000_000, dt.datetime(2026, 11, 17, 20, 0, tzinfo=dt.timezone.utc))
+    fake.fresh = store.FreshSnapshot(5, 88_000_000, dt.datetime(2026, 11, 17, 20, 0, tzinfo=dt.timezone.utc), 35)
 
     def must_not_fetch(chain, raw_store):
         raise AssertionError("provider called despite a fresh snapshot")
     status, conn, logs = run(tmp_path, job({"chain": "tron", "address": ADDR}), must_not_fetch, fake)
     assert status == "done" and "reused snapshot 5" in logs[-1]
     assert fake.snapshots == []
+    assert fake.reused_events == [("worker:test", "tron", ADDR, 5)]       # the completion is logged
 
 
 def test_hex_address_in_payload_is_normalized(tmp_path):

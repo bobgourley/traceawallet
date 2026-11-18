@@ -4,6 +4,7 @@ Skipped unless TEST_DATABASE_URL points at a server where this user may create
 databases. Each test session creates a throwaway database, applies every
 migration, and drops it afterwards. Never point this at production.
 """
+import dataclasses
 import datetime as dt
 import io
 import os
@@ -188,6 +189,61 @@ def test_snapshot_foreign_keys(conns):
     assert ("address_snapshot_response", "address_snapshot") in refs
     assert count(data, "SELECT is_nullable FROM information_schema.columns"
                        " WHERE table_name = 'address_snapshot' AND column_name = 'raw_response_id'") == "NO"
+
+
+def lookup_events(conn):
+    return [dict(actor=a, entity=e, entity_id=i, **p) for a, e, i, p in conn.execute(
+        "SELECT actor, entity, entity_id, payload FROM event_log WHERE action = 'lookup_completed' ORDER BY id")]
+
+
+def test_completed_lookups_are_logged(conns):
+    data, raw = conns
+    s3 = FakeS3()
+    first, _ = lookup_once(data, raw, s3)
+    second, _ = lookup_once(data, raw, s3)
+    events = lookup_events(data)
+    assert len(events) == 2
+    for event, saved in zip(events, (first, second)):
+        assert event["actor"] == ACTOR
+        assert event["entity"] == "address_snapshot" and event["entity_id"] == str(saved.snapshot_id)
+        assert event["chain"] == "tron" and event["address"] == ADDR
+        assert event["snapshot_id"] == saved.snapshot_id
+        assert event["as_of_block"] == 88_091_753
+        assert event["snapshot_reused"] is False
+    assert (events[0]["transfers_saved"], events[0]["transfers_reused"]) == (35, 0)
+    assert (events[1]["transfers_saved"], events[1]["transfers_reused"]) == (0, 35)
+    assert set(events[0]) == {"actor", "entity", "entity_id", "chain", "address", "snapshot_id",
+                              "as_of_block", "transfers_saved", "transfers_reused", "snapshot_reused"}
+    assert count(data, "SELECT event_log_verify() IS NULL") is True
+
+
+def test_reused_lookup_is_logged(conns):
+    data, raw = conns
+    saved, _ = lookup_once(data, raw, FakeS3())
+    fresh = store.fresh_snapshot(data, "tron", ADDR)
+    store.record_reused_lookup(data, "worker:other", "tron", ADDR, fresh)
+    event = lookup_events(data)[-1]
+    assert event["actor"] == "worker:other" and event["snapshot_reused"] is True
+    assert event["snapshot_id"] == saved.snapshot_id
+    assert (event["transfers_saved"], event["transfers_reused"]) == (0, 35)
+    assert count(data, "SELECT event_log_verify() IS NULL") is True
+
+
+def test_failed_save_logs_nothing(conns):
+    data, raw = conns
+    replay = Replay(FIXTURES / ADDR)
+    clock = FakeClock()
+    adapter = TronGridAdapter(store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test"),
+                              "test-key-not-real", http=replay.client(), clock=clock.clock, sleep=clock.sleep)
+    snap = adapter.fetch_snapshot(ADDR)
+    batch = adapter.fetch_transfers(ADDR)
+    # the last transfer points at a response that was never recorded: the save must fail whole
+    broken = dataclasses.replace(batch, transfers=batch.transfers[:-1] + (
+        dataclasses.replace(batch.transfers[-1], raw_sha256="0" * 64),))
+    with pytest.raises(RuntimeError, match="never recorded"):
+        store.save_lookup(data, ACTOR, snap, broken)
+    assert lookup_events(data) == []
+    assert count(data, "SELECT count(*) FROM transfer") == 0
 
 
 def test_fresh_snapshot_window(conns):

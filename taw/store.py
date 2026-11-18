@@ -203,12 +203,13 @@ class FreshSnapshot:
     id: int
     as_of_block: int
     fetched_at: dt.datetime
+    transfer_count: int
 
 
 def fresh_snapshot(conn, chain: str, address: str, max_age: dt.timedelta = FRESH_FOR) -> FreshSnapshot | None:
     """The newest snapshot of this address fetched within max_age, if any."""
     row = conn.execute(
-        "SELECT s.id, s.as_of_block, s.fetched_at FROM address_snapshot s"
+        "SELECT s.id, s.as_of_block, s.fetched_at, s.transfer_count FROM address_snapshot s"
         " JOIN address a ON a.id = s.address_id AND a.chain = s.chain"
         " WHERE a.chain = %s AND a.address = %s AND s.fetched_at > now() - %s"
         " ORDER BY s.fetched_at DESC LIMIT 1",
@@ -225,9 +226,44 @@ class LookupSaved:
     transfers_new: int
     addresses_seen: int
 
+    @property
+    def transfers_reused(self) -> int:
+        """Transfers this lookup found that were already stored."""
+        return self.transfers_seen - self.transfers_new
+
+
+LOOKUP_COMPLETED = "lookup_completed"
+
+
+def log_lookup_completed(conn, actor: str, *, chain: str, address: str, snapshot_id: int,
+                         as_of_block: int, transfers_saved: int, transfers_reused: int,
+                         snapshot_reused: bool) -> None:
+    """One event_log row per completed lookup. Call inside an actor_transaction.
+
+    Holds only what the evidence tables already hold (address, snapshot, block,
+    counts). Nothing about who asked: that stays in the private lookup table.
+    """
+    payload = {"chain": chain, "address": address, "snapshot_id": snapshot_id,
+               "as_of_block": as_of_block, "transfers_saved": transfers_saved,
+               "transfers_reused": transfers_reused, "snapshot_reused": snapshot_reused}
+    conn.execute(
+        "INSERT INTO event_log (actor, action, entity, entity_id, payload)"
+        " VALUES (%s, %s, 'address_snapshot', %s, %s::jsonb)",
+        (actor, LOOKUP_COMPLETED, str(snapshot_id), json.dumps(payload, sort_keys=True)),
+    )
+
+
+def record_reused_lookup(conn, actor: str, chain: str, address: str, fresh: FreshSnapshot) -> None:
+    """Log a lookup that finished by reusing a recent snapshot. Nothing else is written."""
+    with actor_transaction(conn, actor):
+        log_lookup_completed(conn, actor, chain=chain, address=address, snapshot_id=fresh.id,
+                             as_of_block=fresh.as_of_block, transfers_saved=0,
+                             transfers_reused=fresh.transfer_count, snapshot_reused=True)
+
 
 def save_lookup(conn, actor: str, snap: AddressSnapshot, batch: TransferBatch) -> LookupSaved:
-    """Write one lookup's observations in a single actor-tagged transaction."""
+    """Write one lookup's observations, and its lookup_completed event, in a single
+    actor-tagged transaction: the log never records a lookup that did not land."""
     if batch.chain != snap.chain or batch.address != snap.address:
         raise ValueError("snapshot and transfers are for different addresses")
     with actor_transaction(conn, actor):
@@ -244,4 +280,8 @@ def save_lookup(conn, actor: str, snap: AddressSnapshot, batch: TransferBatch) -
 
         new = insert_transfers(conn, batch.transfers, ids, raw_ids)
         snapshot_id = save_snapshot(conn, snap, ids[snap.address], batch, raw_ids)
-    return LookupSaved(snapshot_id, ids[snap.address], len(batch.transfers), new, len(ids))
+        saved = LookupSaved(snapshot_id, ids[snap.address], len(batch.transfers), new, len(ids))
+        log_lookup_completed(conn, actor, chain=snap.chain, address=snap.address, snapshot_id=snapshot_id,
+                             as_of_block=snap.as_of_block, transfers_saved=saved.transfers_new,
+                             transfers_reused=saved.transfers_reused, snapshot_reused=False)
+    return saved

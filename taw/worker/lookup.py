@@ -34,6 +34,7 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
 
     fresh = store_module.fresh_snapshot(data_conn, chain, address)
     if fresh is not None:
+        store_module.record_reused_lookup(data_conn, actor, chain, address, fresh)
         return Outcome(f"reused snapshot {fresh.id} (block {fresh.as_of_block}, fetched "
                        f"{fresh.fetched_at:%Y-%m-%d %H:%M:%S} UTC)", reused=True)
 
