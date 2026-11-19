@@ -63,17 +63,21 @@ def describe_failure(exc: BaseException) -> tuple[bool, str]:
     if isinstance(exc, es.EtherscanChainNotCovered):
         return True, (f"Etherscan's free plan does not cover {exc.chain_name}, so this lookup cannot run. Not retried. "
                       "It needs a paid Etherscan plan.")
-    if isinstance(exc, es.EtherscanKeyRejected):
-        return True, ("Etherscan rejected our API key. Not retried. Check ETHERSCAN_API_KEY in Railway.")
-    if isinstance(exc, es.EtherscanDailyLimit):
-        return True, ("Etherscan's daily call allowance for our key is used up. Not retried; "
-                      "queue the lookup again tomorrow.")
-    if isinstance(exc, es.EtherscanPaidEndpoint):
-        return True, f"A request needs a paid Etherscan endpoint, which is a bug in our code: {exc}."
-    if isinstance(exc, es.EtherscanRateLimited):
-        return False, "Etherscan kept saying we were calling too fast, even after backing off."
     if isinstance(exc, es.EtherscanError):
-        return False, f"Etherscan returned an error: {exc}."
+        who = exc.provider
+        if isinstance(exc, es.EtherscanKeyRejected):
+            return True, f"{who} rejected our API key. Not retried. Check {exc.key_env} in Railway."
+        if isinstance(exc, es.EtherscanDailyLimit):
+            return True, (f"{who}'s daily call allowance for our key is used up. Not retried; "
+                          "queue the lookup again tomorrow.")
+        if isinstance(exc, es.EtherscanPaidEndpoint):
+            return True, f"A request needs a paid {who} endpoint, which is a bug in our code: {exc}."
+        if isinstance(exc, es.EtherscanRateLimited):
+            return False, f"{who} kept saying we were calling too fast, even after backing off."
+        if getattr(exc, "incomplete", False):
+            return False, (f"{who} has not finished indexing this address yet ({exc}). Nothing was saved; "
+                           "the lookup will be tried again.")
+        return False, f"{who} returned an error: {exc}."
     if isinstance(exc, (PayloadError, InvalidTronAddress, InvalidEvmAddress, UnsupportedChain)):
         return True, f"This lookup cannot run: {exc}."
     if isinstance(exc, MissingSetting):

@@ -259,11 +259,38 @@ def test_bad_evm_address_fails_at_once(tmp_path):
     assert status == "failed" and "checksum mismatch" in conn.sql[-1][1][0]
 
 
-def test_missing_etherscan_key_fails_at_once(monkeypatch, tmp_path):
+def test_missing_blockscout_key_fails_at_once(monkeypatch, tmp_path):
     from taw.adapters import registry
-    monkeypatch.delenv("ETHERSCAN_API_KEY", raising=False)
+    monkeypatch.delenv("BLOCKSCOUT_API_KEY", raising=False)
     status, conn, _ = run(tmp_path, job({"chain": "polygon", "address": EVM_ADDR}), registry.adapter_for)
-    assert status == "failed" and "ETHERSCAN_API_KEY is not set" in conn.sql[-1][1][0]
+    assert status == "failed" and "BLOCKSCOUT_API_KEY is not set" in conn.sql[-1][1][0]
+
+
+def test_bsc_fails_at_once_as_not_checked(monkeypatch, tmp_path):
+    from taw.adapters import registry
+    monkeypatch.setenv("BLOCKSCOUT_API_KEY", "proapi_test_not_real")
+    status, conn, _ = run(tmp_path, job({"chain": "bsc", "address": EVM_ADDR}), registry.adapter_for)
+    assert status == "failed"
+    assert conn.sql[-1][1][0].startswith("This lookup cannot run: bsc is not checked in Phase 1")
+
+
+def test_blockscout_not_finished_is_retried_and_nothing_saved(tmp_path):
+    from taw.adapters.chains.evm_blockscout import BlockscoutIncomplete
+    exc = BlockscoutIncomplete("account/txlistinternal: not finished: Some internal transactions within this "
+                               "block range have not yet been processed")
+    exc.provider = "Blockscout"
+    fake = FakeStore()
+    status, conn, _ = run(tmp_path, job({"chain": "eth", "address": EVM_ADDR}, attempts=1), raising(exc), fake)
+    assert status == "queued" and fake.snapshots == []
+    assert "Blockscout has not finished indexing" in conn.sql[-1][1][1]
+
+
+def test_failure_messages_name_the_provider():
+    from taw.adapters.chains import evm_etherscan as es
+    exc = es.EtherscanKeyRejected("x")
+    exc.provider, exc.key_env = "Blockscout", "BLOCKSCOUT_API_KEY"
+    permanent, message = describe_failure(exc)
+    assert permanent and message == "Blockscout rejected our API key. Not retried. Check BLOCKSCOUT_API_KEY in Railway."
 
 
 @pytest.mark.parametrize("exc_name, permanent, words", [

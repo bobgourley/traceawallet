@@ -16,23 +16,26 @@ class MissingSetting(RuntimeError):
     pass
 
 
-# Every EVM chain is served by the Etherscan adapter, one instance per chain.
-# Chains our Etherscan plan does not cover fail at the first call, with a plain message.
+class ChainNotChecked(UnsupportedChain):
+    """A known chain that Phase 1 deliberately does not check. Fails the job at once."""
+
+
+# EVM chains are served by the Blockscout adapter, one instance per chain
+# (docs/DECISIONS.md, 2026-11-19). The Etherscan adapter is kept for tests and
+# cross-checks only: its terms do not allow a public site on our plan.
 EVM_CHAINS = ("eth", "bsc", "polygon", "arbitrum", "optimism", "base")
 SUPPORTED = ("tron",) + EVM_CHAINS
 
 # Phase 1 coverage (docs/DECISIONS.md, 2026-11-19). A report for a 0x address
 # must say which EVM chains were checked, and for each one that was not, why.
 # The report template words these reason codes; nothing here is report prose.
-PHASE1_CHAINS = ("eth", "polygon", "arbitrum", "tron", "btc")
-PHASE1_EVM_CHECKED = ("eth", "polygon", "arbitrum")
+PHASE1_CHAINS = ("eth", "polygon", "arbitrum", "optimism", "base", "tron", "btc")
+PHASE1_EVM_CHECKED = ("eth", "polygon", "arbitrum", "optimism", "base")
 EVM_NOT_CHECKED = {                     # chain -> reason code
-    "bsc": "data_plan_excludes_chain",
-    "optimism": "data_plan_excludes_chain",
-    "base": "data_plan_excludes_chain",
+    "bsc": "no_source_with_suitable_terms",
 }
 NOT_CHECKED_REASONS = {
-    "data_plan_excludes_chain": "Our Etherscan plan does not include this chain.",
+    "no_source_with_suitable_terms": "No data source we may use for a public site covers this chain yet.",
 }
 
 
@@ -57,11 +60,14 @@ def adapter_for(chain: str, raw_store: RawStore) -> ChainAdapter:
         if not key:
             raise MissingSetting("TRONGRID_API_KEY is not set on this service")
         return TronGridAdapter(raw_store, key)
-    if chain in EVM_CHAINS:
-        from taw.adapters.chains.evm_etherscan import EtherscanAdapter
+    if chain in EVM_NOT_CHECKED:
+        raise ChainNotChecked(f"{chain} is not checked in Phase 1: "
+                              f"{NOT_CHECKED_REASONS[EVM_NOT_CHECKED[chain]].rstrip('.').lower()}")
+    if chain in PHASE1_EVM_CHECKED:
+        from taw.adapters.chains.evm_blockscout import BlockscoutAdapter
 
-        key = os.environ.get("ETHERSCAN_API_KEY")
+        key = os.environ.get("BLOCKSCOUT_API_KEY")
         if not key:
-            raise MissingSetting("ETHERSCAN_API_KEY is not set on this service")
-        return EtherscanAdapter(chain, raw_store, key)
+            raise MissingSetting("BLOCKSCOUT_API_KEY is not set on this service")
+        return BlockscoutAdapter(chain, raw_store, key)
     raise _unsupported(chain)
