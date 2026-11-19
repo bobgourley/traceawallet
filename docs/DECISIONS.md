@@ -3,6 +3,47 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-19: Etherscan's terms and Phase 1 chain coverage
+
+**Etherscan is a Phase 1 display source only.** Nothing that comes from
+Etherscan may feed a public API. Phase 2 needs an EVM source whose terms permit
+redistribution. Migration 0005 writes this, the terms we read, and
+`terms_checked_on = 2026-11-19` onto the `etherscan` source row.
+`resale_permitted` stays false.
+
+**We can destroy Etherscan's bodies and keep the record.** Nothing in the
+database points into the bucket except the `bucket_key` text column, so deleting
+objects breaks no row, hash or foreign key. `scripts/purge_source_bodies.py
+<slug>` lists what it would delete and changes nothing unless given `--execute`.
+It has not been run for real. With `--execute` it writes one `event_log` row
+(`raw_bodies_purged`, with every deleted sha256) before deleting, so the removal
+is on the record (rule 5). Afterwards the `raw_response` rows still say what was
+fetched, when, with what status, and what it hashed to. Only the bytes are gone.
+One catch: bodies are stored by hash alone, so if another source ever returned
+the same bytes, both share one object. The script keeps any object another
+source's rows also point at, and lists it. A database test in CI runs a Tron and
+an Ethereum lookup, purges Etherscan, and checks all of this. Not yet confirmed:
+whether our bucket credentials are allowed to delete. The dry run only reads.
+
+**Phase 1 chains: eth, polygon, arbitrum, tron and btc.** BNB Smart Chain, OP
+Mainnet and Base are outside Etherscan's free plan. Their `chain` rows stay;
+nothing is deleted. A job for them still fails at once with a plain message.
+
+**Every report for a 0x address states its chain coverage.** It lists the chains
+that were checked, and each chain that was not, with the reason. The list and
+the reason codes live in `taw/adapters/registry.py` (`PHASE1_EVM_CHECKED`,
+`EVM_NOT_CHECKED`, `NOT_CHECKED_REASONS`), so the report template words them
+from data. A test fails if an EVM chain is in neither list.
+
+**Our use may need the Advanced plan, and that is open.** Etherscan's API Terms
+define "Commercial Application" use as use in a website or service "offered to
+third parties, whether free of charge or for a fee". They reserve that use for
+the Advanced plan ($299 a month) and above. Free, Lite and Standard are for
+"Personal & Research" use. A free public site for fraud victims reads as
+commercial under that wording. This is our reading of the page, not legal
+advice. Until the owner decides, Etherscan data has only been used in tests and
+live checks that nobody else sees.
+
 ## 2026-11-19: EVM chains through Etherscan API V2
 
 **What the free plan covers.** Probed on 2026-11-18 with our key, one
@@ -247,8 +288,8 @@ the live run on Railway.
   `taw_app` role that is not used yet.
 - Nothing yet records lookups in `lookup` or updates `lookup_count`. The
   worker only fetches and stores observations.
-- Etherscan's API Terms limit redistribution, archiving and retention (see
-  2026-11-19). The owner needs to decide whether that fits rule 3 and a later
-  public API, or whether EVM data should come from another provider.
+- Etherscan's API Terms limit redistribution, archiving and retention. Decided
+  2026-11-19: display only, no public API, and a purge script exists. Still
+  open: Phase 2 EVM source, and whether a public site needs the Advanced plan.
 - BNB Smart Chain, OP Mainnet and Base need a paid Etherscan plan or a different
-  provider.
+  provider. They are outside Phase 1.
