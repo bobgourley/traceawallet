@@ -3,6 +3,60 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-19 (later): Blockscout for EVM; launch waits for permissions
+
+**Launch to testers is blocked until Blockscout replies in writing.** We have
+asked Blockscout to confirm three things: a free public report site, a later
+paid API serving our own reports (clause 7(h) of their terms), and keeping raw
+responses. Until a written reply is on file, no EVM data is shown to anyone
+outside the project.
+
+**The worker uses Blockscout for eth, polygon, arbitrum, optimism and base.**
+`taw/adapters/chains/evm_blockscout.py` extends the Etherscan adapter, because
+Blockscout speaks Etherscan's API. The differences:
+
+- block, `eth_call` and `eth_getCode` go by JSON-RPC POST;
+- logs are capped at 1,000 per query;
+- internal rows use `transactionHash` and `index`.
+
+The Etherscan adapter stays for tests and cross-checks only, and no job uses
+it. Research and reasons are in `docs/research/evm-sources.md`.
+
+**"Not yet processed" is never an answer.** If Blockscout answers status "2"
+("Some internal transactions within this block range have not yet been
+processed"), the lookup raises `BlockscoutIncomplete`. Nothing is saved and the
+job retries later. A partial list is never stored as complete.
+
+**Internal transfers carry each provider's own index.** Etherscan's
+`event_index` is an encoded trace path, while Blockscout's is its own index of
+the internal transaction within the transaction. Both are unique within the
+transaction. The table's unique key includes the source, so the two never
+collide. The cross-check matches internal transfers on transaction, from, to
+and amount, not on the index.
+
+**Phase 1 chains: eth, polygon, arbitrum, optimism, base, tron and btc.** This
+supersedes the earlier list, which left out optimism and base because
+Etherscan's free plan refused them. BNB Smart Chain stays out, with reason
+`no_source_with_suitable_terms`: no provider that covers it has terms that
+clearly allow our use. Its chain row stays, and a job for it fails at once.
+
+**Cross-check mode.** `scripts/cross_check_evm.py` runs Etherscan and Blockscout
+at the same block (`at_block`). It reports every difference in transfers,
+balances, first activity and truncation, and exits 1 if there is any.
+
+**Other sources need permission before users see them.** Research is in
+`docs/research/data-sources.md`, and each source row's licence and
+`terms_checked_on` were updated by migration 0006.
+
+| Source | Status |
+|---|---|
+| OFAC | Ready. |
+| TronGrid | Ready for the free site. |
+| GoPlus | Allowed with its logo and "Powered by GoPlus". |
+| DefiLlama | Needs written permission: its terms bar republishing data. |
+| NBCTF | Needs written permission: it publishes no terms. |
+| Bitcoin (mempool.space, Blockstream) | Neither hosted API's terms settle it. The open choice is self-hosting or reading Blockstream's login-only API terms. |
+
 ## 2026-11-19: Etherscan's terms and Phase 1 chain coverage
 
 **Etherscan is a Phase 1 display source only.** Nothing that comes from
@@ -289,7 +343,11 @@ the live run on Railway.
 - Nothing yet records lookups in `lookup` or updates `lookup_count`. The
   worker only fetches and stores observations.
 - Etherscan's API Terms limit redistribution, archiving and retention. Decided
-  2026-11-19: display only, no public API, and a purge script exists. Still
-  open: Phase 2 EVM source, and whether a public site needs the Advanced plan.
-- BNB Smart Chain, OP Mainnet and Base need a paid Etherscan plan or a different
-  provider. They are outside Phase 1.
+  2026-11-19: display only, no public API, and a purge script exists. Since
+  then Etherscan is used for tests and cross-checks only.
+- Blockscout's written reply. Launch to testers waits for it.
+- Written permission from DefiLlama and NBCTF before their data is shown, and
+  from GoPlus, TronGrid and Blockscout before any paid API.
+- Bitcoin source for the public site: self-host esplora or mempool, or read
+  Blockstream's Explorer API terms.
+- BNB Smart Chain has no source with suitable terms; outside Phase 1.
