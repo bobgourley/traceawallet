@@ -132,10 +132,10 @@ class EvmChain:
 
 
 # Freezable stablecoins: each contract's verified ABI on Etherscan was read on
-# 2026-11-18 and has a blacklist, block or freeze function (or event). DAI, USDe
-# and RLUSD were checked and showed none, so they are not listed. BNB Smart Chain,
-# OP Mainnet and Base are not readable on the free plan; their lists are left
-# empty until someone confirms them.
+# 2026-11-18 (Optimism and Base on 2026-11-19) and has a blacklist, block or
+# freeze function (or event). DAI, USDe and RLUSD (Ethereum), USDT (OP Mainnet)
+# and USDbC (Base) were checked and showed none, so they are not listed. BNB Smart
+# Chain is not checked in Phase 1; its list is left empty.
 CHAINS: dict[str, EvmChain] = {c.id: c for c in (
     EvmChain("eth", 1, "Ethereum", "ETH", 12, (
         ("0xdac17f958d2ee523a2206206994597c13d831ec7", "USDT (Tether)"),
@@ -160,8 +160,14 @@ CHAINS: dict[str, EvmChain] = {c.id: c for c in (
         ("0x46850ad61c2b7d64d08c9c754f45254596696984", "PYUSD (Paxos)"),
     )),
     EvmChain("bsc", 56, "BNB Smart Chain", "BNB", 15),
-    EvmChain("optimism", 10, "OP Mainnet", "ETH", 10),
-    EvmChain("base", 8453, "Base", "ETH", 10),
+    EvmChain("optimism", 10, "OP Mainnet", "ETH", 10, (
+        ("0x0b2c639c533813f4aa9d7837caf62653d097ff85", "USDC (Circle)"),
+        ("0x7f5c764cbc14f9669b88837ca1490cca17c31607", "USDC.e (bridged)"),
+    )),
+    EvmChain("base", 8453, "Base", "ETH", 10, (
+        ("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", "USDC (Circle)"),
+        ("0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42", "EURC (Circle)"),
+    )),
 )}
 
 _KIND_ORDER = {"native": 0, "internal": 1, "token": 2}
@@ -172,6 +178,11 @@ _KIND_ORDER = {"native": 0, "internal": 1, "token": 2}
 # ---------------------------------------------------------------------------
 
 class EtherscanError(RuntimeError):
+    """An error from an Etherscan-compatible provider. `provider` and `key_env` name
+    which one, so failure messages point at the right service and setting."""
+    provider = "Etherscan"
+    key_env = "ETHERSCAN_API_KEY"
+
     def __init__(self, message: str, status: int | None = None):
         super().__init__(message)
         self.status = status
@@ -302,28 +313,42 @@ def _record_key(r: TransferRecord):
 # ---------------------------------------------------------------------------
 
 class EtherscanAdapter:
+    # What differs between Etherscan-compatible providers. A subclass changes these
+    # and the few hook methods below (see evm_blockscout.py).
+    source = SOURCE
+    provider_name = "Etherscan"
+    key_env = "ETHERSCAN_API_KEY"
+    default_base_url = API_URL
+    chain_param = "chainid"
+    default_per_second = 2.5
+    logs_window: int | None = None          # rows one logs query may return; None = the list window
+
     def __init__(self, chain: str, raw_store: RawStore, api_key: str | None, *,
                  http: httpx.Client | None = None,
-                 base_url: str = API_URL,
-                 per_second: float = 2.5,
+                 base_url: str | None = None,
+                 per_second: float | None = None,
                  max_attempts: int = 6,
                  page_size: int = PAGE_SIZE,
                  window: int = WINDOW,
+                 at_block: int | None = None,
                  clock: Callable[[], float] = time.monotonic,
                  sleep: Callable[[float], None] = time.sleep):
+        """at_block pins every read to that block instead of latest minus confirmations
+        (used by the cross-check so two providers are compared at one height)."""
         if chain not in CHAINS:
             raise ValueError(f"no Etherscan settings for chain {chain!r}")
         self.info = CHAINS[chain]
         self.chain = chain
         self.raw_store = raw_store
-        self.base_url = base_url
+        self.base_url = base_url or self.default_base_url
+        self._at_block = at_block
         self.http = http or httpx.Client(timeout=30.0)
         self._key = api_key
         self.max_attempts = max_attempts
         self.page_size = page_size
         self.window = window
         self._sleep = sleep
-        self._pacer = Pacer(per_second, clock, sleep)
+        self._pacer = Pacer(per_second or self.default_per_second, clock, sleep)
         self._head: Head | None = None
         self._token_meta: dict[str, tuple[int | None, str | None]] = {}
         self._memo: dict[str, _Response] = {}   # every read is pinned to head, so a repeat gets the same answer
@@ -334,19 +359,38 @@ class EtherscanAdapter:
     # -- HTTP ------------------------------------------------------------------
 
     def _request(self, params: dict, *, rpc_error_ok: bool = False) -> _Response:
-        """One call. rpc_error_ok: return a JSON-RPC error (a reverted eth_call) as an answer."""
-        query = {"chainid": self.info.chain_id, **params}
-        stored = {"query": query}                       # never the key
-        memo_key = json.dumps(query, sort_keys=True, default=str)
-        if memo_key in self._memo and params.get("action") != "eth_blockNumber":
-            return self._memo[memo_key]
+        """One GET to the Etherscan-style endpoint. rpc_error_ok: return a JSON-RPC
+        error (a reverted eth_call) as an answer."""
+        query = {self.chain_param: self.info.chain_id, **params}
         send = {**query, "apikey": self._key} if self._key else dict(query)
-        what = f"{params.get('module')}/{params.get('action')}"
+        return self._send(f"{params.get('module')}/{params.get('action')}", "GET", self.base_url,
+                          stored={"query": query}, query=send, rpc_error_ok=rpc_error_ok,
+                          memo=params.get("action") != "eth_blockNumber")
+
+    def _send(self, what: str, method: str, url: str, *, stored: dict, query: dict | None = None,
+              body: dict | None = None, headers: dict | None = None, rpc_error_ok: bool = False,
+              memo: bool = True) -> _Response:
+        """Send with pacing and retries, store every response, check the body.
+
+        `stored` is what the RawStore records for the request: never the key, which
+        travels only in `query` or `headers`.
+        """
+        memo_key = json.dumps([url, stored], sort_keys=True, default=str)
+        if memo and memo_key in self._memo:
+            return self._memo[memo_key]
+        try:
+            return self._send_loop(what, method, url, stored=stored, query=query, body=body, headers=headers,
+                                   rpc_error_ok=rpc_error_ok, memo=memo, memo_key=memo_key)
+        except EtherscanError as exc:
+            exc.provider, exc.key_env = self.provider_name, self.key_env
+            raise
+
+    def _send_loop(self, what, method, url, *, stored, query, body, headers, rpc_error_ok, memo, memo_key):
         for attempt in range(1, self.max_attempts + 1):
             self._pacer.wait()
             self.request_count += 1
-            resp = self.http.get(self.base_url, params=send)
-            sha = self.raw_store.save(SOURCE, self.base_url, stored, resp.status_code, resp.content)
+            resp = self.http.request(method, url, params=query, json=body, headers=headers)
+            sha = self.raw_store.save(self.source, url, stored, resp.status_code, resp.content)
 
             if resp.status_code in (429, 502, 503, 504):
                 if attempt == self.max_attempts:
@@ -356,16 +400,21 @@ class EtherscanAdapter:
                 self._backoff(attempt, float(retry_after) if retry_after.isdigit() else None)
                 continue
             if resp.status_code >= 400:
-                raise EtherscanError(f"{what}: HTTP {resp.status_code}", resp.status_code)
+                kind = self._classify(resp.text[:300]) if resp.status_code in (401, 403) else EtherscanError
+                if kind is EtherscanError:
+                    raise EtherscanError(f"{what}: HTTP {resp.status_code}", resp.status_code)
+                raise kind(f"{what}: HTTP {resp.status_code}: {resp.text[:200]}")
             try:
                 data = json.loads(resp.content or b"{}")
             except ValueError as exc:
                 raise EtherscanError(f"{what}: response is not JSON") from exc
-            error = _body_error(data)
+            error = self._body_error(data)
             if error is None or (rpc_error_ok and isinstance(data, dict) and "jsonrpc" in data):
-                self._memo[memo_key] = _Response(data, sha)
-                return self._memo[memo_key]
-            kind = _classify(error)
+                result = _Response(data, sha)
+                if memo:
+                    self._memo[memo_key] = result
+                return result
+            kind = self._classify(error)
             if kind is EtherscanRateLimited:
                 if attempt == self.max_attempts:
                     raise EtherscanRateLimited(f"{what}: {error} (after {attempt} tries)")
@@ -375,6 +424,34 @@ class EtherscanAdapter:
                 raise EtherscanChainNotCovered(f"{self.info.name}: {error}", self.info.name)
             raise kind(f"{what}: {error}")
         raise AssertionError("unreachable")
+
+    # -- hooks a provider dialect may override -------------------------------------
+
+    def _body_error(self, data: Any) -> str | None:
+        return _body_error(data)
+
+    def _classify(self, text: str) -> type[EtherscanError]:
+        return _classify(text)
+
+    def _normalize_row(self, action: str, row: dict) -> dict:
+        """A list row in Etherscan's field names."""
+        return row
+
+    def _internal_index(self, row: dict) -> int | None:
+        """event_index for an internal transfer, or None to fall back to position."""
+        return trace_index(row.get("traceId"))
+
+    def _block_number(self) -> tuple[int, str]:
+        r = self._proxy("eth_blockNumber")
+        return _int(r.data["result"]), r.sha
+
+    def _block(self, number: int) -> tuple[dict, str]:
+        r = self._proxy("eth_getBlockByNumber", tag=hex(number), boolean="false")
+        return (r.data.get("result") or {}), r.sha
+
+    def _get_code(self, address: str, tag: str) -> tuple[str, str]:
+        r = self._proxy("eth_getCode", address=address, tag=tag)
+        return (r.data.get("result") or "0x"), r.sha
 
     def _backoff(self, attempt: int, seconds: float | None) -> None:
         wait = seconds if seconds is not None else min(30.0, 2 ** (attempt - 1))
@@ -397,13 +474,15 @@ class EtherscanAdapter:
     def head(self) -> Head:
         """The block every read is pinned to, fixed for the life of this adapter."""
         if self._head is None:
-            latest = self._proxy("eth_blockNumber")
-            number = max(0, _int(latest.data["result"]) - self.info.confirmations)
-            block = self._proxy("eth_getBlockByNumber", tag=hex(number), boolean="false")
-            got = block.data.get("result") or {}
+            if self._at_block is not None:
+                number, shas = self._at_block, ()
+            else:
+                latest, latest_sha = self._block_number()
+                number, shas = max(0, latest - self.info.confirmations), (latest_sha,)
+            got, block_sha = self._block(number)
             if _int(got.get("number", -1)) != number:
                 raise EtherscanError(f"block {number} was not returned")
-            self._head = Head(number, _ts(got["timestamp"]), (latest.sha, block.sha))
+            self._head = Head(number, _ts(got["timestamp"]), shas + (block_sha,))
         return self._head
 
     def token_meta(self, contract: str) -> tuple[tuple[int | None, str | None], list[str]]:
@@ -437,7 +516,7 @@ class EtherscanAdapter:
               keep: Callable[[dict], bool], key: Callable[[dict], Any],
               block_of: Callable[[dict], int], max_pages: int,
               lo_name: str = "startblock", hi_name: str = "endblock",
-              sort: bool = True) -> tuple[list[tuple[dict, str]], bool]:
+              sort: bool = True, window: int | None = None) -> tuple[list[tuple[dict, str]], bool]:
         """Page through a list between blocks lo and hi.
 
         Returns ([(row, sha)], more). `more` is True when it stopped with rows
@@ -447,14 +526,16 @@ class EtherscanAdapter:
         out: list[tuple[dict, str]] = []
         seen: set = set()
         pages = 0
+        window = window or self.window
+        page_size = min(self.page_size, window)
         while True:
             rows: list = []
-            for page in range(1, self.window // self.page_size + 1):
-                q = {**params, lo_name: lo, hi_name: hi, "page": page, "offset": self.page_size}
+            for page in range(1, window // page_size + 1):
+                q = {**params, lo_name: lo, hi_name: hi, "page": page, "offset": page_size}
                 if sort:
                     q["sort"] = "desc" if descending else "asc"
                 r = self._request(q)
-                rows = r.data.get("result") or []
+                rows = [self._normalize_row(params.get("action", ""), row) for row in (r.data.get("result") or [])]
                 pages += 1
                 for row in rows:
                     k = key(row)
@@ -463,7 +544,7 @@ class EtherscanAdapter:
                     seen.add(k)
                     if keep(row):
                         out.append((row, r.sha))
-                if len(rows) < self.page_size:
+                if len(rows) < page_size:
                     return out, False
                 if want is not None and len(out) > want:
                     return out, True
@@ -472,11 +553,11 @@ class EtherscanAdapter:
             edge = block_of(rows[-1])
             if descending:
                 if edge == hi:
-                    raise EtherscanError(f"more than {self.window:,} rows in block {edge}; cannot page past it")
+                    raise EtherscanError(f"more than {window:,} rows in block {edge}; cannot page past it")
                 hi = edge
             else:
                 if edge == lo:
-                    raise EtherscanError(f"more than {self.window:,} rows in block {edge}; cannot page past it")
+                    raise EtherscanError(f"more than {window:,} rows in block {edge}; cannot page past it")
                 lo = edge
 
     def _account(self, action: str, addr: str, head: int, want: int | None,
@@ -496,7 +577,7 @@ class EtherscanAdapter:
                 keep=lambda log: len(log.get("topics") or []) == 3,        # four topics: an NFT
                 key=lambda log: (log["transactionHash"].lower(), _int(log["logIndex"])),
                 block_of=lambda log: _int(log["blockNumber"]), max_pages=MAX_LOG_PAGES,
-                lo_name="fromBlock", hi_name="toBlock", sort=False)
+                lo_name="fromBlock", hi_name="toBlock", sort=False, window=self.logs_window)
             if more:
                 raise EtherscanError(f"token transfer logs for {addr} did not fit in {MAX_LOG_PAGES} pages")
             for log, sha in rows:
@@ -518,15 +599,14 @@ class EtherscanAdapter:
             raise EtherscanError(f"could not read the native balance at block {head.number}")
         shas = [native_sha, *head.shas]
 
-        code = self._proxy("eth_getCode", address=addr, tag=tag)
-        shas.append(code.sha)
-        code_hex = code.data.get("result") or "0x"
+        code_hex, code_sha = self._get_code(addr, tag)
+        shas.append(code_sha)
         is_contract = isinstance(code_hex, str) and code_hex not in ("0x", "0x0")
 
         page = self._request({"module": "account", "action": "tokentx", "address": addr, "startblock": 0,
                               "endblock": head.number, "page": 1, "offset": TOKEN_PAGE, "sort": "desc"})
         shas.append(page.sha)
-        rows = page.data.get("result") or []
+        rows = [self._normalize_row("tokentx", row) for row in (page.data.get("result") or [])]
         self._remember_meta(rows)
         counts = Counter((row.get("contractAddress") or "").lower() for row in rows)
         counts.pop("", None)
@@ -550,7 +630,7 @@ class EtherscanAdapter:
             chain=self.chain, address=addr, as_of_block=head.number, as_of_time=head.time,
             native_symbol=self.info.native_symbol, native_decimals=self.info.native_decimals,
             native_balance_raw=decode_uint(native_hex), token_balances=tuple(balances),
-            is_contract=is_contract, truncated=truncated, source_slug=SOURCE, raw_sha256=tuple(shas),
+            is_contract=is_contract, truncated=truncated, source_slug=self.source, raw_sha256=tuple(shas),
         )
 
     def fetch_transfers(self, address: str, limit: int = 2000) -> TransferBatch:
@@ -611,7 +691,8 @@ class EtherscanAdapter:
     def _oldest_rows(self, action: str, addr: str, head: int, keep: Callable[[dict], bool]):
         r = self._request({"module": "account", "action": action, "address": addr, "startblock": 0,
                            "endblock": head, "page": 1, "offset": FIRST_ROWS, "sort": "asc"})
-        return [(row, r.sha) for row in (r.data.get("result") or []) if keep(row)]
+        rows = [self._normalize_row(action, row) for row in (r.data.get("result") or [])]
+        return [(row, r.sha) for row in rows if keep(row)]
 
     def _firsts_native(self, addr, head, have, more):
         if not more:
@@ -650,7 +731,7 @@ class EtherscanAdapter:
             token_contract=None, token_symbol=self.info.native_symbol,
             token_decimals=self.info.native_decimals, amount_raw=_int(row["value"]),
             block_number=_int(row["blockNumber"]), block_time=_ts(row["timeStamp"]),
-            source_slug=SOURCE, raw_sha256=sha,
+            source_slug=self.source, raw_sha256=sha,
         )
 
     def _internal_records(self, rows: list[tuple[dict, str]]) -> list[TransferRecord]:
@@ -658,7 +739,7 @@ class EtherscanAdapter:
         out = []
         for row, sha in rows:
             tx = row["hash"].lower()
-            index = trace_index(row.get("traceId"))
+            index = self._internal_index(row)
             if index is None:
                 index = position[tx]
             position[tx] += 1
@@ -668,7 +749,7 @@ class EtherscanAdapter:
                 token_contract=None, token_symbol=self.info.native_symbol,
                 token_decimals=self.info.native_decimals, amount_raw=_int(row["value"]),
                 block_number=_int(row["blockNumber"]), block_time=_ts(row["timeStamp"]),
-                source_slug=SOURCE, raw_sha256=sha,
+                source_slug=self.source, raw_sha256=sha,
             ))
         return out
 
@@ -683,7 +764,7 @@ class EtherscanAdapter:
             token_contract=contract, token_symbol=None, token_decimals=0,   # filled in by _with_decimals
             amount_raw=decode_uint(data) if data else 0,
             block_number=_int(log["blockNumber"]), block_time=_ts(log["timeStamp"]),
-            source_slug=SOURCE, raw_sha256=sha,
+            source_slug=self.source, raw_sha256=sha,
         )
 
     def _count_unmatched(self, rows: list[dict], logs: list[tuple[dict, str]]) -> None:
