@@ -375,6 +375,8 @@ def _purge_module():
     path = pathlib.Path(__file__).resolve().parent.parent / "scripts" / "purge_source_bodies.py"
     spec = importlib.util.spec_from_file_location("purge_source_bodies", path)
     mod = importlib.util.module_from_spec(spec)
+    import sys
+    sys.modules[spec.name] = mod                 # @dataclass looks its module up here
     spec.loader.exec_module(mod)
     return mod
 
