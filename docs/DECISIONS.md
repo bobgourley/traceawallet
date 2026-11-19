@@ -3,6 +3,87 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20: reconciliation, for every chain
+
+**Every lookup checks that its transfers explain its token balances.** For
+each token, transfers in minus transfers out, up to the snapshot block, is
+compared with the balance read from the contract at that block
+(`taw/reconcile.py`). It covers the freezable stablecoins on every chain, plus
+any other token whose balance was read. Each token gets one status, and both
+numbers are kept:
+
+| Status | Meaning |
+|---|---|
+| `reconciled` | The two numbers are equal. |
+| `not_reconciled` | They differ. |
+| `not_checkable` | The check can't be made. The reason is `history_truncated` or `balance_not_read`. A third reason, `internal_range_incomplete`, is reserved for the native coin. |
+
+The results go on the snapshot (migration 0007): `token_reconciliation`,
+`history_incomplete` and `incomplete_reasons`.
+
+**An incomplete history is never presented as a finished answer.** A snapshot
+is marked incomplete when either of these holds:
+
+- a freezable stablecoin fails to reconcile on a history that is not
+  truncated, or
+- the adapter itself reported that its list may miss transfers.
+
+The report must say the history may be incomplete. Rows from before 0007 have
+NULL in the new columns. That means "not checked" and must not be read as
+complete either. The `lookup_completed` event and the job message carry the
+flag too.
+
+**Why the adapter's own signal counts.** Balance arithmetic can't see a gap
+that nets to zero. Blockscout's log search returned 6 of the test wallet's 41
+token transfers. The wallet passes every token straight through, so in minus
+out still equalled the balance, 0. What caught it was the EVM adapter's
+comparison of the token list (41 rows) with the logs (6): 35 rows had no
+matching log. That count now goes on the batch as an incomplete reason. A
+replay test of that exact response proves the snapshot is flagged.
+
+**Results on the test addresses.**
+
+| Address | Token | Balance | In minus out | Status |
+|---|---|---|---|---|
+| Tron | USDT | 0 | 0 | reconciled |
+| Ethereum (Etherscan fixture) | USDC | 0 | 0 | reconciled |
+| Ethereum (Etherscan fixture) | USDT | 0 | 0 | reconciled |
+| Ethereum (Blockscout, 6 of 41) | USDC | 0 | 0 | reconciled, but `history_incomplete`: "35 of 41 token-list rows have no matching Transfer log" |
+
+**Two related bugs found and fixed.** Blockscout pads log `topics` to four with
+null. The adapter read four topics as an NFT transfer and dropped every
+Blockscout ERC-20 log, even the 6 it returned. Nulls are now ignored, and a
+test covers it. The reconciliation alone would also have caught this on any
+wallet with a non-zero stablecoin balance.
+
+**Known blind spot.** A balance can change without a Transfer event: a
+rebasing token, or an issuer burning frozen funds (Tether's
+`destroyBlackFunds`). Such a token shows as `not_reconciled`. For a stablecoin
+that marks the history incomplete, which is the safe direction.
+
+**Native coin: checkable, not built.** Balance = in − out − fees was tested on
+data we already hold:
+
+| Chain | Result |
+|---|---|
+| Ethereum | 0.823658723973332 in + 0.25022341 internal in − 1.0729786868 out − 0.000474472886768108 fees (`gasUsed × gasPrice` on the 22 transactions it sent) = 0.000428974286563892. That is the balance read, to the wei. |
+| Tron | 14.000013 in − 13.310013 out − 0.69 fees (`ret.fee` on the transactions it sent) = 0, the balance read. |
+
+Extra calls per lookup to build it:
+
+- **Ethereum and Arbitrum:** none. The gas fields are already in the
+  transaction list we fetch, including failed and zero-value transactions,
+  which pay fees too. Ethereum adds one call for validator withdrawals to the
+  address, which are not transactions.
+- **Optimism:** the L1 data fee is not in `gasUsed × gasPrice`. That needs one
+  receipt per sent transaction, or Blockscout's REST transaction list, at
+  about one call per 50 transactions. To be confirmed.
+- **Tron:** none. But TRX staking (freeze, unfreeze, delegate) and voting
+  rewards move the liquid balance and must be parsed.
+
+It is `not_checkable` whenever the history is truncated or internal transfers
+were not read in full.
+
 ## 2026-11-19 (later): Blockscout for EVM; permissions asked for
 
 **Blockscout has been asked in writing; the answer gates Phase 2, not testers.**
