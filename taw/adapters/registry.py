@@ -21,6 +21,20 @@ class MissingSetting(RuntimeError):
 EVM_CHAINS = ("eth", "bsc", "polygon", "arbitrum", "optimism", "base")
 SUPPORTED = ("tron",) + EVM_CHAINS
 
+# Phase 1 coverage (docs/DECISIONS.md, 2026-11-19). A report for a 0x address
+# must say which EVM chains were checked, and for each one that was not, why.
+# The report template words these reason codes; nothing here is report prose.
+PHASE1_CHAINS = ("eth", "polygon", "arbitrum", "tron", "btc")
+PHASE1_EVM_CHECKED = ("eth", "polygon", "arbitrum")
+EVM_NOT_CHECKED = {                     # chain -> reason code
+    "bsc": "data_plan_excludes_chain",
+    "optimism": "data_plan_excludes_chain",
+    "base": "data_plan_excludes_chain",
+}
+NOT_CHECKED_REASONS = {
+    "data_plan_excludes_chain": "Our Etherscan plan does not include this chain.",
+}
+
 
 def _unsupported(chain: str) -> UnsupportedChain:
     return UnsupportedChain(f"lookups for chain {chain!r} are not built yet (supported: {', '.join(SUPPORTED)})")
