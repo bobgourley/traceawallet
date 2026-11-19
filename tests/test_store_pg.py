@@ -439,3 +439,14 @@ def test_chains_outside_phase1_keep_their_rows(conns):
     data, _ = conns
     rows = dict(data.execute("SELECT id, evm_chain_id FROM chain WHERE id IN ('bsc', 'optimism', 'base')").fetchall())
     assert rows == {"bsc": 56, "optimism": 10, "base": 8453}
+
+
+def test_every_source_shown_to_users_has_its_terms_checked(conns):
+    data, _ = conns
+    rows = dict(data.execute("SELECT slug, terms_checked_on FROM source").fetchall())
+    for slug in ("blockscout", "etherscan", "trongrid", "mempool-space", "blockstream", "goplus", "defillama",
+                 "ofac-sdn", "nbctf"):
+        assert rows[slug] == dt.date(2026, 11, 19), slug
+    resale = {s for (s,) in data.execute("SELECT slug FROM source WHERE resale_permitted")}
+    assert resale <= {"ofac-sdn", "usdt-contract", "usdc-contract"}
+    assert count(data, "SELECT count(*) FROM event_log WHERE actor = 'migration:0006_source_terms'") == 8
