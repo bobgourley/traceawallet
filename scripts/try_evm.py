@@ -1,9 +1,11 @@
-"""Try the Etherscan adapter on one address. No database needed.
+"""Try an EVM adapter on one address. No database needed.
 
     railway run --service traceawallet-worker .venv/bin/python scripts/try_evm.py 0x... [--chain eth]
+        [--provider blockscout|etherscan]
 
-Raw responses are saved under .raw/ (gitignored). ETHERSCAN_API_KEY comes from
-the environment; it is never printed.
+Blockscout is what the worker uses; Etherscan is for comparison only. Raw
+responses are saved under .raw/ (gitignored). BLOCKSCOUT_API_KEY or
+ETHERSCAN_API_KEY comes from the environment; it is never printed.
 """
 from __future__ import annotations
 
@@ -17,6 +19,7 @@ from decimal import Decimal
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from taw.adapters.base import LocalRawStore  # noqa: E402
+from taw.adapters.chains.evm_blockscout import BlockscoutAdapter  # noqa: E402
 from taw.adapters.chains.evm_etherscan import CHAINS, EtherscanAdapter  # noqa: E402
 
 
@@ -33,12 +36,15 @@ def main() -> int:
     ap.add_argument("--chain", default="eth", choices=sorted(CHAINS))
     ap.add_argument("--limit", type=int, default=2000)
     ap.add_argument("--raw-dir", default=".raw")
+    ap.add_argument("--provider", default="blockscout", choices=("blockscout", "etherscan"))
+    ap.add_argument("--at-block", type=int, default=None, help="pin every read to this block")
     args = ap.parse_args()
 
-    key = os.environ.get("ETHERSCAN_API_KEY")
+    cls = BlockscoutAdapter if args.provider == "blockscout" else EtherscanAdapter
+    key = os.environ.get(cls.key_env)
     info = CHAINS[args.chain]
     stable = dict(info.stablecoins)
-    adapter = EtherscanAdapter(args.chain, LocalRawStore(args.raw_dir), key)
+    adapter = cls(args.chain, LocalRawStore(args.raw_dir), key, at_block=args.at_block)
 
     def token_name(contract: str | None, symbol: str | None) -> str:
         if contract is None:
@@ -51,6 +57,7 @@ def main() -> int:
     batch = adapter.fetch_transfers(snap.address, limit=args.limit)
     addr = snap.address
 
+    print(f"Provider     {adapter.provider_name}")
     print(f"Chain        {info.name} (chainid {info.chain_id})")
     print(f"Address      {addr}")
     print(f"API key      {'present' if key else 'MISSING'}")
