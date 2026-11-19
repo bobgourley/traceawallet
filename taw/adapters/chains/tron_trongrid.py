@@ -43,6 +43,7 @@ import httpx
 
 from taw.adapters.base import (AddressSnapshot, RawMissing, RawStore, ReusableRawStore,
                                TokenBalance, TransferBatch, TransferRecord)
+from taw.adapters.chains.common import Pacer, decode_string, decode_uint
 from taw.adapters.chains.tron_address import to_base58
 
 SOURCE = "trongrid"
@@ -69,41 +70,8 @@ class _Response:
     sha: str
 
 
-class _Pacer:
-    """Keeps requests under `per_second`."""
-
-    def __init__(self, per_second: float, clock: Callable[[], float], sleep: Callable[[float], None]):
-        self.interval = 1.0 / per_second
-        self.clock, self.sleep = clock, sleep
-        self.last = float("-inf")
-
-    def wait(self) -> None:
-        delay = self.last + self.interval - self.clock()
-        if delay > 0:
-            self.sleep(delay)
-        self.last = self.clock()
-
-
 def _ms_to_dt(ms: int) -> dt.datetime:
     return dt.datetime.fromtimestamp(ms / 1000, tz=dt.timezone.utc)
-
-
-def _decode_uint(hex_word: str) -> int:
-    return int(hex_word[:64] or "0", 16)
-
-
-def _decode_string(hex_data: str) -> str | None:
-    """ABI string, or bytes32 for older tokens."""
-    try:
-        if len(hex_data) >= 128:
-            length = int(hex_data[64:128], 16)
-            raw = bytes.fromhex(hex_data[128:128 + 2 * length])
-        else:
-            raw = bytes.fromhex(hex_data[:64]).rstrip(b"\0")
-        text = raw.decode("utf-8", errors="replace").strip()
-        return text or None
-    except ValueError:
-        return None
 
 
 class TronGridAdapter:
@@ -124,7 +92,7 @@ class TronGridAdapter:
             self._headers["TRON-PRO-API-KEY"] = api_key
         self.max_attempts = max_attempts
         self._sleep = sleep
-        self._pacer = _Pacer(per_second, clock, sleep)
+        self._pacer = Pacer(per_second, clock, sleep)
         self._token_meta: dict[str, tuple[int | None, str | None]] = {}
         self.request_count = 0          # HTTP requests sent
         self.reused_count = 0           # saved responses used instead of a request
@@ -218,10 +186,10 @@ class TronGridAdapter:
             return self._token_meta[contract], []
         dec_hex, sha1 = self._constant_call(contract, "decimals()")
         sym_hex, sha2 = self._constant_call(contract, "symbol()")
-        decimals = _decode_uint(dec_hex) if dec_hex else None
+        decimals = decode_uint(dec_hex) if dec_hex else None
         if decimals is not None and not 0 <= decimals <= 77:
             decimals = None
-        meta = (decimals, _decode_string(sym_hex) if sym_hex else None)
+        meta = (decimals, decode_string(sym_hex) if sym_hex else None)
         self._token_meta[contract] = meta
         return meta, [sha1, sha2]
 
