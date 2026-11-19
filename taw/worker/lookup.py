@@ -13,10 +13,11 @@ import httpx
 import psycopg
 
 from taw import store
+from taw.reconcile import reconcile
 from taw.adapters.base import RawIntegrityError, RawStore, SecretLeak
 from taw.adapters.chains.evm_address import InvalidEvmAddress
 from taw.adapters.chains.tron_address import InvalidTronAddress
-from taw.adapters.registry import MissingSetting, UnsupportedChain
+from taw.adapters.registry import MissingSetting, UnsupportedChain, stablecoins_for
 from taw.jobs import PayloadError, read_lookup_payload
 
 TRANSFER_LIMIT = 2000
@@ -42,11 +43,13 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
     adapter = adapter_for(chain, raw_store)
     snap = adapter.fetch_snapshot(address)
     batch = adapter.fetch_transfers(snap.address, limit=TRANSFER_LIMIT)
-    saved = store_module.save_lookup(data_conn, actor, snap, batch)
+    recon = reconcile(snap, batch, stablecoins_for(chain))
+    saved = store_module.save_lookup(data_conn, actor, snap, batch, recon=recon)
     note = ", truncated at the limit" if batch.truncated else ""
+    warning = ("; HISTORY MAY BE INCOMPLETE: " + "; ".join(recon.incomplete_reasons)) if recon.history_incomplete else ""
     return Outcome(
         f"snapshot {saved.snapshot_id} at block {snap.as_of_block}; {saved.transfers_seen} transfers "
-        f"({saved.transfers_new} new{note}); {saved.addresses_seen} addresses",
+        f"({saved.transfers_new} new{note}); {saved.addresses_seen} addresses{warning}",
         reused=False, saved=saved,
     )
 

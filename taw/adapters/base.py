@@ -53,6 +53,10 @@ class AddressSnapshot:
     truncated: bool               # True when token_balances is incomplete (see the adapter)
     source_slug: str
     raw_sha256: tuple[str, ...]   # every response this snapshot was built from; balance response first
+    # Contracts whose balance was read at as_of_block. A contract listed here but
+    # missing from token_balances holds 0. None means token_balances is the
+    # address's full holdings (as TronGrid gives it), so every unlisted token holds 0.
+    balances_read: tuple[str, ...] | None = None
 
     def native_balance(self) -> Decimal:
         return Decimal(self.native_balance_raw).scaleb(-self.native_decimals)
@@ -100,6 +104,9 @@ class TransferBatch:
     transfers: tuple[TransferRecord, ...]
     truncated: bool
     limit: int
+    # Problems the adapter saw that mean the list may miss transfers even though it
+    # is not truncated, in plain words (e.g. token-list rows with no Transfer log).
+    incomplete_reasons: tuple[str, ...] = ()
 
 
 @runtime_checkable

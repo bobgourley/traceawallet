@@ -22,6 +22,7 @@ class FakeStore:
         self.transfers = set()
         self.snapshots = []
         self.reused_events = []
+        self.recons = []
 
     def fresh_snapshot(self, conn, chain, address):
         return self.fresh
@@ -29,7 +30,8 @@ class FakeStore:
     def record_reused_lookup(self, conn, actor, chain, address, fresh):
         self.reused_events.append((actor, chain, address, fresh.id))
 
-    def save_lookup(self, conn, actor, snap, batch):
+    def save_lookup(self, conn, actor, snap, batch, recon=None):
+        self.recons.append(recon)
         keys = {(t.chain, t.tx_hash, t.kind, t.event_index, t.source_slug) for t in batch.transfers}
         new = len(keys - self.transfers)
         self.transfers |= keys
@@ -313,3 +315,19 @@ def test_etherscan_failure_wording(exc_name, permanent, words):
 
 def test_one_job_per_chain():
     assert jobs.lookup_payload("polygon", EVM_ADDR.upper().replace("0X", "0x")) == {"chain": "polygon", "address": EVM_ADDR}
+
+
+def test_incomplete_history_is_named_in_the_job_message(tmp_path):
+    from tests.evm_replay import FIXTURES as EVM_FIXTURES, Replay as EvmReplay
+    from tests.test_reconcile import InternalFromKnownGoodBlock
+    clock = FakeClock()
+
+    def factory(chain, raw_store):
+        return InternalFromKnownGoodBlock(chain, raw_store, "proapi_test_not_real", at_block=26_451_986,
+                                          http=EvmReplay(EVM_FIXTURES / "blockscout-eth" / EVM_ADDR).client(),
+                                          clock=clock.clock, sleep=clock.sleep)
+    fake = FakeStore()
+    status, _, logs = run(tmp_path, job({"chain": "eth", "address": EVM_ADDR}), factory, fake)
+    assert status == "done"
+    assert logs[-1].endswith("HISTORY MAY BE INCOMPLETE: 35 of 41 token-list rows have no matching Transfer log")
+    assert fake.recons[0].history_incomplete is True

@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 from taw.adapters.base import AddressSnapshot, BucketRawStore, TransferBatch, TransferRecord
+from taw.reconcile import Reconciliation
 
 FRESH_FOR = dt.timedelta(minutes=10)
 
@@ -170,7 +171,7 @@ def insert_transfers(conn, records: Sequence[TransferRecord], address_ids: Mappi
 
 
 def save_snapshot(conn, snap: AddressSnapshot, address_id: int, batch: TransferBatch,
-                  raw_ids: Mapping[str, int]) -> int:
+                  raw_ids: Mapping[str, int], recon: Reconciliation | None = None) -> int:
     """Insert the snapshot row and link every response it was built from.
 
     The adapter lists the balance response first in raw_sha256; that one is
@@ -183,12 +184,16 @@ def save_snapshot(conn, snap: AddressSnapshot, address_id: int, batch: TransferB
     row = conn.execute(
         "INSERT INTO address_snapshot (chain, address_id, as_of_block, as_of_time, native_balance_raw,"
         " native_decimals, token_balances, is_contract, tokens_truncated, transfer_count,"
-        " transfers_truncated, source_id, raw_response_id)"
-        " VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s) RETURNING id",
+        " transfers_truncated, source_id, raw_response_id, token_reconciliation, history_incomplete,"
+        " incomplete_reasons)"
+        " VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s) RETURNING id",
         (snap.chain, address_id, snap.as_of_block, snap.as_of_time, snap.native_balance_raw,
          snap.native_decimals, json.dumps(tokens), snap.is_contract, snap.truncated,
          len(batch.transfers), batch.truncated, source_id(conn, snap.source_slug),
-         raw_ids[snap.raw_sha256[0]]),
+         raw_ids[snap.raw_sha256[0]],
+         json.dumps([c.as_json() for c in recon.checks]) if recon else None,
+         recon.history_incomplete if recon else None,
+         list(recon.incomplete_reasons) if recon else None),
     ).fetchone()
     conn.execute(
         "INSERT INTO address_snapshot_response (snapshot_id, raw_response_id)"
@@ -204,12 +209,13 @@ class FreshSnapshot:
     as_of_block: int
     fetched_at: dt.datetime
     transfer_count: int
+    history_incomplete: bool | None = None     # None: not checked (rows from before 0007)
 
 
 def fresh_snapshot(conn, chain: str, address: str, max_age: dt.timedelta = FRESH_FOR) -> FreshSnapshot | None:
     """The newest snapshot of this address fetched within max_age, if any."""
     row = conn.execute(
-        "SELECT s.id, s.as_of_block, s.fetched_at, s.transfer_count FROM address_snapshot s"
+        "SELECT s.id, s.as_of_block, s.fetched_at, s.transfer_count, s.history_incomplete FROM address_snapshot s"
         " JOIN address a ON a.id = s.address_id AND a.chain = s.chain"
         " WHERE a.chain = %s AND a.address = %s AND s.fetched_at > now() - %s"
         " ORDER BY s.fetched_at DESC LIMIT 1",
@@ -237,7 +243,7 @@ LOOKUP_COMPLETED = "lookup_completed"
 
 def log_lookup_completed(conn, actor: str, *, chain: str, address: str, snapshot_id: int,
                          as_of_block: int, transfers_saved: int, transfers_reused: int,
-                         snapshot_reused: bool) -> None:
+                         snapshot_reused: bool, history_incomplete: bool | None) -> None:
     """One event_log row per completed lookup. Call inside an actor_transaction.
 
     Holds only what the evidence tables already hold (address, snapshot, block,
@@ -245,7 +251,8 @@ def log_lookup_completed(conn, actor: str, *, chain: str, address: str, snapshot
     """
     payload = {"chain": chain, "address": address, "snapshot_id": snapshot_id,
                "as_of_block": as_of_block, "transfers_saved": transfers_saved,
-               "transfers_reused": transfers_reused, "snapshot_reused": snapshot_reused}
+               "transfers_reused": transfers_reused, "snapshot_reused": snapshot_reused,
+               "history_incomplete": history_incomplete}
     conn.execute(
         "INSERT INTO event_log (actor, action, entity, entity_id, payload)"
         " VALUES (%s, %s, 'address_snapshot', %s, %s::jsonb)",
@@ -258,12 +265,15 @@ def record_reused_lookup(conn, actor: str, chain: str, address: str, fresh: Fres
     with actor_transaction(conn, actor):
         log_lookup_completed(conn, actor, chain=chain, address=address, snapshot_id=fresh.id,
                              as_of_block=fresh.as_of_block, transfers_saved=0,
-                             transfers_reused=fresh.transfer_count, snapshot_reused=True)
+                             transfers_reused=fresh.transfer_count, snapshot_reused=True,
+                             history_incomplete=fresh.history_incomplete)
 
 
-def save_lookup(conn, actor: str, snap: AddressSnapshot, batch: TransferBatch) -> LookupSaved:
-    """Write one lookup's observations, and its lookup_completed event, in a single
-    actor-tagged transaction: the log never records a lookup that did not land."""
+def save_lookup(conn, actor: str, snap: AddressSnapshot, batch: TransferBatch,
+                recon: Reconciliation | None = None) -> LookupSaved:
+    """Write one lookup's observations, its reconciliation and its lookup_completed
+    event, in a single actor-tagged transaction: the log never records a lookup
+    that did not land."""
     if batch.chain != snap.chain or batch.address != snap.address:
         raise ValueError("snapshot and transfers are for different addresses")
     with actor_transaction(conn, actor):
@@ -279,9 +289,10 @@ def save_lookup(conn, actor: str, snap: AddressSnapshot, batch: TransferBatch) -
             raw_ids.update(raw_response_ids(conn, slug, shas))
 
         new = insert_transfers(conn, batch.transfers, ids, raw_ids)
-        snapshot_id = save_snapshot(conn, snap, ids[snap.address], batch, raw_ids)
+        snapshot_id = save_snapshot(conn, snap, ids[snap.address], batch, raw_ids, recon)
         saved = LookupSaved(snapshot_id, ids[snap.address], len(batch.transfers), new, len(ids))
         log_lookup_completed(conn, actor, chain=snap.chain, address=snap.address, snapshot_id=snapshot_id,
                              as_of_block=snap.as_of_block, transfers_saved=saved.transfers_new,
-                             transfers_reused=saved.transfers_reused, snapshot_reused=False)
+                             transfers_reused=saved.transfers_reused, snapshot_reused=False,
+                             history_incomplete=recon.history_incomplete if recon else None)
     return saved

@@ -450,3 +450,46 @@ def test_every_source_shown_to_users_has_its_terms_checked(conns):
     resale = {s for (s,) in data.execute("SELECT slug FROM source WHERE resale_permitted")}
     assert resale <= {"ofac-sdn", "usdt-contract", "usdc-contract"}
     assert count(data, "SELECT count(*) FROM event_log WHERE actor = 'migration:0006_source_terms'") == 8
+
+
+# -- reconciliation (0007) ----------------------------------------------------------
+
+def test_reconciliation_is_stored_on_the_snapshot(conns):
+    from taw.adapters.registry import stablecoins_for
+    from taw.reconcile import reconcile
+    data, raw = conns
+    s3 = FakeS3()
+    replay = Replay(FIXTURES / ADDR)
+    clock = FakeClock()
+    adapter = TronGridAdapter(store.RecordingRawStore(raw, ACTOR, s3_client=s3, bucket="test"), "test-key-not-real",
+                              http=replay.client(), clock=clock.clock, sleep=clock.sleep)
+    snap = adapter.fetch_snapshot(ADDR)
+    batch = adapter.fetch_transfers(ADDR)
+    recon = reconcile(snap, batch, stablecoins_for("tron"))
+    saved = store.save_lookup(data, ACTOR, snap, batch, recon=recon)
+    checks, incomplete, reasons = data.execute(
+        "SELECT token_reconciliation, history_incomplete, incomplete_reasons FROM address_snapshot WHERE id = %s",
+        (saved.snapshot_id,)).fetchone()
+    assert incomplete is False and reasons == []
+    assert checks == [{"contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t", "symbol": "USDT", "stablecoin": True,
+                       "status": "reconciled", "balance_raw": "0", "net_flow_raw": "0", "reason": None}]
+    (event,) = data.execute("SELECT payload FROM event_log WHERE action = 'lookup_completed'").fetchone()
+    assert event["history_incomplete"] is False
+    fresh = store.fresh_snapshot(data, "tron", ADDR)
+    assert fresh.history_incomplete is False
+
+
+def test_snapshot_without_reconciliation_stores_nulls_never_complete(conns):
+    data, raw = conns
+    saved, _ = lookup_once(data, raw, FakeS3())                  # the old call, no reconciliation
+    row = data.execute("SELECT token_reconciliation, history_incomplete, incomplete_reasons FROM address_snapshot"
+                       " WHERE id = %s", (saved.snapshot_id,)).fetchone()
+    assert row == (None, None, None)
+    with pytest.raises(psycopg.errors.CheckViolation):
+        with data.transaction():
+            data.execute("INSERT INTO address_snapshot (chain, address_id, as_of_block, as_of_time,"
+                         " native_balance_raw, native_decimals, is_contract, tokens_truncated, transfer_count,"
+                         " transfers_truncated, source_id, raw_response_id, history_incomplete)"
+                         " SELECT chain, address_id, as_of_block, as_of_time, native_balance_raw, native_decimals,"
+                         " is_contract, tokens_truncated, transfer_count, transfers_truncated, source_id,"
+                         " raw_response_id, false FROM address_snapshot WHERE id = %s", (saved.snapshot_id,))

@@ -53,6 +53,14 @@ PAGE_SIZE = 200                 # TronGrid maximum
 MAX_TRX_PAGES = 60              # /transactions lists every kind of transaction; stop somewhere
 MAX_TOKEN_LOOKUPS = 50          # decimals()/symbol() calls per snapshot (spam tokens are common)
 
+# Freezable stablecoins on Tron. Each contract's ABI was read through TronGrid
+# /wallet/getcontract on 2026-11-19: USDT (TetherToken) has addBlackList /
+# isBlackListed, USDC (FiatTokenProxy) has blacklist / isBlacklisted.
+STABLECOINS = (
+    ("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t", "USDT (Tether)"),
+    ("TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8", "USDC (Circle)"),
+)
+
 
 class TronGridError(RuntimeError):
     def __init__(self, message: str, status: int | None = None):

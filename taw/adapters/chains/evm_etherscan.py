@@ -577,7 +577,7 @@ class EtherscanAdapter:
             rows, more = self._scan(
                 {"module": "logs", "action": "getLogs", "topic0": TRANSFER_TOPIC, topic: _pad(addr), opr: "and"},
                 lo=lo, hi=hi, descending=False, want=None,
-                keep=lambda log: len(log.get("topics") or []) == 3,        # four topics: an NFT
+                keep=lambda log: len([t for t in log.get("topics") or [] if t]) == 3,   # four: an NFT
                 key=lambda log: (log["transactionHash"].lower(), _int(log["logIndex"])),
                 block_of=lambda log: _int(log["blockNumber"]), max_pages=MAX_LOG_PAGES,
                 lo_name="fromBlock", hi_name="toBlock", sort=False, window=self.logs_window)
@@ -634,6 +634,7 @@ class EtherscanAdapter:
             native_symbol=self.info.native_symbol, native_decimals=self.info.native_decimals,
             native_balance_raw=decode_uint(native_hex), token_balances=tuple(balances),
             is_contract=is_contract, truncated=truncated, source_slug=self.source, raw_sha256=tuple(shas),
+            balances_read=tuple(checked),
         )
 
     def fetch_transfers(self, address: str, limit: int = 2000) -> TransferBatch:
@@ -660,7 +661,10 @@ class EtherscanAdapter:
         self._remember_meta(row for row, _ in token_rows)
         lo = min((_int(row["blockNumber"]) for row, _ in token_rows), default=0) if token_more else 0
         logs = self._logs(addr, lo, head)
+        unmatched_before = self.unmatched_token_rows
         self._count_unmatched([row for row, _ in token_rows if _int(row["blockNumber"]) >= lo], logs)
+        unmatched = self.unmatched_token_rows - unmatched_before
+        reasons = (f"{unmatched} of {len(token_rows)} token-list rows have no matching Transfer log",) if unmatched else ()
         token = [self._log_record(log, sha) for log, sha in logs]
 
         merged = sorted(native + internal + token, key=_sort_key, reverse=True)
@@ -679,7 +683,8 @@ class EtherscanAdapter:
                     extra[_record_key(r)] = r
             kept = kept + sorted(extra.values(), key=_sort_key, reverse=True)
 
-        return TransferBatch(self.chain, addr, tuple(self._with_decimals(kept)), truncated, limit)
+        return TransferBatch(self.chain, addr, tuple(self._with_decimals(kept)), truncated, limit,
+                             incomplete_reasons=reasons)
 
     # -- first transfers ---------------------------------------------------------
 

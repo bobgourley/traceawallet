@@ -74,3 +74,14 @@ def adapter_for(chain: str, raw_store: RawStore) -> ChainAdapter:
             raise MissingSetting("BLOCKSCOUT_API_KEY is not set on this service")
         return BlockscoutAdapter(chain, raw_store, key)
     raise _unsupported(chain)
+
+
+def stablecoins_for(chain: str) -> tuple[str, ...]:
+    """Contracts of the freezable stablecoins on a chain (identity by contract, never symbol)."""
+    if chain == "tron":
+        from taw.adapters.chains.tron_trongrid import STABLECOINS
+        return tuple(c for c, _ in STABLECOINS)
+    if chain in EVM_CHAINS:
+        from taw.adapters.chains.evm_etherscan import CHAINS
+        return tuple(c for c, _ in CHAINS[chain].stablecoins)
+    return ()
