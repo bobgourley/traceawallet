@@ -7,11 +7,36 @@ Last updated 2026-11-19. Design choices and their reasons are in
 
 - `traceawallet-web` and `traceawallet-worker` run on Railway (project "adaptable-connection").
 - `/healthz` reports 8 chains (six EVM chains, Tron, Bitcoin).
-- Migrations 0001 to 0004 are applied.
+- Migrations 0001 to 0004 are applied. 0005 (Etherscan terms) is on branch `etherscan-terms`.
 - The worker handles `address_lookup` jobs for Tron. Nothing queues them automatically yet.
-- EVM lookups (Etherscan) are built on branch `evm-etherscan` and not deployed yet.
+- The worker handles EVM lookups through Etherscan (deployed 2026-11-19). Phase 1 checks eth, polygon
+  and arbitrum; bsc, optimism and base fail at once because our plan does not cover them.
 
-## Live check (2026-11-18, production database and bucket)
+## Live check, Ethereum (2026-11-19, production database and bucket)
+
+Three lookups of `0xaab6417993d04a861f1f02c5c4bd2e9145d8f637` on `eth`, queued with
+`scripts/enqueue.py` through `railway ssh` and run by the deployed worker.
+
+| | Job 5 (22:13) | Job 6 (22:13, 18 s later) | Job 7 (22:26, after 10 min) |
+|---|---|---|---|
+| Outcome | full fetch, 9 s | reused snapshot 4, 1 s | full fetch, 8 s |
+| Snapshot | 4, block 26,452,034 | 4 | 5, block 26,452,100 |
+| eth address rows | 8 | 8 | 8 |
+| transfers touching the address | 49 (49 new) | 49 | 49 (0 new) |
+| duplicate transfer keys | 0 | 0 | 0 |
+| raw_response rows (all sources) | 58 | 58 | 76 (18 more) |
+| bucket objects | 48 | 48 | 52 (most bodies identical to job 5) |
+| `event_log_verify()` | NULL (intact) | NULL | NULL |
+
+`lookup_completed` events, one per job, each with only chain, address, snapshot, block and counts:
+
+    14 22:13:14 snapshot 4 block 26452034 transfers_saved 49 transfers_reused 0  snapshot_reused false
+    15 22:13:24 snapshot 4 block 26452034 transfers_saved 0  transfers_reused 49 snapshot_reused true
+    16 22:26:36 snapshot 5 block 26452100 transfers_saved 0  transfers_reused 49 snapshot_reused false
+
+Every job finished on attempt 1 with no `last_error`.
+
+## Live check, Tron (2026-11-18, production database and bucket)
 
 Three lookups of `TL7me8SQkNmieVngj9sPQGG2PSMENASHug`, queued with `scripts/enqueue.py` through
 `railway ssh` and processed by the deployed worker. The tables started empty.
@@ -71,12 +96,13 @@ What a job does:
 | `taw/worker/lookup.py` | The `address_lookup` handler and failure wording |
 | `scripts/try_tron.py`, `scripts/try_evm.py` | Try an adapter without a database |
 | `scripts/enqueue.py`, `scripts/check_lookup.py` | Queue a lookup; inspect results |
+| `scripts/purge_source_bodies.py` | Delete one source's bodies from the bucket, keep the rows (dry run by default; never run for real) |
 
 ## Tests
 
     .venv/bin/python -m pytest
 
-114 tests run anywhere, without network access. 23 more (`tests/test_store_pg.py`) need a real
+116 tests run anywhere, without network access. 26 more (`tests/test_store_pg.py`) need a real
 Postgres through `TEST_DATABASE_URL`. They are skipped locally and run in GitHub Actions
 (`.github/workflows/tests.yml`) against a throwaway Postgres 16, where a skipped test fails the run.
 
@@ -92,6 +118,8 @@ The tests cover:
 - retries, 403 and pacing
 - the raw stores
 - the handler's happy paths, payload rules, retries and failure wording
+- purging one source's bodies: rows and other sources untouched, shared bodies kept, the purge logged
+- the Phase 1 chain coverage lists
 
 ## Checked against Tronscan (2026-11-17)
 
@@ -142,7 +170,8 @@ Postgres, its volume and the bucket are in US East too. Check with
 - EVM: BNB Smart Chain, OP Mainnet and Base need a paid Etherscan plan. NFTs (ERC-721, ERC-1155),
   fees, and tokens whose Transfer event does not index from and to are not read. Token balances
   cover the freezable stablecoins and the 20 most-used tokens only.
-- Etherscan's terms limit redistribution and archiving of its data; see DECISIONS.md (Open).
+- Etherscan is a display source only and may not feed a public API. Its terms may require the
+  Advanced plan for a public site; see DECISIONS.md (Open).
 - Nothing creates `lookup` rows or updates `lookup_count` yet. The website does not queue jobs yet.
 - Services connect as the database owner; the restricted `taw_app` role is unused.
 
