@@ -16,7 +16,7 @@ import pytest
 psycopg = pytest.importorskip("psycopg")
 
 from taw import jobs, store  # noqa: E402
-from taw.adapters.base import TransferBatch, TransferRecord  # noqa: E402
+from taw.adapters.base import BucketRawStore, TransferBatch, TransferRecord  # noqa: E402
 from taw.adapters.chains.tron_trongrid import TronGridAdapter  # noqa: E402
 from tests.tron_replay import FIXTURES, FakeClock, Replay  # noqa: E402
 
@@ -80,6 +80,14 @@ class FakeS3:
         if Key not in self.objects:
             raise NoSuchKey(Key)
         return {"Body": io.BytesIO(self.objects[Key])}
+
+    def head_object(self, Bucket, Key):
+        if Key not in self.objects:
+            raise NoSuchKey(Key)
+        return {"ContentLength": len(self.objects[Key])}
+
+    def delete_object(self, Bucket, Key):
+        self.objects.pop(Key, None)
 
 
 def count(conn, sql, *args):
@@ -357,3 +365,75 @@ def test_evm_lookup_is_stored_and_idempotent(conns):
     assert (second.transfers_seen, second.transfers_new) == (49, 0)
     assert count(data, "SELECT count(*) FROM transfer WHERE chain = 'eth'") == 49
     assert count(data, "SELECT event_log_verify() IS NULL") is True
+
+
+
+# -- Etherscan terms: purging bodies by source, the source row, chain rows ----------
+
+def _purge_module():
+    import importlib.util
+    path = pathlib.Path(__file__).resolve().parent.parent / "scripts" / "purge_source_bodies.py"
+    spec = importlib.util.spec_from_file_location("purge_source_bodies", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_etherscan_bodies_can_be_purged_and_rows_stay(conns):
+    from taw.adapters.base import RawMissing, bucket_key_for
+    purge = _purge_module()
+    data, raw = conns
+    s3 = FakeS3()
+    lookup_once(data, raw, s3)                                     # Tron
+    evm_lookup_once(data, raw, s3)                                 # Ethereum
+    # A Tron response whose bytes happen to equal an Etherscan one: one shared object.
+    shared_body = next(v for k, v in s3.objects.items()
+                       if count(data, "SELECT count(*) FROM raw_response r JOIN source s ON s.id = r.source_id"
+                                      " WHERE s.slug = 'etherscan' AND r.sha256 = %s", k.split("/")[-1]))
+    rec = store.RecordingRawStore(raw, ACTOR, s3_client=s3, bucket="test")
+    shared_sha = rec.save("trongrid", "https://api.trongrid.io/test", None, 200, shared_body)
+
+    rows_before = count(data, "SELECT count(*) FROM raw_response")
+    tron_keys = {bucket_key_for(sha.strip()) for (sha,) in data.execute(
+        "SELECT r.sha256 FROM raw_response r JOIN source s ON s.id = r.source_id WHERE s.slug = 'trongrid'")}
+    objects_before = len(s3.objects)
+
+    p = purge.plan(data, "etherscan")
+    assert shared_sha in p.shared and shared_sha not in p.delete
+    assert len(p.delete) + len(p.shared) == count(
+        data, "SELECT count(DISTINCT sha256) FROM raw_response r JOIN source s ON s.id = r.source_id"
+              " WHERE s.slug = 'etherscan'")
+    assert purge.present(s3, "test", p.delete) == p.delete          # dry run reads only
+    assert len(s3.objects) == objects_before
+
+    deleted = purge.execute(data, s3, "test", p, "script:test")
+    assert deleted == len(p.delete) and len(s3.objects) == objects_before - deleted
+    assert tron_keys <= set(s3.objects)                             # other sources untouched
+    assert bucket_key_for(shared_sha) in s3.objects                 # shared object kept
+    assert count(data, "SELECT count(*) FROM raw_response") == rows_before   # every row and hash stays
+    assert count(data, "SELECT count(*) FROM transfer WHERE chain = 'eth'") == 49
+    with pytest.raises(RawMissing):
+        BucketRawStore(data, s3_client=s3, bucket="test").body(p.delete[0])
+
+    (payload,) = data.execute("SELECT payload FROM event_log WHERE action = 'raw_bodies_purged'").fetchone()
+    assert payload["source"] == "etherscan" and sorted(payload["deleted_sha256"]) == sorted(p.delete)
+    assert payload["kept_shared_sha256"] == [shared_sha]
+    assert count(data, "SELECT event_log_verify() IS NULL") is True
+
+
+def test_etherscan_source_row_records_the_terms(conns):
+    data, _ = conns
+    row = data.execute("SELECT license, attribution, terms_checked_on, resale_permitted FROM source"
+                       " WHERE slug = 'etherscan'").fetchone()
+    license, attribution, checked_on, resale = row
+    assert checked_on == dt.date(2026, 11, 19) and resale is False
+    assert attribution == "Powered by Etherscan.io APIs"
+    assert "nothing from it may feed a public API" in license
+    assert count(data, "SELECT count(*) FROM event_log WHERE actor = 'migration:0005_etherscan_terms'"
+                       " AND entity = 'source'") == 1
+
+
+def test_chains_outside_phase1_keep_their_rows(conns):
+    data, _ = conns
+    rows = dict(data.execute("SELECT id, evm_chain_id FROM chain WHERE id IN ('bsc', 'optimism', 'base')").fetchall())
+    assert rows == {"bsc": 56, "optimism": 10, "base": 8453}
