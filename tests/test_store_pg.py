@@ -318,3 +318,42 @@ def test_queue(conns):
     new_id, created = jobs.enqueue_lookup(data, "tron", ADDR)          # a finished job does not block
     assert created and new_id != job_id
     jobs.mark_done(data, jobs.claim(data, "w4").id)
+
+
+# -- EVM (Etherscan) ----------------------------------------------------------------
+
+EVM_ADDR = "0xaab6417993d04a861f1f02c5c4bd2e9145d8f637"
+
+
+def evm_lookup_once(data, raw, s3):
+    from taw.adapters.chains.evm_etherscan import EtherscanAdapter
+    from tests.evm_replay import FIXTURES as EVM_FIXTURES, Replay as EvmReplay
+
+    clock = FakeClock()
+    raw_store = store.RecordingRawStore(raw, ACTOR, s3_client=s3, bucket="test")
+    adapter = EtherscanAdapter("eth", raw_store, "test-etherscan-key-not-real",
+                               http=EvmReplay(EVM_FIXTURES / "eth" / EVM_ADDR).client(),
+                               clock=clock.clock, sleep=clock.sleep)
+    snap = adapter.fetch_snapshot(EVM_ADDR)
+    batch = adapter.fetch_transfers(EVM_ADDR)
+    return store.save_lookup(data, ACTOR, snap, batch), adapter
+
+
+def test_evm_lookup_is_stored_and_idempotent(conns):
+    data, raw = conns
+    s3 = FakeS3()
+    first, adapter = evm_lookup_once(data, raw, s3)
+    assert (first.transfers_seen, first.transfers_new) == (49, 49)
+    assert count(data, "SELECT count(*) FROM raw_response") == adapter.request_count == 18
+    assert count(data, "SELECT count(*) FROM transfer WHERE chain = 'eth' AND kind = 'internal'"
+                       " AND event_index >= 33554432") == 1                  # encoded trace position fits
+    assert count(data, "SELECT count(*) FROM transfer t JOIN raw_response r ON r.id = t.raw_response_id"
+                       " JOIN source s ON s.id = r.source_id WHERE s.slug = 'etherscan'") == 49
+    assert count(data, "SELECT count(*) FROM raw_response WHERE request_url LIKE '%%apikey%%'"
+                       " OR request_params::text LIKE '%%apikey%%'") == 0
+    assert count(data, "SELECT as_of_block FROM address_snapshot") == 26_451_986
+
+    second, _ = evm_lookup_once(data, raw, s3)
+    assert (second.transfers_seen, second.transfers_new) == (49, 0)
+    assert count(data, "SELECT count(*) FROM transfer WHERE chain = 'eth'") == 49
+    assert count(data, "SELECT event_log_verify() IS NULL") is True

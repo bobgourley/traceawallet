@@ -14,6 +14,7 @@ import psycopg
 
 from taw import store
 from taw.adapters.base import RawIntegrityError, RawStore, SecretLeak
+from taw.adapters.chains.evm_address import InvalidEvmAddress
 from taw.adapters.chains.tron_address import InvalidTronAddress
 from taw.adapters.registry import MissingSetting, UnsupportedChain
 from taw.jobs import PayloadError, read_lookup_payload
@@ -53,12 +54,27 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
 def describe_failure(exc: BaseException) -> tuple[bool, str]:
     """(permanent, plain-language message). Permanent failures are not retried."""
     # Imported here so the worker starts even if one chain's module is broken.
+    from taw.adapters.chains import evm_etherscan as es
     from taw.adapters.chains.tron_trongrid import TronGridBlocked, TronGridError
 
     if isinstance(exc, TronGridBlocked):
         return True, ("TronGrid refused the request (HTTP 403), which means it has blocked our API key "
                       "for now. Not retried. Check TRONGRID_API_KEY in Railway and wait before trying again.")
-    if isinstance(exc, (PayloadError, InvalidTronAddress, UnsupportedChain)):
+    if isinstance(exc, es.EtherscanChainNotCovered):
+        return True, (f"Etherscan's free plan does not cover {exc.chain_name}, so this lookup cannot run. Not retried. "
+                      "It needs a paid Etherscan plan.")
+    if isinstance(exc, es.EtherscanKeyRejected):
+        return True, ("Etherscan rejected our API key. Not retried. Check ETHERSCAN_API_KEY in Railway.")
+    if isinstance(exc, es.EtherscanDailyLimit):
+        return True, ("Etherscan's daily call allowance for our key is used up. Not retried; "
+                      "queue the lookup again tomorrow.")
+    if isinstance(exc, es.EtherscanPaidEndpoint):
+        return True, f"A request needs a paid Etherscan endpoint, which is a bug in our code: {exc}."
+    if isinstance(exc, es.EtherscanRateLimited):
+        return False, "Etherscan kept saying we were calling too fast, even after backing off."
+    if isinstance(exc, es.EtherscanError):
+        return False, f"Etherscan returned an error: {exc}."
+    if isinstance(exc, (PayloadError, InvalidTronAddress, InvalidEvmAddress, UnsupportedChain)):
         return True, f"This lookup cannot run: {exc}."
     if isinstance(exc, MissingSetting):
         return True, f"The worker is missing a setting: {exc}."

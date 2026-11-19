@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 
 from taw.adapters.base import ChainAdapter, RawStore
+from taw.adapters.chains import evm_address
 from taw.adapters.chains.tron_address import to_base58
 
 
@@ -15,14 +16,23 @@ class MissingSetting(RuntimeError):
     pass
 
 
-SUPPORTED = ("tron",)
+# Every EVM chain is served by the Etherscan adapter, one instance per chain.
+# Chains our Etherscan plan does not cover fail at the first call, with a plain message.
+EVM_CHAINS = ("eth", "bsc", "polygon", "arbitrum", "optimism", "base")
+SUPPORTED = ("tron",) + EVM_CHAINS
+
+
+def _unsupported(chain: str) -> UnsupportedChain:
+    return UnsupportedChain(f"lookups for chain {chain!r} are not built yet (supported: {', '.join(SUPPORTED)})")
 
 
 def normalize_address(chain: str, address: str) -> str:
     """Validate and return the stored form of an address. Raises ValueError."""
     if chain == "tron":
         return to_base58(address)
-    raise UnsupportedChain(f"lookups for chain {chain!r} are not built yet (supported: {', '.join(SUPPORTED)})")
+    if chain in EVM_CHAINS:
+        return evm_address.normalize(address)
+    raise _unsupported(chain)
 
 
 def adapter_for(chain: str, raw_store: RawStore) -> ChainAdapter:
@@ -33,4 +43,11 @@ def adapter_for(chain: str, raw_store: RawStore) -> ChainAdapter:
         if not key:
             raise MissingSetting("TRONGRID_API_KEY is not set on this service")
         return TronGridAdapter(raw_store, key)
-    raise UnsupportedChain(f"lookups for chain {chain!r} are not built yet (supported: {', '.join(SUPPORTED)})")
+    if chain in EVM_CHAINS:
+        from taw.adapters.chains.evm_etherscan import EtherscanAdapter
+
+        key = os.environ.get("ETHERSCAN_API_KEY")
+        if not key:
+            raise MissingSetting("ETHERSCAN_API_KEY is not set on this service")
+        return EtherscanAdapter(chain, raw_store, key)
+    raise _unsupported(chain)

@@ -139,7 +139,8 @@ def test_lookup_payload_holds_nothing_else():
 def test_bad_address_and_unsupported_chain_fail_at_once(tmp_path):
     status, conn, _ = run(tmp_path, job({"chain": "tron", "address": "TnotAnAddress"}), replay_adapter_for(tmp_path))
     assert status == "failed" and "cannot run" in conn.sql[-1][1][0]
-    status, conn, _ = run(tmp_path, job({"chain": "eth", "address": "0x" + "a" * 40}), replay_adapter_for(tmp_path))
+    status, conn, _ = run(tmp_path, job({"chain": "btc", "address": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"}),
+                          replay_adapter_for(tmp_path))
     assert status == "failed" and "not built yet" in conn.sql[-1][1][0]
 
 
@@ -209,3 +210,73 @@ def test_run_lookup_passes_actor_to_store(tmp_path):
                      raw_store=LocalRawStore(tmp_path / "raw"), actor="worker:abc",
                      adapter_for=replay_adapter_for(tmp_path), store_module=fake)
     assert out.reused is False and fake.snapshots[0][0] == "worker:abc"
+
+
+# -- EVM chains (Etherscan) -------------------------------------------------------
+
+EVM_ADDR = "0xaab6417993d04a861f1f02c5c4bd2e9145d8f637"
+
+
+def evm_adapter_for(http):
+    from taw.adapters.chains.evm_etherscan import EtherscanAdapter
+    clock = FakeClock()
+
+    def factory(chain, raw_store):
+        return EtherscanAdapter(chain, raw_store, "test-etherscan-key-not-real", http=http,
+                                clock=clock.clock, sleep=clock.sleep)
+    return factory
+
+
+def test_eth_lookup_saves_snapshot_and_transfers(tmp_path):
+    from tests.evm_replay import FIXTURES as EVM_FIXTURES, Replay as EvmReplay
+    fake = FakeStore()
+    http = EvmReplay(EVM_FIXTURES / "eth" / EVM_ADDR).client()
+    status, conn, logs = run(tmp_path, job({"chain": "eth", "address": EVM_ADDR}), evm_adapter_for(http), fake)
+    assert status == "done" and conn.status_set() == ["done"]
+    assert fake.snapshots == [("worker:test", 26_451_986)]
+    assert len(fake.transfers) == 49 and "49 transfers (49 new)" in logs[-1]
+
+
+def test_chain_outside_the_free_plan_fails_at_once(tmp_path):
+    body = (b'{"status":"0","message":"NOTOK","result":"Free API access is not supported for this chain. '
+            b'Please upgrade your api plan for full chain coverage. https://etherscan.io/apis"}')
+    seen = []
+
+    def handler(request):
+        seen.append(request)
+        return httpx.Response(200, content=body)
+    http = httpx.Client(transport=httpx.MockTransport(handler))
+    status, conn, _ = run(tmp_path, job({"chain": "bsc", "address": EVM_ADDR}, attempts=1), evm_adapter_for(http))
+    assert status == "failed" and conn.status_set() == ["failed"]
+    assert conn.sql[-1][1][0] == ("Etherscan's free plan does not cover BNB Smart Chain, so this lookup cannot run. "
+                                  "Not retried. It needs a paid Etherscan plan.")
+    assert len(seen) == 1                                          # one call, no retries
+
+
+def test_bad_evm_address_fails_at_once(tmp_path):
+    bad = "0xaaB6417993D04A861F1f02c5c4Bd2E9145D8F637"                 # one letter in the wrong case
+    status, conn, _ = run(tmp_path, job({"chain": "eth", "address": bad}), evm_adapter_for(None))
+    assert status == "failed" and "checksum mismatch" in conn.sql[-1][1][0]
+
+
+def test_missing_etherscan_key_fails_at_once(monkeypatch, tmp_path):
+    from taw.adapters import registry
+    monkeypatch.delenv("ETHERSCAN_API_KEY", raising=False)
+    status, conn, _ = run(tmp_path, job({"chain": "polygon", "address": EVM_ADDR}), registry.adapter_for)
+    assert status == "failed" and "ETHERSCAN_API_KEY is not set" in conn.sql[-1][1][0]
+
+
+@pytest.mark.parametrize("exc_name, permanent, words", [
+    ("EtherscanKeyRejected", True, "rejected our API key"),
+    ("EtherscanDailyLimit", True, "daily call allowance"),
+    ("EtherscanRateLimited", False, "calling too fast"),
+    ("EtherscanError", False, "Etherscan returned an error"),
+])
+def test_etherscan_failure_wording(exc_name, permanent, words):
+    from taw.adapters.chains import evm_etherscan as es
+    got_permanent, message = describe_failure(getattr(es, exc_name)("x"))
+    assert got_permanent is permanent and words in message
+
+
+def test_one_job_per_chain():
+    assert jobs.lookup_payload("polygon", EVM_ADDR.upper().replace("0X", "0x")) == {"chain": "polygon", "address": EVM_ADDR}
