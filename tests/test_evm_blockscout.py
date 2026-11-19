@@ -188,3 +188,14 @@ def test_pinned_block_skips_the_tip(tmp_path):
     adapter = make(tmp_path, fake, at_block=777)
     assert adapter.head().number == 777
     assert not any(c.get("rpc") == "eth_blockNumber" for c in fake.calls)
+
+
+def test_null_padded_topics_are_not_mistaken_for_nfts(tmp_path):
+    """Blockscout answers topics as [topic0, from, to, null]. That is an ERC-20 transfer."""
+    fake = FakeBlockscout()
+    padded = log(400, 950, 7, B, A, 5)
+    padded["topics"] = padded["topics"] + [None]
+    nft = log(401, 951, 8, B, A, 0, contract="0x" + "9" * 40, token_id=12)
+    fake.logs = [padded, nft]
+    batch = make(tmp_path, fake).fetch_transfers(A)
+    assert [(r.tx_hash, r.event_index, r.amount_raw) for r in batch.transfers] == [(h(400), 7, 5)]

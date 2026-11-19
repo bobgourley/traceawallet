@@ -29,7 +29,12 @@ and observed responses (to be confirmed with a key: see docs/STATUS.md):
                 event_index directly. Where only traceId is present, the Etherscan
                 encoding is used; with neither, the position as returned.
   getLogs       At most 1,000 logs per query, so the logs window is 1,000: after a
-                full answer the block edge moves to the last block seen.
+                full answer the block edge moves to the last block seen. Topics are
+                padded to four with null; the nulls are dropped, or every ERC-20
+                Transfer would look like an NFT transfer (four topics) and be skipped.
+                On Ethereum the log search is also incomplete (docs/research/
+                evm-sources.md, Correction); token transfers must move to the REST
+                list before this adapter is used.
   Limits        Free tier 5 requests a second and 100,000 credits a day (about 5,000
                 calls); paced at 4 a second.
 
@@ -101,6 +106,9 @@ class BlockscoutAdapter(EtherscanAdapter):
     def _normalize_row(self, action: str, row: dict) -> dict:
         if action == "txlistinternal" and "hash" not in row and "transactionHash" in row:
             row = {**row, "hash": row["transactionHash"]}
+        if action == "getLogs" and None in (row.get("topics") or []):
+            # Blockscout pads topics to four with null; an ERC-20 Transfer has three real ones.
+            row = {**row, "topics": [t for t in row["topics"] if t]}
         return row
 
     def _internal_index(self, row: dict) -> int | None:
