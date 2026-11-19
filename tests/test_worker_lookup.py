@@ -248,7 +248,7 @@ def test_chain_outside_the_free_plan_fails_at_once(tmp_path):
     http = httpx.Client(transport=httpx.MockTransport(handler))
     status, conn, _ = run(tmp_path, job({"chain": "bsc", "address": EVM_ADDR}, attempts=1), evm_adapter_for(http))
     assert status == "failed" and conn.status_set() == ["failed"]
-    assert conn.sql[-1][1][0] == ("Etherscan's free plan does not cover BNB Smart Chain, so this lookup cannot run. "
+    assert conn.sql[-1][1][0] == ("Etherscan's plan does not cover BNB Smart Chain, so this lookup cannot run. "
                                   "Not retried. It needs a paid Etherscan plan.")
     assert len(seen) == 1                                          # one call, no retries
 
@@ -262,16 +262,22 @@ def test_bad_evm_address_fails_at_once(tmp_path):
 def test_missing_blockscout_key_fails_at_once(monkeypatch, tmp_path):
     from taw.adapters import registry
     monkeypatch.delenv("BLOCKSCOUT_API_KEY", raising=False)
-    status, conn, _ = run(tmp_path, job({"chain": "polygon", "address": EVM_ADDR}), registry.adapter_for)
+    status, conn, _ = run(tmp_path, job({"chain": "eth", "address": EVM_ADDR}), registry.adapter_for)
     assert status == "failed" and "BLOCKSCOUT_API_KEY is not set" in conn.sql[-1][1][0]
 
 
-def test_bsc_fails_at_once_as_not_checked(monkeypatch, tmp_path):
+@pytest.mark.parametrize("chain, reason", [
+    ("bsc", "no data source we may use for a public site covers this chain yet"),
+    ("polygon", "it needs a paid Blockscout plan"),
+    ("base", "it needs a paid Blockscout plan"),
+])
+def test_chains_outside_phase1_fail_at_once(monkeypatch, tmp_path, chain, reason):
     from taw.adapters import registry
     monkeypatch.setenv("BLOCKSCOUT_API_KEY", "proapi_test_not_real")
-    status, conn, _ = run(tmp_path, job({"chain": "bsc", "address": EVM_ADDR}), registry.adapter_for)
+    monkeypatch.setenv("ETHERSCAN_API_KEY", "etherscan_test_not_real")
+    status, conn, _ = run(tmp_path, job({"chain": chain, "address": EVM_ADDR}), registry.adapter_for)
     assert status == "failed"
-    assert conn.sql[-1][1][0].startswith("This lookup cannot run: bsc is not checked in Phase 1")
+    assert conn.sql[-1][1][0] == f"This lookup cannot run: {chain} is not checked in Phase 1: {reason}."
 
 
 def test_blockscout_not_finished_is_retried_and_nothing_saved(tmp_path):

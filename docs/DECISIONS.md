@@ -13,7 +13,7 @@ answer is recommended, but it does not block the launch to testers: nothing in
 Blockscout's terms forbids a free public site. A written answer is required
 before any Phase 2 public API is built on Blockscout data.
 
-**The worker uses Blockscout for eth, polygon, arbitrum, optimism and base.**
+**The worker uses Blockscout for eth, arbitrum and optimism.**
 `taw/adapters/chains/evm_blockscout.py` extends the Etherscan adapter, because
 Blockscout speaks Etherscan's API. The differences:
 
@@ -36,11 +36,41 @@ transaction. The table's unique key includes the source, so the two never
 collide. The cross-check matches internal transfers on transaction, from, to
 and amount, not on the index.
 
-**Phase 1 chains: eth, polygon, arbitrum, optimism, base, tron and btc.** This
-supersedes the earlier list, which left out optimism and base because
-Etherscan's free plan refused them. BNB Smart Chain stays out, with reason
-`no_source_with_suitable_terms`: no provider that covers it has terms that
-clearly allow our use. Its chain row stays, and a job for it fails at once.
+**Phase 1 on free plans: eth, arbitrum and optimism from Blockscout, plus tron
+and btc.** This supersedes the 2026-11-19 list of eth, polygon and arbitrum.
+Blockscout's free tier stopped serving Polygon and Base on 2026-10-01. With our
+key on 2026-11-19 they answered HTTP 402 "Featured chain 137 requires one of
+the following plans: Builder, Business, Pro" (8453 the same), while eth,
+arbitrum and optimism answered.
+
+Chains not checked, with their reason codes:
+
+| Chain | Reason code | Why |
+|---|---|---|
+| polygon | `needs_paid_blockscout_plan` | "It needs a paid Blockscout plan." |
+| base | `needs_paid_blockscout_plan` | "It needs a paid Blockscout plan." |
+| bsc | `no_source_with_suitable_terms` | Blockscout answers 404 "Network not supported", and no other provider's terms clearly allow our use. |
+
+A job for any of the three fails at once with a plain message. They are never
+routed to Etherscan or anywhere else, and their chain rows stay. A test checks
+this with every key set.
+
+**Blockscout's own index is incomplete in two places (found 2026-11-19, live).**
+Details are in `docs/research/evm-sources.md`, Correction.
+
+- **Logs.** `getLogs` by topic finds only the last few days on Ethereum, and
+  still answers "OK". It found 6 of the test wallet's 41 token transfers. The
+  REST list `/api/v2/addresses/{a}/token-transfers` found all 41, with log
+  indexes matching Etherscan.
+- **Internal transactions.** On Ethereum, anything before about block
+  23,397,763 is "not yet processed". On Optimism, the newest day or so is.
+
+As built, every eth and optimism lookup fails, and token transfers would have
+come back incomplete. **The `evm-blockscout` branch is not to be merged until
+both are fixed and the cross-check passes.** Two decisions are open:
+
+1. How to treat unfinished internal ranges.
+2. Whether to switch tokens to the REST list.
 
 **Cross-check mode.** `scripts/cross_check_evm.py` runs Etherscan and Blockscout
 at the same block (`at_block`). It reports every difference in transfers,

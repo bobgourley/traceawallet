@@ -13,11 +13,13 @@ def test_every_evm_chain_is_either_checked_or_has_a_reason():
 
 
 def test_phase1_chains():
-    assert registry.PHASE1_CHAINS == ("eth", "polygon", "arbitrum", "optimism", "base", "tron", "btc")
-    assert set(registry.EVM_NOT_CHECKED) == {"bsc"}
+    assert registry.PHASE1_CHAINS == ("eth", "arbitrum", "optimism", "tron", "btc")
+    assert registry.EVM_NOT_CHECKED == {"bsc": "no_source_with_suitable_terms",
+                                        "polygon": "needs_paid_blockscout_plan",
+                                        "base": "needs_paid_blockscout_plan"}
 
 
-@pytest.mark.parametrize("chain", ["eth", "polygon", "arbitrum", "optimism", "base"])
+@pytest.mark.parametrize("chain", ["eth", "arbitrum", "optimism"])
 def test_worker_uses_blockscout_for_evm(chain, tmp_path, monkeypatch):
     from taw.adapters.chains.evm_blockscout import BlockscoutAdapter
     monkeypatch.setenv("BLOCKSCOUT_API_KEY", "proapi_test_not_real")
@@ -26,6 +28,10 @@ def test_worker_uses_blockscout_for_evm(chain, tmp_path, monkeypatch):
     assert type(adapter) is BlockscoutAdapter and adapter.chain == chain and adapter.source == "blockscout"
 
 
-def test_bsc_is_not_checked(tmp_path):
-    with pytest.raises(registry.ChainNotChecked, match="bsc is not checked in Phase 1"):
-        registry.adapter_for("bsc", LocalRawStore(tmp_path))
+@pytest.mark.parametrize("chain", ["bsc", "polygon", "base"])
+def test_not_checked_chains_never_reach_a_provider(chain, tmp_path, monkeypatch):
+    """Not routed to Etherscan or anywhere else, even with every key set."""
+    monkeypatch.setenv("BLOCKSCOUT_API_KEY", "proapi_test_not_real")
+    monkeypatch.setenv("ETHERSCAN_API_KEY", "etherscan_test_not_real")
+    with pytest.raises(registry.ChainNotChecked, match=f"{chain} is not checked in Phase 1"):
+        registry.adapter_for(chain, LocalRawStore(tmp_path))

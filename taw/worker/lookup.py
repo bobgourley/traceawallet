@@ -61,8 +61,8 @@ def describe_failure(exc: BaseException) -> tuple[bool, str]:
         return True, ("TronGrid refused the request (HTTP 403), which means it has blocked our API key "
                       "for now. Not retried. Check TRONGRID_API_KEY in Railway and wait before trying again.")
     if isinstance(exc, es.EtherscanChainNotCovered):
-        return True, (f"Etherscan's free plan does not cover {exc.chain_name}, so this lookup cannot run. Not retried. "
-                      "It needs a paid Etherscan plan.")
+        return True, (f"{exc.provider}'s plan does not cover {exc.chain_name}, so this lookup cannot run. "
+                      f"Not retried. It needs a paid {exc.provider} plan.")
     if isinstance(exc, es.EtherscanError):
         who = exc.provider
         if isinstance(exc, es.EtherscanKeyRejected):

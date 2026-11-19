@@ -1,5 +1,37 @@
 # EVM data sources: which ones allow a free public site
 
+## Correction, 2026-11-19 (live tests with our PRO API key)
+
+The Blockscout entry below was written from docs, before we had a key. Live
+calls changed three things.
+
+1. **Free tier covers eth, arbitrum and optimism only.** Polygon and Base
+   answer HTTP 402 "Featured chain 137 requires one of the following plans:
+   Builder, Business, Pro" (8453 the same). The dashboard says these became
+   paid on 2026-10-01. BNB Smart Chain answers 404 "Network not supported". So
+   the Blockscout row's "5: no BNB" is 3 on the free tier.
+2. **Its log search is silently incomplete on Ethereum.** `getLogs` filtered on
+   the Transfer topic and our test address returned 3 logs each way, all from
+   the last few days. Etherscan returned 20 sent and 21 received. A range around
+   the wallet's first transfer (block 25,889,000 to 25,890,000) answered "No logs
+   found". Every answer was status "1", "OK". The REST list
+   `/api/v2/addresses/{address}/token-transfers?type=ERC-20` returned all 41,
+   each with `log_index` (log 543 for the newest, as on Etherscan). Use that,
+   not `getLogs`.
+3. **Its internal-transaction index has unfinished ranges.**
+   - Ethereum: any range reaching back before about block 23,397,763 answers
+     status "2", "not yet processed". From there to the tip it is complete, and
+     it returned the same 0.25022341 ETH internal transfer Etherscan shows.
+   - Optimism: the last 50,000 blocks or so (about a day) answered status "2".
+     Older windows were complete.
+   - Arbitrum: every window sampled was complete.
+
+What this does to the recommendation: Blockscout's terms are still the best
+fit. But the "high, about 80%" reuse estimate assumed its Etherscan-compatible
+endpoints behave like Etherscan's, and two of them do not. Token transfers
+need its REST list. Internal transfers need a rule for unfinished ranges, which
+is an open decision (DECISIONS.md, 2026-11-19, latest entry).
+
 Researched 2026-11-19. Why: Etherscan's API Terms treat a website "offered to
 third parties, whether free of charge or for a fee" as Commercial Application use
 (Advanced plan, $299 a month). They also ban passing data to third parties as an

@@ -74,12 +74,26 @@ def make(tmp_path, fake, chain="eth", **kw):
                              clock=clock.clock, sleep=clock.sleep, **kw)
 
 
-def test_satisfies_protocol_and_serves_five_chains(tmp_path):
-    for chain in ("eth", "polygon", "arbitrum", "optimism", "base"):
+def test_satisfies_protocol_and_serves_the_free_tier_chains(tmp_path):
+    for chain in ("eth", "arbitrum", "optimism"):
         adapter = make(tmp_path, FakeBlockscout(), chain=chain)
         assert isinstance(adapter, ChainAdapter) and adapter.source == "blockscout"
-    with pytest.raises(ValueError):
-        make(tmp_path, FakeBlockscout(), chain="bsc")
+    for chain in ("bsc", "polygon", "base"):
+        with pytest.raises(ValueError):
+            make(tmp_path, FakeBlockscout(), chain=chain)
+
+
+@pytest.mark.parametrize("status, text", [
+    (402, '{"error":"Featured chain 1 requires one of the following plans: Builder, Business, Pro","source":"internal"}'),
+    (404, '{"error":"Network not supported","source":"internal"}'),
+])
+def test_paid_or_missing_chain_fails_at_once(tmp_path, status, text):
+    fake = FakeBlockscout()
+    fake.first = [httpx.Response(status, content=text.encode())]
+    with pytest.raises(es.EtherscanChainNotCovered) as err:
+        make(tmp_path, fake).head()
+    assert err.value.provider == "Blockscout" and err.value.chain_name == "Ethereum"
+    assert len(fake.requests) == 1
 
 
 def test_rpc_by_post_and_key_never_stored(tmp_path, monkeypatch):

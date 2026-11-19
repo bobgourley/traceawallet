@@ -1,6 +1,6 @@
 """EVM chain adapter backed by the Blockscout PRO API (https://api.blockscout.com).
 
-The worker's adapter for eth, polygon, arbitrum, optimism and base. Blockscout
+The worker's adapter for eth, arbitrum and optimism (free tier). Blockscout
 speaks Etherscan's API, so this is EtherscanAdapter (evm_etherscan.py) with the
 differences below; paging, parsing, block pinning, truncation, first transfers,
 token balances and the raw-store rules are all inherited. Read that module's
@@ -45,7 +45,13 @@ from taw.adapters.chains.evm_etherscan import EtherscanAdapter, EtherscanError, 
 SOURCE = "blockscout"
 API_URL = "https://api.blockscout.com/v2/api"
 RPC_URL = "https://api.blockscout.com/{chain_id}/json-rpc"
-CHAINS = ("eth", "polygon", "arbitrum", "optimism", "base")
+# Free tier, probed 2026-11-19: eth, arbitrum and optimism answer. Polygon and
+# Base answer HTTP 402 "Featured chain ... requires one of the following plans:
+# Builder, Business, Pro" (paid since 2026-10-01); BNB Smart Chain answers 404
+# "Network not supported". The settings for polygon and base stay so that a
+# paid plan only needs adding them back here and in the registry.
+CHAINS = ("eth", "arbitrum", "optimism")
+PAID_PLAN_CHAINS = ("polygon", "base")
 _INCOMPLETE = "not finished: "
 
 
@@ -80,6 +86,8 @@ class BlockscoutAdapter(EtherscanAdapter):
         t = text.lower()
         if text.startswith(_INCOMPLETE):
             return BlockscoutIncomplete
+        if "requires one of the following plans" in t or "network not supported" in t:
+            return es.EtherscanChainNotCovered
         if "too many requests" in t:
             return es.EtherscanRateLimited
         if "api key" in t and ("invalid" in t or "proceed with" in t or "missing" in t or "unauthor" in t):

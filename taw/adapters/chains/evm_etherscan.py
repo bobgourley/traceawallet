@@ -400,9 +400,12 @@ class EtherscanAdapter:
                 self._backoff(attempt, float(retry_after) if retry_after.isdigit() else None)
                 continue
             if resp.status_code >= 400:
-                kind = self._classify(resp.text[:300]) if resp.status_code in (401, 403) else EtherscanError
+                kind = self._classify(resp.text[:300]) if resp.status_code in (401, 402, 403, 404) else EtherscanError
                 if kind is EtherscanError:
                     raise EtherscanError(f"{what}: HTTP {resp.status_code}", resp.status_code)
+                if kind is EtherscanChainNotCovered:
+                    raise EtherscanChainNotCovered(f"{self.info.name}: HTTP {resp.status_code}: {resp.text[:200]}",
+                                                   self.info.name)
                 raise kind(f"{what}: HTTP {resp.status_code}: {resp.text[:200]}")
             try:
                 data = json.loads(resp.content or b"{}")
