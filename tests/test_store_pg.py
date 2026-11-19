@@ -221,7 +221,8 @@ def test_completed_lookups_are_logged(conns):
     assert (events[0]["transfers_saved"], events[0]["transfers_reused"]) == (35, 0)
     assert (events[1]["transfers_saved"], events[1]["transfers_reused"]) == (0, 35)
     assert set(events[0]) == {"actor", "entity", "entity_id", "chain", "address", "snapshot_id",
-                              "as_of_block", "transfers_saved", "transfers_reused", "snapshot_reused"}
+                              "as_of_block", "transfers_saved", "transfers_reused", "snapshot_reused",
+                              "history_incomplete"}
     assert count(data, "SELECT event_log_verify() IS NULL") is True
 
 
