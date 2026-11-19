@@ -14,7 +14,8 @@ INSERT INTO source (slug, name, kind, url, license, resale_permitted, attributio
      'Blockscout Terms & Conditions v1.1, last updated 2024-12-06. Licence to use the Products "for their '
      'intended purposes"; no internal-use limit, no redistribution, caching or deletion clause. Clause 7(h) bars '
      '"duplicating its essential elements" without written consent, which a later paid API must clear. Written '
-     'confirmation of our use requested; launch to testers waits for it.',
+     'confirmation requested from info@blockscout.com on 2026-11-19; required before a Phase 2 public API uses '
+     'Blockscout data, not before the free site.',
      false, 'Blockscout', DATE '2026-11-19');
 
 UPDATE source SET license =

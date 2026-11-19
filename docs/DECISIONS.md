@@ -3,13 +3,15 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
-## 2026-11-19 (later): Blockscout for EVM; launch waits for permissions
+## 2026-11-19 (later): Blockscout for EVM; permissions asked for
 
-**Launch to testers is blocked until Blockscout replies in writing.** We have
-asked Blockscout to confirm three things: a free public report site, a later
-paid API serving our own reports (clause 7(h) of their terms), and keeping raw
-responses. Until a written reply is on file, no EVM data is shown to anyone
-outside the project.
+**Blockscout has been asked in writing; the answer gates Phase 2, not testers.**
+The owner emailed info@blockscout.com on 2026-11-19. The email asks Blockscout
+to confirm three things: a free public report site, a later paid API serving our
+own reports (clause 7(h) of their terms), and keeping raw responses. A written
+answer is recommended, but it does not block the launch to testers: nothing in
+Blockscout's terms forbids a free public site. A written answer is required
+before any Phase 2 public API is built on Blockscout data.
 
 **The worker uses Blockscout for eth, polygon, arbitrum, optimism and base.**
 `taw/adapters/chains/evm_blockscout.py` extends the Etherscan adapter, because
@@ -345,7 +347,8 @@ the live run on Railway.
 - Etherscan's API Terms limit redistribution, archiving and retention. Decided
   2026-11-19: display only, no public API, and a purge script exists. Since
   then Etherscan is used for tests and cross-checks only.
-- Blockscout's written reply. Launch to testers waits for it.
+- Blockscout's written reply to the 2026-11-19 email. Not needed for testers;
+  required before a Phase 2 public API uses Blockscout data.
 - Written permission from DefiLlama and NBCTF before their data is shown, and
   from GoPlus, TronGrid and Blockscout before any paid API.
 - Bitcoin source for the public site: self-host esplora or mempool, or read
