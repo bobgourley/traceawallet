@@ -3,6 +3,124 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-19: EVM chains through Etherscan API V2
+
+**What the free plan covers.** Probed on 2026-11-18 with our key, one
+`proxy/eth_blockNumber` call per chain:
+
+| Chain | chainid | Free plan |
+|---|---|---|
+| Ethereum | 1 | yes |
+| Polygon | 137 | yes |
+| Arbitrum One | 42161 | yes |
+| BNB Smart Chain | 56 | no |
+| OP Mainnet | 10 | no |
+| Base | 8453 | no |
+
+The three refusals come back as HTTP 200 with "Free API access is not supported
+for this chain. Please upgrade your api plan for full chain coverage." This
+matches docs.etherscan.io/supported-chains. A job for one of those chains fails
+on its first call, with no retries: "Etherscan's free plan does not cover BNB
+Smart Chain, so this lookup cannot run. Not retried. It needs a paid Etherscan
+plan." Nothing is hard-coded, so these chains start working if the plan is
+upgraded.
+
+**Limits.** docs.etherscan.io/resources/rate-limits says the free plan allows 3
+calls a second and 100,000 a day. We pace at 2.5 a second. A burst test got
+"Max calls per sec rate limit reached (3/sec)" from the fourth call on, as HTTP
+200. A typical small lookup takes about 18 calls, so the daily cap is roughly
+5,000 lookups. `addresstokenbalance` (all token holdings) is an "API Pro"
+endpoint and is not used.
+
+**Attribution.** The API Terms (last updated 1 October 2026) say that on any
+plan, wherever API data is displayed, we must show "Powered by Etherscan.io
+APIs" with a link to https://etherscan.io where practical. It must not suggest
+Etherscan endorses us. The `etherscan` source row (migration 0003) already holds
+that wording. The report template must show it.
+
+**Terms that need the owner's decision.** The same terms forbid passing API data
+to third parties as a feed, API or proxy, forbid bulk-downloading or archiving
+their datasets, and say data must be destroyed when the agreement ends. They
+mention a retention period without giving one. That bears on the Phase 2 public
+API and on rule 3, which keeps every raw response. `resale_permitted` stays
+false. This is not settled; see Open below.
+
+**Errors arrive as HTTP 200, so every body is read.** `{"status": "0"}` with a
+text result is an error. With an empty list it means "nothing found" and is not
+an error. A rate-limit body is retried with growing waits. These fail the job at
+once: chain not covered, key rejected, daily cap used up, and an API Pro
+endpoint (that one would be our bug). The daily-cap wording ("Max daily rate
+limit reached") is from Etherscan's error list. We have not seen it with our own
+key, so it is matched loosely on "daily" plus "limit".
+
+**The key never reaches storage.** Etherscan takes the key only in the query
+string. The adapter adds it to the outgoing request alone. The RawStore gets the
+bare endpoint URL and the other parameters. `clean_request()` would drop an
+`apikey` field anyway, and refuses to store a value from the environment. A test
+checks the index and every saved body for the key.
+
+**One block for everything.** A lookup reads at `head`, which is the latest block
+minus a few confirmations: 12 on Ethereum, 64 on Polygon, 20 on Arbitrum. Lists
+use `endblock=head`, logs `toBlock=head`, and `eth_call`/`eth_getCode` read state
+at head. Etherscan's balance endpoint only answers "latest" (balance history is
+paid), so the native balance comes from Multicall3's `getEthBalance` at head.
+The snapshot and the transfers then agree on `as_of_block`.
+
+**ERC-20 log index from the logs endpoint.** `tokentx` has no log index. Token
+transfers are read from `getLogs` filtered on the Transfer topic, with our
+address as topic1 (sent) and then as topic2 (received). `logIndex` is unique
+within the block, so two identical transfers in one transaction stay two rows.
+`tokentx` is used only for decimals and symbols, and to pick where the logs scan
+starts when history is long. Logs with four topics are NFT transfers and are
+ignored. A token whose Transfer event does not index from and to cannot be found
+this way. Those rows are counted (`unmatched_token_rows`), not stored. A Tron-style
+fallback index was rejected because it would collide with a real log index the
+next time the same transaction is seen from another address.
+
+**Internal transfers use the trace position.** Etherscan's `traceId` is a path
+in the call tree ("0", "0_1", "0_1_1"). It is unique within the transaction, so
+it is encoded into one integer that keeps trace order, as base-32 digits over
+six places ("0_1_1" is 1·32⁵ + 2·32⁴ + 2·32³). Paths up to six deep with steps
+below 31 fit the int column. If `traceId` is missing or does not fit, the
+position within the transaction as returned is used. Those numbers are all
+below 32⁵, so the two never collide. The position depends on which rows the API
+returned for this address, which is why it is only a fallback.
+
+**Token balances without the paid endpoint.** `balanceOf` at head for each
+freezable stablecoin on the chain, plus the 20 tokens with the most transfers in
+the address's newest 1,000 token transfers. Only non-zero balances are kept. The
+stablecoin list was confirmed by reading each contract's verified ABI on
+Etherscan for a blacklist, block or freeze function or event:
+
+- Ethereum: USDT, USDC, PYUSD, USDP, TUSD, EURC, FDUSD, USD1, USDG
+- Polygon: USDT0, USDC, USDC.e
+- Arbitrum: USDT0, USDC, USDC.e, PYUSD
+
+DAI, USDe and RLUSD showed none and are left out. XAUT and PAXG can be frozen but
+are gold tokens, not stablecoins. The chains outside the free plan have empty
+lists until someone checks them.
+
+**Truncation keeps the first transfers.** Over 2,000 transfers, the batch holds
+the newest 2,000 and `truncated` is true. The very first native, internal and
+token transfer, and the first incoming one of each, are fetched separately and
+appended, so first activity and first funder are right. A truncated batch can
+therefore hold up to six transfers past the limit, with a gap before them.
+
+**Paging past 10,000 rows.** Etherscan refuses page × offset above 10,000. After
+ten pages of 1,000 the adapter moves the block edge to the last block it saw and
+starts again from page 1. Rows from that block arrive twice and are dropped by
+key. If a single block holds more than 10,000 rows for one address, the lookup
+fails with a clear error rather than looping.
+
+**Mixed-case addresses must pass EIP-55.** A mixed-case address is a checksum,
+and checking it catches most typos. All-lower and all-upper addresses are
+accepted as typed. Keccak-256 is implemented in pure Python
+(`chains/evm_address.py`) rather than adding a package, and tested against
+published vectors.
+
+**Shared helpers.** The request pacer and ABI decoding moved from the Tron
+adapter to `taw/adapters/chains/common.py`.
+
 ## 2026-11-18: settings move to the dashboard; one region
 
 **Railway settings live in the dashboard, not the repo.** This supersedes the
@@ -129,3 +247,8 @@ the live run on Railway.
   `taw_app` role that is not used yet.
 - Nothing yet records lookups in `lookup` or updates `lookup_count`. The
   worker only fetches and stores observations.
+- Etherscan's API Terms limit redistribution, archiving and retention (see
+  2026-11-19). The owner needs to decide whether that fits rule 3 and a later
+  public API, or whether EVM data should come from another provider.
+- BNB Smart Chain, OP Mainnet and Base need a paid Etherscan plan or a different
+  provider.
