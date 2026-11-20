@@ -3,6 +3,84 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (afternoon): Burned funds: a global index of blacklist events
+
+**The problem.** Tether can destroy a frozen address's USDT
+(`destroyBlackFunds`). The balance drops to zero with no Transfer event. The
+production smoke test (TC66d59…KNWAN on Tron) showed USDT balance 0 against
+transfers summing to 465,514.638375. The reconciliation therefore said "history
+may be incomplete" when the history was complete and the funds had been burned.
+
+**The index.** Migration 0016 adds `blacklist_event` (append-only) and
+`blacklist_scan`. It holds every freeze, release and destruction event of:
+
+| Chain | Token | Events | Read through |
+|---|---|---|---|
+| Ethereum | USDT | AddedBlackList, RemovedBlackList, DestroyedBlackFunds | Blockscout `eth_getLogs` |
+| Ethereum | USDC | Blacklisted, UnBlacklisted | Blockscout `eth_getLogs` |
+| Tron | USDT | the same three as Ethereum USDT | TronGrid's events list |
+| Tron | USDC | the same two as Ethereum USDC | TronGrid's events list |
+
+USDC has no event for burning a frozen balance. Arbitrum and OP Mainnet are left
+out because their freeze events index the address, so one address's events cost
+one call at lookup time (as before).
+
+**Backfill once, then daily.** `scripts/backfill_blacklist.py` does the first
+scan for each chain. The `blacklist_refresh` job runs daily at 01:00 UTC, after
+Blockscout's reset. It scans each backfilled contract from the end of its index
+to the head (64 blocks short of the head on Ethereum). A contract never
+backfilled is skipped and said to be so. It is never treated as having no
+events.
+
+**Cost.**
+
+- Tron dry run, 2026-11-20 (to block 88,170,277): 149 TronGrid calls.
+  - USDT: 9,321 AddedBlackList, 1,006 RemovedBlackList and 1,308
+    DestroyedBlackFunds events. The earliest is 2020-06-26.
+  - USDC: 1,206 Blacklisted and 640 UnBlacklisted events.
+  - Every destruction in it has an earlier freeze. One release has no freeze
+    before it: Tether released an address it had never frozen, which the
+    contract allows.
+- Ethereum (Etherscan's counts at block 26,454,430): 5,091 events.
+  - Expected backfill: 15 to 20 Blockscout calls (300 to 400 credits).
+  - Daily update: five calls.
+
+**Checking Blockscout against Etherscan.** Blockscout's log search returned 6 of
+a test wallet's 41 transfers once. So the Ethereum backfill also reads the same
+range from Etherscan and compares the two, log by log (transaction hash and log
+index). If they differ for a contract, that contract is not written: the index
+is never filled in from Etherscan and never written short. Both providers'
+replies are kept as a fixture, and a test replays them.
+
+**Audit.** As for label loads (0015): a scan writes its events and one
+`event_log` entry (action `scan`, entity `blacklist_scan`) in one transaction.
+The entry holds the row count, counts by action and a sha256 over the rows
+added. `scripts/verify_label_loads.py` recomputes the scans too.
+
+**Freeze dates.** For Ethereum USDT and Tron USDT and USDC, the freeze date on a
+frozen label now comes from the index: the last freeze event for the address
+with no release after it, up to the snapshot block. The note names the
+transaction and how far the index was complete.
+
+**The reconciliation.** Before the checks, the worker reads the contract's
+freeze status (the same reads the freeze step used to make, now reused) and
+the address's destruction events from the index. Then, per stablecoin:
+
+- A destruction at or before the snapshot block counts as an accounted
+  movement out. It is listed in the token's result with its transaction hash,
+  log index, block and amount.
+- Balance = transfers in − out − destroyed: `reconciled`.
+- Frozen, balance zero, and no destruction found:
+  `frozen_zero_no_destruction`. This is its own result, not reconciled. It marks
+  the history incomplete, and its reason says how far the index was complete.
+- Anything else that doesn't add up: `not_reconciled`, as before.
+
+**Deploys and new job kinds.** During the exchange-wallets deploy the old worker
+claimed the new `exchange_refresh` job and failed it ("No handler"). That used
+up the day's run. Now a worker defers a job kind it doesn't know for ten
+minutes, without counting the attempt. `ensure_daily` also queues a day's job
+again when an old worker failed it for that reason.
+
 ## 2026-11-20 (afternoon): Audit: one entry per label load
 
 The owner decided this before the first OKX load (about 500,000 labels).
