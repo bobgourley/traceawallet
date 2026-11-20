@@ -35,3 +35,19 @@ def test_not_checked_chains_never_reach_a_provider(chain, tmp_path, monkeypatch)
     monkeypatch.setenv("ETHERSCAN_API_KEY", "etherscan_test_not_real")
     with pytest.raises(registry.ChainNotChecked, match=f"{chain} is not checked in Phase 1"):
         registry.adapter_for(chain, LocalRawStore(tmp_path))
+
+
+def test_goplus_is_never_used_for_bitcoin():
+    assert registry.goplus_allowed("btc") is False
+    assert "btc" not in registry.GOPLUS_CHAINS
+    assert registry.goplus_allowed("eth") is True
+
+
+def test_btc_needs_no_key(tmp_path, monkeypatch):
+    from taw.adapters.chains.btc_esplora import BtcEsploraAdapter
+    for name in ("BLOCKSCOUT_API_KEY", "ETHERSCAN_API_KEY", "TRONGRID_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    adapter = registry.adapter_for("btc", LocalRawStore(tmp_path))
+    assert type(adapter) is BtcEsploraAdapter and adapter.source == "mempool-space"
+    assert registry.normalize_address("btc", "BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4") == \
+        "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"

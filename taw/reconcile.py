@@ -49,6 +49,7 @@ NATIVE_NOT_RUN = {
     "optimism": "Optimism's L1 data fee is not read yet, so the fees paid cannot be totalled.",
     "tron": "TRX staking, unstaking and resource delegation are not parsed yet; they move the balance.",
 }
+NO_TOKENS = ("btc",)             # chains with no token transfers: the token checks are left out
 NO_NONCE = {
     "tron": "Tron accounts have no transaction nonce.",
     "btc": "Bitcoin addresses have no transaction nonce.",
@@ -219,13 +220,16 @@ def run_checks(snap: AddressSnapshot, batch: TransferBatch, stablecoins: Iterabl
     if (snap.chain, snap.address) != (batch.chain, batch.address):
         raise ValueError("snapshot and transfers are for different addresses")
     tokens = token_checks(snap, batch, stablecoins)
-    checks = [
-        _token_summary("stablecoin_reconciliation", [t for t in tokens if t.stablecoin], True, "stablecoin"),
-        _token_summary("other_token_reconciliation", [t for t in tokens if not t.stablecoin], False, "token"),
-        native_check(snap, batch),
-        tx_count_check(snap, batch),
-        *batch.checks,
-    ]
+    generic = [native_check(snap, batch), tx_count_check(snap, batch)]
+    if snap.chain not in NO_TOKENS:
+        generic = [
+            _token_summary("stablecoin_reconciliation", [t for t in tokens if t.stablecoin], True, "stablecoin"),
+            _token_summary("other_token_reconciliation", [t for t in tokens if not t.stablecoin], False, "token"),
+        ] + generic
+    # An adapter that runs a check itself (Bitcoin's balance and count) replaces the
+    # generic one of the same name, so every chain reports under the same names.
+    own = {c.name for c in batch.checks}
+    checks = [c for c in generic if c.name not in own] + list(batch.checks)
     reasons = tuple(c.reason or c.name for c in checks if c.status == FAILED and c.marks_incomplete)
     return Completeness(tokens, tuple(checks), bool(reasons), reasons)
 

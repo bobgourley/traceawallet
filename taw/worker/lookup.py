@@ -15,6 +15,7 @@ import psycopg
 from taw import store
 from taw.reconcile import run_checks
 from taw.adapters.base import RawIntegrityError, RawStore, SecretLeak
+from taw.adapters.chains.btc_address import InvalidBitcoinAddress
 from taw.adapters.chains.evm_address import InvalidEvmAddress
 from taw.adapters.chains.tron_address import InvalidTronAddress
 from taw.adapters.registry import MissingSetting, UnsupportedChain, stablecoins_for
@@ -81,7 +82,12 @@ def describe_failure(exc: BaseException) -> tuple[bool, str]:
             return False, (f"{who} has not finished indexing this address yet ({exc}). Nothing was saved; "
                            "the lookup will be tried again.")
         return False, f"{who} returned an error: {exc}."
-    if isinstance(exc, (PayloadError, InvalidTronAddress, InvalidEvmAddress, UnsupportedChain)):
+    from taw.adapters.chains.btc_esplora import EsploraError, EsploraRateLimited
+    if isinstance(exc, EsploraRateLimited):
+        return False, f"{exc.provider} kept saying we were calling too fast, even after backing off."
+    if isinstance(exc, EsploraError):
+        return False, f"{exc.provider} returned an error: {exc}."
+    if isinstance(exc, (PayloadError, InvalidTronAddress, InvalidEvmAddress, InvalidBitcoinAddress, UnsupportedChain)):
         return True, f"This lookup cannot run: {exc}."
     if isinstance(exc, MissingSetting):
         return True, f"The worker is missing a setting: {exc}."

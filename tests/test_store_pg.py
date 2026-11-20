@@ -539,3 +539,38 @@ def test_goplus_display_rules_and_nbctf_out_of_phase1(conns):
     (nbctf,) = data.execute("SELECT license FROM source WHERE slug = 'nbctf'").fetchone()
     assert "Out of Phase 1" in nbctf
     assert count(data, "SELECT count(*) FROM event_log WHERE actor = 'migration:0009_goplus_nbctf'") == 2
+
+
+# -- Bitcoin -------------------------------------------------------------------------------
+
+def test_btc_lookup_is_stored_and_idempotent(conns):
+    from taw.adapters.chains.btc_esplora import BtcEsploraAdapter
+    from taw.reconcile import run_checks
+    from tests.test_btc_esplora import ADDR as BTC_ADDR, FIXTURES as BTC_FIXTURES, HEIGHT, Replay as BtcReplay
+    data, raw = conns
+    s3 = FakeS3()
+
+    def once():
+        clock = FakeClock()
+        adapter = BtcEsploraAdapter(store.RecordingRawStore(raw, ACTOR, s3_client=s3, bucket="test"), at_height=HEIGHT,
+                                    http=BtcReplay(BTC_FIXTURES / "mempool" / BTC_ADDR).client(),
+                                    clock=clock.clock, sleep=clock.sleep)
+        snap = adapter.fetch_snapshot(BTC_ADDR)
+        batch = adapter.fetch_transfers(BTC_ADDR)
+        return store.save_lookup(data, ACTOR, snap, batch, recon=run_checks(snap, batch, ()))
+
+    first = once()
+    assert (first.transfers_seen, first.transfers_new) == (154, 154)
+    assert count(data, "SELECT count(*) FROM transfer WHERE chain = 'btc' AND kind = 'utxo_in'"
+                       " AND to_address_id IS NULL AND from_address_id IS NOT NULL") == 43
+    assert count(data, "SELECT count(*) FROM transfer WHERE chain = 'btc' AND kind = 'utxo_out'"
+                       " AND from_address_id IS NULL AND to_address_id IS NOT NULL") == 111
+    assert count(data, "SELECT count(*) FROM address WHERE chain = 'btc' AND address = %s", BTC_ADDR) == 1
+    checks, inc = data.execute("SELECT checks, history_incomplete FROM address_snapshot WHERE id = %s",
+                               (first.snapshot_id,)).fetchone()
+    assert {c["name"]: c["status"] for c in checks} == {"native_reconciliation": "passed", "tx_count": "passed",
+                                                        "other_party_rows_capped": "passed"}
+    assert inc is False
+    second = once()
+    assert (second.transfers_seen, second.transfers_new) == (154, 0)
+    assert count(data, "SELECT count(*) FROM transfer WHERE chain = 'btc'") == 154

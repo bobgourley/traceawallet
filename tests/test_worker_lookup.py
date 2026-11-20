@@ -141,7 +141,7 @@ def test_lookup_payload_holds_nothing_else():
 def test_bad_address_and_unsupported_chain_fail_at_once(tmp_path):
     status, conn, _ = run(tmp_path, job({"chain": "tron", "address": "TnotAnAddress"}), replay_adapter_for(tmp_path))
     assert status == "failed" and "cannot run" in conn.sql[-1][1][0]
-    status, conn, _ = run(tmp_path, job({"chain": "btc", "address": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"}),
+    status, conn, _ = run(tmp_path, job({"chain": "sol", "address": "So11111111111111111111111111111111111111112"}),
                           replay_adapter_for(tmp_path))
     assert status == "failed" and "not built yet" in conn.sql[-1][1][0]
 
@@ -331,3 +331,27 @@ def test_incomplete_history_is_named_in_the_job_message(tmp_path):
     assert status == "done"
     assert logs[-1].endswith("HISTORY MAY BE INCOMPLETE: 35 of 41 token-list rows have no matching Transfer log")
     assert fake.recons[0].history_incomplete is True
+
+
+# -- Bitcoin -----------------------------------------------------------------------------
+
+def test_btc_lookup_saves_snapshot_and_rows(tmp_path):
+    from taw.adapters.chains.btc_esplora import BtcEsploraAdapter
+    from tests.test_btc_esplora import ADDR as BTC_ADDR, FIXTURES as BTC_FIXTURES, HEIGHT, Replay as BtcReplay
+    clock = FakeClock()
+
+    def factory(chain, raw_store):
+        assert chain == "btc"
+        return BtcEsploraAdapter(raw_store, at_height=HEIGHT, http=BtcReplay(BTC_FIXTURES / "mempool" / BTC_ADDR).client(),
+                                 clock=clock.clock, sleep=clock.sleep)
+    fake = FakeStore()
+    status, conn, logs = run(tmp_path, job({"chain": "btc", "address": BTC_ADDR}), factory, fake)
+    assert status == "done" and fake.snapshots == [("worker:test", HEIGHT)]
+    assert len(fake.transfers) == 154 and "154 transfers (154 new)" in logs[-1]
+    assert fake.recons[0].history_incomplete is False
+
+
+def test_bad_btc_address_fails_at_once(tmp_path):
+    status, conn, _ = run(tmp_path, job({"chain": "btc", "address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb"}),
+                          replay_adapter_for(tmp_path))
+    assert status == "failed" and "checksum mismatch" in conn.sql[-1][1][0]
