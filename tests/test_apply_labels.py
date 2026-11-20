@@ -40,5 +40,5 @@ def test_bitcoin_uses_the_other_side_of_each_transaction():
     assert counterparties("btc", me, rows) == {f1: {"funder"}, f2: {"funder"}, out: {"destination"}}
 
 
-def test_only_ofac_and_the_exchange_file_are_local():
-    assert LOCAL_SOURCES == ("ofac-sdn", "exchange-por")
+def test_only_ofac_and_the_exchange_lists_are_local():
+    assert LOCAL_SOURCES == ("ofac-sdn", "exchange-por", "okx-por")

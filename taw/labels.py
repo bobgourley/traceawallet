@@ -26,6 +26,9 @@ from taw import store
 from taw.adapters.labels.base import LabelClaim, Publication
 
 
+INSERT_CHUNK = 20_000          # rows per INSERT; a whole OKX file is about 500,000
+
+
 @dataclass(frozen=True)
 class SyncResult:
     claims: int
@@ -38,7 +41,7 @@ class SyncResult:
 
 
 _HEADS = """
-SELECT l.id, l.address_id, l.claim_key, l.category, l.label, l.claim_url, l.status::text
+SELECT l.id, l.address_id, l.claim_key, l.category, l.label, l.claim_url, l.status::text, l.source_date
 FROM label l
 WHERE l.source_id = %s AND l.claim_key IS NOT NULL {scope}
   AND NOT EXISTS (SELECT 1 FROM label n WHERE n.supersedes_id = l.id)
@@ -85,8 +88,8 @@ def sync(conn, actor: str, source_slug: str, claims: list[LabelClaim], *, raw_sh
         if only_address:
             scope = "AND l.address_id = %s"
             params.append(ids[only_address])
-        heads = {(a, k): (i, cat, lab, url, status)
-                 for i, a, k, cat, lab, url, status in conn.execute(_HEADS.format(scope=scope), params).fetchall()}
+        heads = {(a, k): (i, cat, lab, url, status, sdate)
+                 for i, a, k, cat, lab, url, status, sdate in conn.execute(_HEADS.format(scope=scope), params).fetchall()}
         seen = set()
         added = changed = withdrawn = 0
         for c in claims:
@@ -95,7 +98,9 @@ def sync(conn, actor: str, source_slug: str, claims: list[LabelClaim], *, raw_sh
                 continue
             seen.add(key)
             head = heads.get(key)
-            if head and head[4] == "asserted" and head[1:4] == (c.category, c.label, c.claim_url):
+            if head and head[4] == "asserted" and head[1] == c.category and head[3] == c.claim_url and (
+                    head[2] == c.label or (c.dated_label and c.source_date and head[5]
+                                           and head[2] == c.label.replace(str(c.source_date), str(head[5])))):
                 continue
             rows.append((key[0], source, c.category, c.label, c.claim_url, c.source_date, observed_at, "asserted",
                          head[0] if head else None, raw_id, c.claim_key))
@@ -103,12 +108,12 @@ def sync(conn, actor: str, source_slug: str, claims: list[LabelClaim], *, raw_sh
                 added += 1
             else:
                 changed += 1
-        for key, (i, cat, lab, url, status) in heads.items():
+        for key, (i, cat, lab, url, status, _) in heads.items():
             if status == "asserted" and key not in seen:
                 rows.append((key[0], source, cat, lab, url, source_date, observed_at, "withdrawn", i, raw_id, key[1]))
                 withdrawn += 1
-        if rows:
-            conn.execute(_INSERT, [list(col) for col in zip(*rows)])
+        for i in range(0, len(rows), INSERT_CHUNK):
+            conn.execute(_INSERT, [list(col) for col in zip(*rows[i:i + INSERT_CHUNK])])
     return SyncResult(len(seen), added, changed, withdrawn)
 
 
@@ -163,7 +168,7 @@ def record_check(conn, actor: str, source_slug: str, chain: str, address: str, *
 # ---------------------------------------------------------------------------
 
 # Answered from our own tables: applying them costs no API calls.
-LOCAL_SOURCES = ("ofac-sdn", "exchange-por")
+LOCAL_SOURCES = ("ofac-sdn", "exchange-por", "okx-por")
 
 
 def counterparties(chain: str, address: str, records) -> dict[str, set[str]]:

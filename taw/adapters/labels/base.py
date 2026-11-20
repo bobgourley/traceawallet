@@ -33,6 +33,10 @@ class LabelClaim:
     source_date: dt.date | None
     claim_url: str | None = None
     raw_sha256: str | None = None
+    # The label text carries source_date ("listed by OKX as its wallet on 2026-11-01").
+    # A reload that says the same thing with a later date keeps the existing row, so
+    # the text keeps the first date it was listed; label_load records each later list.
+    dated_label: bool = False
 
     def __post_init__(self):
         if self.category not in CATEGORIES:
