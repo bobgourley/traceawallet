@@ -3,6 +3,60 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (small hours): Prices: Chainlink at bucket starts
+
+This supersedes "read at the block before the transfer, cached per hour" in the
+2026-11-20 (late) prices entry. Each price is now a time bucket's price, and
+the bucket size depends on age: hourly for transfers in the last 48 hours,
+daily before that. The owner asked for this.
+
+**Where a bucket's price is read.** `latestRoundData()` at the last block at or
+before the bucket's start, found with Blockscout's `getblocknobytime` (closest
+before). The start, not the end, so the price never uses anything after the
+bucket began, and a bucket in progress already has a fixed answer. A transfer
+late in a daily bucket gets a price up to a day older than the transfer. The
+round's `updatedAt`, age and block are stored beside it.
+
+**Feeds.** These were read from the contracts on 2026-11-20 (`description()`,
+`decimals()` = 8):
+
+- ETH/USD, BTC/USD, DAI/USD, USDT/USD and USDC/USD on Ethereum
+- TRX/USD on OP Mainnet
+
+A stablecoin is priced from its own feed, never assumed to be $1. Only an
+issuer's own token gets its feed's price:
+
+- USDT0 on Arbitrum is Tether's, so it is priced as USDT.
+- Bridged USDC.e gets no price.
+- DAI on Ethereum, Arbitrum and OP Mainnet was confirmed on-chain (symbol
+  DAI, 18 decimals).
+
+**No price.** A read gives no price when:
+
+- the call is empty or reverts (the feed didn't exist yet)
+- the round is older than the feed's heartbeat plus a quarter (75 minutes for
+  ETH, BTC and DAI; 30 hours for USDT and TRX; 28 h 45 m for USDC)
+- the answer isn't positive
+
+The read is still stored, with `usd` NULL and the reason, so it isn't paid for
+again. Today's heartbeats are applied to old rounds too. Some early rounds
+(DAI/USD updated once a day in 2020) will show as no price; that is the safe
+side.
+
+**Table.** `price` (0011) is append-only. It holds asset, bucket, status, USD,
+feed chain and address, block, round, `updatedAt`, age, the limit used, the
+`chainlink` source row, and two raw responses (the block lookup and the
+feed read). The raw responses' own source is `blockscout`, which served them.
+
+**Cost, all counted in the Blockscout ledger as the worker.** Each new bucket
+costs one block lookup per feed chain plus one `eth_call` per asset. That's 20
+credits a call, so 2 calls (40 credits) for one asset and one more call for
+each further Ethereum asset in the same bucket. A stored bucket costs nothing
+again, for any lookup. One lookup reads at most `PRICE_MAX_NEW_PER_LOOKUP`
+(default 40) new buckets, newest first: at most 80 calls (1,600 credits, 1.6%
+of the daily allowance). The rest wait for a later lookup. Running out of
+allowance stops pricing; the lookup still completes.
+
 ## 2026-11-20 (late night): Blockscout daily budget
 
 On 2026-11-20 our Blockscout key ran out of credits (HTTP 402, "Out of
