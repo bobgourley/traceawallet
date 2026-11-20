@@ -896,7 +896,8 @@ def okx_publication(raw_store, month, keep=None, extra=()):
     body = (pathlib.Path(__file__).parent / "fixtures" / "okx" / "por_sample.zip").read_bytes()
     sha = raw_store.save("okx-por", exchanges.okx_url(month), None, 200, body + month.isoformat().encode())
     claims, detail = exchanges.parse_okx(body, month, sha)
-    claims = (claims if keep is None else claims[:keep]) + [dataclasses.replace(claims[0], address=a) for a in extra]
+    eth = next(c for c in claims if c.chain == "eth")
+    claims = (claims if keep is None else claims[:keep]) + [dataclasses.replace(eth, address=a) for a in extra]
     return Publication("okx-por", month, sha, claims, detail=detail)
 
 
