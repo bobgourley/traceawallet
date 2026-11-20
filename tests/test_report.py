@@ -389,3 +389,43 @@ def test_the_checklist_mentions_the_bank():
 def test_the_victims_balance_before_and_after():
     text = (rf.FIXTURES / "wdpa-2-26-cv-00087-usdt" / "report_with_match.txt").read_text()
     assert "USDC at this address just before your transfer arrived: 0.041921. Just after: 242,209.45551." in text
+
+
+# -- the web page says what the text says --------------------------------------------------------
+
+def _page_text(html: str) -> str:
+    import html as h
+    blocks = re.sub(r"</?(div|details|summary|h2|header|article)\b[^>]*>", " ", html)
+    return re.sub(r"\s+", " ", h.unescape(re.sub(r"<[^>]+>", "", blocks)))
+
+
+@pytest.mark.parametrize("case", CASES)
+def test_the_html_report_has_every_line_of_the_text_report(case):
+    from taw.report.render import render_html
+    inp, data = built(case)
+    kw = {"sha256": digest(inp, data), "public_id": "00000000-0000-0000-0000-000000000001", "prior_lookups": "none"}
+    text = render_text(data, **kw)
+    page = _page_text(str(render_html(data, **kw)))
+    for line in text.splitlines():
+        s = re.sub(r"\s+", " ", line.strip())
+        if not s or s.startswith("<<<"):
+            continue
+        if s.startswith("== ") and s.endswith(" =="):
+            s = s[3:-3]
+        assert s in page, s
+
+
+def test_the_html_report_escapes_token_names_and_links_only_addresses():
+    from taw.report.render import render_html
+    html = str(render_html(built("wdpa-2-26-cv-00087-usdt")[1]))
+    assert "&lt;U+2063&gt;" in html and "<U+2063>" not in html
+    anchors = re.findall(r"<a [^>]*>[^<]*</a>", html)
+    assert anchors and all(re.search(r'href="(/\?address=|https://)', a) for a in anchors)
+    assert not re.search(r'href="[^"]*(bio\.link|bio\[\.\]link)', html)
+    assert "<script" not in html
+
+
+def test_the_private_section_is_only_rendered_with_a_match():
+    from taw.report.render import render_html
+    _, data = built("wdpa-2-26-cv-00087-usdt")
+    assert "Your transaction" not in str(render_html(data))

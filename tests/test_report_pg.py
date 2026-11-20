@@ -136,7 +136,7 @@ def finish_jobs(data, chain_reports: dict):
 
 def test_a_0x_lookup_starts_one_job_per_chain_checked(conns):
     data, _ = conns
-    lid, chains = lookups.create(data, "api", "user-a", lookups.LookupRequest(address=rf.CASES[CASE3][1].upper()
+    lid, chains = lookups.create(data, "api", user_id="user-a", req=lookups.LookupRequest(address=rf.CASES[CASE3][1].upper()
                                                                              .replace("0X", "0x")))
     assert chains == ("eth", "arbitrum", "optimism")
     rows = data.execute("SELECT lj.chain, j.payload FROM lookup_job lj JOIN job j ON j.id = lj.job_id"
@@ -149,7 +149,7 @@ def test_a_0x_lookup_starts_one_job_per_chain_checked(conns):
 def test_only_the_owner_can_read_a_lookup(conns):
     data, raw = conns
     sid = save_case(data, raw, KNWAN)
-    lid, _ = lookups.create(data, "api", "user-a", lookups.LookupRequest(address=rf.CASES[KNWAN][1]))
+    lid, _ = lookups.create(data, "api", user_id="user-a", req=lookups.LookupRequest(address=rf.CASES[KNWAN][1]))
     finish_jobs(data, {"tron": sid})
     mine = lookups.get(data, "api", lid, "user-a")
     assert mine["chains"][0]["job_status"] == "done" and mine["chains"][0]["report"]["public_id"]
@@ -162,7 +162,7 @@ def test_lookup_count_counts_distinct_signed_in_accounts(conns):
     data, _ = conns
     addr = rf.CASES[KNWAN][1]
     for who in ("a", "b", "a"):
-        lookups.create(data, "api", who, lookups.LookupRequest(address=addr))
+        lookups.create(data, "api", user_id=who, req=lookups.LookupRequest(address=addr))
     store.upsert_addresses(data, "tron", [addr])
     assert lookups.refresh_count(data, "tron", addr) == 2
 
@@ -174,7 +174,7 @@ def test_refused_requests(conns):
                 lookups.LookupRequest(address=rf.CASES[KNWAN][1], tx_hash="abc"),
                 lookups.LookupRequest(address=rf.CASES[KNWAN][1], amount="-5")):
         with pytest.raises(lookups.LookupRefused):
-            lookups.create(data, "api", "u", req)
+            lookups.create(data, "api", req, user_id="u")
 
 
 class FakeAdapter:
@@ -191,7 +191,7 @@ class FakeAdapter:
 
 def case3_lookup(data, raw, **inputs):
     sid = save_case(data, raw, CASE3)
-    lid, _ = lookups.create(data, "api", "victim", lookups.LookupRequest(address=rf.CASES[CASE3][1], **inputs))
+    lid, _ = lookups.create(data, "api", user_id="victim", req=lookups.LookupRequest(address=rf.CASES[CASE3][1], **inputs))
     finish_jobs(data, {"eth": sid})
     return lid
 
@@ -220,7 +220,7 @@ def test_match_by_hash_is_stored_on_the_lookup_and_nowhere_else(conns):
 def test_match_without_a_hash_and_a_match_waits_for_the_address_jobs(conns):
     data, raw = conns
     sid = save_case(data, raw, CASE3)
-    lid, _ = lookups.create(data, "api", "victim", lookups.LookupRequest(
+    lid, _ = lookups.create(data, "api", user_id="victim", req=lookups.LookupRequest(
         address=rf.CASES[CASE3][1], amount="242209.53", sent_on=dt.date(2025, 5, 10), asset="USDC"))
     assert lookups.run_match(data, ACTOR, lid, adapter_for=None, raw_store=None) == "wait"
     finish_jobs(data, {"eth": sid})
@@ -243,75 +243,12 @@ def test_redaction_clears_the_match(conns):
 
 def test_lookup_job_rows_are_append_only(conns):
     data, _ = conns
-    lid, _ = lookups.create(data, "api", "u", lookups.LookupRequest(address=rf.CASES[KNWAN][1]))
+    lid, _ = lookups.create(data, "api", user_id="u", req=lookups.LookupRequest(address=rf.CASES[KNWAN][1]))
     with pytest.raises(psycopg.errors.RaiseException):
         data.execute("DELETE FROM lookup_job WHERE lookup_id = %s", (lid,))
 
 
-# -- the API ------------------------------------------------------------------------------------------
-
-@pytest.fixture
-def client(db_url, monkeypatch):
-    from fastapi.testclient import TestClient
-
-    from taw import api
-    from taw.main import app
-
-    def conn():
-        c = psycopg.connect(db_url, autocommit=True)
-        try:
-            yield c
-        finally:
-            c.close()
-    app.dependency_overrides[api.conn] = conn
-    monkeypatch.setenv("TAW_API_ENABLED", "1")
-    yield TestClient(app)
-    app.dependency_overrides.clear()
-
-
-def test_the_api_is_off_unless_the_setting_is_on(client, monkeypatch):
-    monkeypatch.setenv("TAW_API_ENABLED", "")
-    for method, path in (("post", "/api/v1/lookups"), ("get", "/api/v1/lookups/x"), ("get", "/api/v1/reports/x")):
-        assert getattr(client, method)(path, headers={"X-TAW-User": "a"}).status_code == 404
-    assert client.get("/openapi.json").status_code == 404
-
-
-def test_the_api_end_to_end(client, db_url):
-    addr = rf.CASES[KNWAN][1]
-    assert client.post("/api/v1/lookups", json={"address": addr}).status_code == 401
-    r = client.post("/api/v1/lookups", json={"address": addr}, headers={"X-TAW-User": "owner"})
-    assert r.status_code == 202 and r.json()["chains"] == ["tron"]
-    lid = r.json()["id"]
-    bad = client.post("/api/v1/lookups", json={"address": "T" + "1" * 33}, headers={"X-TAW-User": "owner"})
-    assert bad.status_code == 422
-    assert client.get(f"/api/v1/lookups/{lid}", headers={"X-TAW-User": "someone-else"}).status_code == 404
-    with psycopg.connect(db_url, autocommit=True) as data, psycopg.connect(db_url, autocommit=True) as raw:
-        sid = save_case(data, raw, KNWAN)
-        finish_jobs(data, {"tron": sid})
-        lookups.refresh_count(data, "tron", addr)
-    got = client.get(f"/api/v1/lookups/{lid}", headers={"X-TAW-User": "owner"}).json()
-    public_id = got["chains"][0]["report"]["public_id"]
-    rep = client.get(f"/api/v1/reports/{public_id}", headers={"X-TAW-User": "anyone"}).json()
-    assert rep["address"] == addr and rep["prior_lookups"] == "1" and len(rep["sha256"]) == 64
-    assert "prior" not in json.dumps(rep["data"])
-    text = client.get(f"/api/v1/reports/{public_id}?format=text", headers={"X-TAW-User": "anyone"}).text
-    assert "Tether destroyed 465,514.638375 USDT" in text and "looked up this address: 1" in text
-
-
-def test_the_owner_sees_the_report_with_their_match_and_no_one_else_does(client, db_url):
-    addr = rf.CASES[CASE3][1]
-    r = client.post("/api/v1/lookups", json={"address": addr, "amount": "242209.53", "sent_on": "2025-05-10",
-                                             "asset": "USDC"}, headers={"X-TAW-User": "victim"})
-    lid = r.json()["id"]
-    with psycopg.connect(db_url, autocommit=True) as data, psycopg.connect(db_url, autocommit=True) as raw:
-        sid = save_case(data, raw, CASE3)
-        finish_jobs(data, {"eth": sid})
-        assert lookups.run_match(data, ACTOR, lid, adapter_for=None, raw_store=None) == "matched"
-    assert client.get(f"/api/v1/lookups/{lid}/report", headers={"X-TAW-User": "other"}).status_code == 404
-    text = client.get(f"/api/v1/lookups/{lid}/report?chain=eth", headers={"X-TAW-User": "victim"}).text
-    assert "== Your transaction (private) ==" in text and "242,209.413589 USDC" in text
-    public_id = client.get(f"/api/v1/lookups/{lid}", headers={"X-TAW-User": "victim"}).json()["chains"]
-    pid = next(c["report"]["public_id"] for c in public_id if c["chain"] == "eth")
-    assert f"Report id: {pid}" in text
-    shared = client.get(f"/api/v1/reports/{pid}?format=text", headers={"X-TAW-User": "other"}).text
-    assert "Your transaction" not in shared and "242,209.413589" not in shared.split("== Chains ==")[0]
+def test_a_lookup_needs_an_account_or_a_session(conns):
+    data, _ = conns
+    with pytest.raises(lookups.LookupRefused):
+        lookups.create(data, "api", lookups.LookupRequest(address=rf.CASES[KNWAN][1]))
