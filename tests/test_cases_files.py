@@ -12,7 +12,7 @@ from taw.adapters.chains.tron_address import to_base58 as tron_normalize
 CASES = sorted((pathlib.Path(__file__).parent / "cases").glob("*/expected.json"))
 CHECK_KINDS = {"token_transfer", "token_transfers_total", "token_balance_at", "token_balance_before",
                "token_balance_reached", "balance_now", "btc_balance_in_month", "activated_on",
-               "activated_by_one_address", "token_received_run", "received_share"}
+               "activated_by_one_address", "token_received_run", "received_share", "frozen"}
 
 
 def test_there_are_cases():

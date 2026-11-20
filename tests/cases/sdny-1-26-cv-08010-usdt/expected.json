@@ -284,8 +284,24 @@
       "id": "F12",
       "paragraph": "52",
       "quote": "The Defendants -in-rem were frozen on the below listed dates",
-      "check": null,
-      "not_checkable_reason": "Freeze dates need the stablecoin freeze loader (not built yet)."
+      "check": {
+        "chain": "tron",
+        "kind": "frozen",
+        "token": "USDT",
+        "addresses": [
+          "TGuqbYqJ4m1J8dKWB3NVnsuXtgXCQkgdyf",
+          "TBJT9BP7cM5yYne9kTdf2HNu9mX1WpRQpt",
+          "TTc6TVtmRUpYR9fhZeixsNkJuCMRzFqfcb",
+          "TVmYFoST9AGCoxryWJCfMSa6wB2fzkqm2d",
+          "TSkqigdsdzjzZvAokFNfJBBfHU8HQ7CvAa",
+          "TBxCvqQiCQFJqJRc6GWdJhnwCZv4EDdVaV",
+          "TXW9gwHiB5fr6gCsQjkRErGxWGa9pyCCrz",
+          "TPVZt64P6tkAiVfZBuWdg2ycjPyYkxjxNX",
+          "TPDQC3qpjhAykg87exSVy7LxTcXUvndaxW",
+          "TVrxXvMehX5rkFYYZ2gj3E1RLVMNst8TQH"
+        ],
+        "consequence": "Status is checked; the freeze dates are not, because TronGrid cannot filter Tron USDT's freeze events by address."
+      }
     },
     {
       "id": "F13",

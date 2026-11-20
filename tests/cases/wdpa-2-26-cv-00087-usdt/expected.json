@@ -376,6 +376,20 @@
       "quote": "Address 74bf contained cryptocurrency worth approximately $5,680,000.",
       "check": null,
       "not_checkable_reason": "A US-dollar value with no date: needs the price adapter and a date."
+    },
+    {
+      "id": "F18",
+      "paragraph": "39",
+      "quote": "Tether complied with the warrant and burned the 5,680,000 USDT.",
+      "check": {
+        "chain": "eth",
+        "kind": "frozen",
+        "token": "USDT",
+        "addresses": [
+          "0xC1B68434D0Ef9A78E7f62e3b9850B70B3d0174bf"
+        ],
+        "consequence": "Ethereum USDT can destroy a holder's tokens only through destroyBlackFunds, which requires the address to be blacklisted. So the on-chain consequence checked is that the address is blacklisted; the date is not."
+      }
     }
   ]
 }

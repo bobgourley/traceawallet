@@ -193,8 +193,15 @@
       "id": "F8",
       "paragraph": "46",
       "quote": "On or about November 4, 2024, Tether froze KNWAN at the request of the FBI.",
-      "check": null,
-      "not_checkable_reason": "Freeze status needs the stablecoin freeze loader (not built yet)."
+      "check": {
+        "chain": "tron",
+        "kind": "frozen",
+        "token": "USDT",
+        "addresses": [
+          "TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN"
+        ],
+        "consequence": "Status is checked; the date is not (Tron USDT's freeze events can't be filtered by address)."
+      }
     },
     {
       "id": "F9",
@@ -231,8 +238,15 @@
       "id": "F12",
       "paragraph": "55",
       "quote": "7McvZ was blacklisted by Tether on or about November 4, 2024",
-      "check": null,
-      "not_checkable_reason": "Freeze status needs the stablecoin freeze loader (not built yet)."
+      "check": {
+        "chain": "tron",
+        "kind": "frozen",
+        "token": "USDT",
+        "addresses": [
+          "TH4qXPSp3S5g3HnDr1pgnEq4XAoJh7McvZ"
+        ],
+        "consequence": "Status is checked; the date is not (Tron USDT's freeze events can't be filtered by address)."
+      }
     }
   ]
 }

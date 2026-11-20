@@ -100,6 +100,19 @@ class Chains:
             self.batches[key] = adapter.fetch_transfers(address)
         return self.adapters[key], self.batches[key]
 
+    def tron_adapter(self):
+        if "tron-calls" not in self.adapters:
+            self.adapters["tron-calls"] = TronGridAdapter(LocalRawStore(self.raw_root / "tron-calls"),
+                                                          os.environ.get("TRONGRID_API_KEY"))
+        return self.adapters["tron-calls"]
+
+    def evm_adapter(self, chain: str):
+        key = f"{chain}-calls"
+        if key not in self.adapters:
+            self.adapters[key] = BlockscoutAdapter(chain, LocalRawStore(self.raw_root / key),
+                                                   os.environ["BLOCKSCOUT_API_KEY"], **self.metered())
+        return self.adapters[key]
+
     def history(self, chain: str, address: str):
         return self.tron(address) if chain == "tron" else self.evm(chain, address)
 
@@ -344,6 +357,28 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
         return "NOT FOUND", (f"no run of consecutive receipts among {len(incoming)} adds up to {c['amount']}; the "
                              "complaint does not identify the transfers, so a set that is not consecutive is not "
                              "ruled out")
+    if kind == "frozen":
+        # Status now, from the token contract (taw/adapters/labels/freeze.py). A stated date is
+        # compared only where the contract's freeze event indexes the address.
+        from taw.adapters.labels import freeze
+        token = {"USDT": ("USDT", "USDT0"), "USDC": ("USDC",)}[c["token"]]
+        contract = next(k for k in freeze.contracts_for(c["chain"]) if k.token in token)
+        results = []
+        for a in c["addresses"]:
+            if c["chain"] == "tron":
+                results.append(freeze.check_tron(chains.tron_adapter(), contract, a))
+            else:
+                adapter = chains.evm_adapter(c["chain"])
+                results.append(freeze.check_evm(adapter, contract, a.lower(), adapter.head().number))
+        not_frozen = [f"{r.address}: {r.result.replace('_', ' ')}" for r in results if not r.frozen]
+        where = "at the current head" if c["chain"] == "tron" else f"at block {results[0].block:,}"
+        dates = sorted({r.frozen_since.date().isoformat() for r in results if r.frozen_since})
+        date_text = (f"; frozen since {', '.join(dates)}" if dates else
+                     f"; date not checked ({results[0].date_note.removeprefix('not read: ')})")
+        if not_frozen:
+            return "DIFFERS", f"{contract.token} contract {where}: " + "; ".join(not_frozen)
+        return "CONFIRMED", (f"all {len(results)} address(es) frozen: the {contract.token} contract reports "
+                             f"{contract.function} = true {where}{date_text}")
     raise ValueError(f"unknown check kind {kind}")
 
 

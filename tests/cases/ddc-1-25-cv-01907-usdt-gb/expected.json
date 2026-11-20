@@ -212,8 +212,21 @@
       "id": "F4",
       "paragraph": "172",
       "quote": "On or around November 20, 2023, USSS requested that Tether voluntarily freeze approximately 225 million USDT at the SUBJECT VIRTUAL CURRENCY ADDRESSES",
-      "check": null,
-      "not_checkable_reason": "Freeze status needs the stablecoin freeze loader (not built yet)."
+      "check": {
+        "chain": "eth",
+        "kind": "frozen",
+        "token": "USDT",
+        "addresses": [
+          "0xc7c8f8284c5360d0086a2f0a05bdd07afde23246",
+          "0x564e11ace70bfe6c943a973f1289faa6e8a0fe16",
+          "0xcab9a8391f765f6beda0b5bad434b10985bdaad0",
+          "0x0b5453635e5325f5385ca1643c9e9eb173f9d5a8",
+          "0xc76afbf0f69ae9be5d855239c50673252cf3f26b",
+          "0x99ebaf3661065dc1e44feff4b80365678bdff6ce",
+          "0x82e1d4ddd636857ebcf6a0e74b9b0929c158d7fb"
+        ],
+        "consequence": "The complaint states a request. The on-chain consequence checked is that the seven USDT Token Group addresses are blacklisted now; Ethereum USDT's freeze date is not readable cheaply."
+      }
     },
     {
       "id": "F5",
