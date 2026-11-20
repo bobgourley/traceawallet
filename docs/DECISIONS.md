@@ -3,6 +3,58 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (morning): Labels: stablecoin freeze status
+
+**Function names, from each contract's published code** (2026-11-20). The EVM
+sources are the verified implementations behind each proxy, read through
+Etherscan, plus Blockscout's public explorer for OP Mainnet. The Tron sources
+are the on-chain ABIs, read through TronGrid.
+
+| Chain | Token | Status function | Freeze events | Date cheap? |
+|---|---|---|---|---|
+| Ethereum | USDT (TetherToken) | `isBlackListed(address)` | AddedBlackList / RemovedBlackList, address not indexed | No |
+| Ethereum | USDC (FiatTokenV2_2) | `isBlacklisted(address)` | Blacklisted / UnBlacklisted, indexed | Yes |
+| Arbitrum | USDT0 (ArbitrumExtensionV2) | `isBlocked(address)` | BlockPlaced / BlockReleased, indexed | Yes |
+| Arbitrum | USDC (FiatTokenV2_2) | `isBlacklisted(address)` | indexed | Yes |
+| OP Mainnet | USDC (FiatTokenV2_2) | `isBlacklisted(address)` | indexed | Yes |
+| Tron | USDT (TetherToken) | `isBlackListed(address)` | AddedBlackList / RemovedBlackList | No |
+| Tron | USDC (FiatTokenProxy) | `isBlacklisted(address)` | Blacklisted / UnBlacklisted | No (not built) |
+
+**Status** is one call per contract for the looked-up address. On EVM chains it
+is an `eth_call` at the snapshot block through Blockscout (20 credits each,
+metered). TronGrid can't call at a past block, so on Tron it is read at the
+current head just after the snapshot, and both are recorded. Every question and
+answer goes in `label_check` (0013), "not frozen" included. A frozen address
+also gets a label from `usdt-contract` or `usdc-contract`: "frozen by Tether:
+the USDT contract on Ethereum (0xdac1...) reports isBlackListed = true for this
+address". A call that gives no answer never withdraws an existing freeze label.
+
+**Freeze dates, read only where cheap.**
+
+- Built: USDC on the three EVM chains and USDT0 on Arbitrum. The events index
+  the address, so one `eth_getLogs` up to the snapshot block, plus one block
+  read for the time, finds the last freeze. That is two more calls, and only
+  for a frozen address.
+- Ethereum USDT: the events don't index the address. A date would need a
+  binary search on `isBlackListed` at past blocks, about 25 calls (500
+  credits). Not built.
+- Tron USDT: TronGrid can't filter events by address, and the contract logged
+  more than 6,000 freezes between July and November 2025 alone. Not built.
+- Tron USDC: 1,206 freeze events in all (7 pages of 200), but TronGrid still
+  can't filter them, so it means reading every page each time. Not built; it
+  could be, with a local copy of the events.
+
+**Ground-truth cases.** Five freeze statements are now checks:
+
+- case 3: 74bf is blacklisted, which is the consequence of the burn
+- case 5: the seven USDT groups
+- S.D.N.Y.: the ten addresses
+- D.D.C. 02967: KNWAN and 7McvZ
+
+The Tron ones were confirmed live on 2026-11-20. A never-used Tron address and
+the S.D.N.Y. activating address both read as not frozen, so the call does tell
+the two apart. The Ethereum ones wait for Blockscout's credit reset.
+
 ## 2026-11-20 (small hours): Labels: OFAC SDN list
 
 **One interface for every label source** (`taw/adapters/labels/base.py`, rule

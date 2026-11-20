@@ -242,7 +242,9 @@ Postgres, its volume and the bucket are in US East too. Check with
    transfers' (asset, bucket) pairs into the `price` table, at most 40 new buckets a lookup. Live
    check pending Blockscout's credit reset.
 2. OFAC (branch `ofac`): built. Daily load of the SDN list into `label`; case 4 checked (none listed).
-3. Label loaders: OFAC SDN list, GoPlus (never for Bitcoin; logo and "Powered by GoPlus"),
+3. Freeze status (branch `freeze`): built. USDT/USDC status for the looked-up address after each
+   lookup; dates only where cheap (USDC on EVM, USDT0 on Arbitrum).
+4. Label loaders: OFAC SDN list, GoPlus (never for Bitcoin; logo and "Powered by GoPlus"),
    stablecoin freeze checks, the exchange wallet file.
 3. Transaction matching: find the victim's own transfer from what they entered.
 4. The report.
