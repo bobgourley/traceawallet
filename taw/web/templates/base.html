@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}TraceAWallet{% endblock %}</title>
+{% block robots %}{% endblock %}
+<link rel="stylesheet" href="/static/app.css">
+{% if clerk_host and clerk_key %}
+<script defer crossorigin="anonymous" src="https://{{ clerk_host }}/npm/@clerk/ui@1/dist/ui.browser.js"></script>
+<script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_key }}" src="https://{{ clerk_host }}/npm/@clerk/clerk-js@6/dist/clerk.browser.js"></script>
+{% endif %}
+{% block head %}{% endblock %}
+<script defer src="/static/app.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site">
+  <a class="brand" href="/">TraceAWallet</a>
+  <nav>
+    <a href="/">Look up an address</a>
+    {% if me.signed_in %}
+    <a href="/account">My lookups</a>
+    <button type="button" class="link" id="sign-out">Sign out</button>
+    {% else %}
+    <a href="/sign-in">Sign in</a>
+    {% endif %}
+  </nav>
+</header>
+<main id="main">
+{% block main %}{% endblock %}
+</main>
+<footer class="site">
+  <a href="/about">About</a> <a href="/privacy">Privacy</a> <a href="/terms">Terms</a>
+  <p>TraceAWallet shows what public records say about an address. It cannot recover money.</p>
+</footer>
+</body>
+</html>

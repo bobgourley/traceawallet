@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Your lookup · TraceAWallet{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% if refresh %}<meta http-equiv="refresh" content="{{ refresh }}">{% endif %}{% endblock %}
+{% block main %}
+<h1>Your lookup</h1>
+<p class="addr-line">Address <code class="id">{{ lookup.address }}</code><button type="button" class="copy" data-copy="{{ lookup.address }}" aria-label="Copy {{ lookup.address }}"></button></p>
+
+{% if pending %}
+<section class="status" aria-live="polite">
+  <h2>Reading public records…</h2>
+  <p>This usually takes under a minute, and can take longer for a busy address. This page refreshes by itself.</p>
+  <ul>
+  {% for c in lookup.chains %}
+    <li>{{ c.chain|replace("eth","Ethereum")|replace("arbitrum","Arbitrum One")|replace("optimism","OP Mainnet")|replace("tron","Tron")|replace("btc","Bitcoin") }}: {% if c.job_status == "done" %}done{% elif c.job_status == "failed" %}could not be read{% else %}waiting{% endif %}{% if c.message and c.job_status != "done" %}. {{ c.message }}{% endif %}</li>
+  {% endfor %}
+  </ul>
+</section>
+{% else %}
+{% if lookup.chains|length > 1 %}
+<p>This address format exists on several networks. We checked {{ sections|map(attribute="name")|join(", ") }}; each has its own report below.</p>
+{% endif %}
+{% if not_covered %}
+<p class="note">This site does not cover {{ not_covered[:-1]|join(", ") }}{{ " or " if not_covered|length > 1 }}{{ not_covered[-1] }} yet. If you sent on one of these, this report cannot see it.</p>
+{% endif %}
+{% for s in sections %}
+<section class="chain">
+  <h2 class="chain-name">{{ s.name }}</h2>
+  {% if s.status == "failed" %}
+  <p class="alert">We could not read {{ s.name }}. {{ s.message or "" }}</p>
+  {% elif not s.html %}
+  <p>The report for {{ s.name }} is not ready.</p>
+  {% else %}
+  {% if s.quiet %}<p class="quiet">No activity on {{ s.name }}: this address has no transfers there and holds nothing we recognise.</p>{% endif %}
+  {% if s.quiet %}<details class="quiet-report"><summary>Show the {{ s.name }} report anyway</summary>{{ s.html }}</details>{% else %}{{ s.html }}{% endif %}
+  <p class="share">Shareable link to this report, without your private section: <a href="/reports/{{ s.public_id }}">/reports/{{ s.public_id }}</a></p>
+  {% endif %}
+</section>
+{% endfor %}
+{% endif %}
+{% endblock %}

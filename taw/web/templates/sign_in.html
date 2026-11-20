@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block main %}
+<h1>Sign in to see your results</h1>
+<p>TraceAWallet is open to invited testers only for now.</p>
+<div id="sign-in" data-next="{{ next }}"></div>
+<noscript><p class="alert">Signing in needs JavaScript.</p></noscript>
+{% endblock %}

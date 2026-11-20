@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Privacy · TraceAWallet{% endblock %}
+{% block main %}
+<p class="draft">DRAFT, not yet approved.</p>
+<h1>Privacy</h1>
+<h2>What we keep</h2>
+<ul>
+  <li>Your account: the email address you sign in with, held by our sign-in provider, Clerk.</li>
+  <li>Your lookups: the address you entered and any details you added, such as an amount, a date or a transaction ID. Only you can see these.</li>
+  <li>For limits and abuse prevention: your IP address and browser session, stored only as one-way scrambled codes (salted hashes), never in readable form.</li>
+</ul>
+<h2>What other people can see</h2>
+<p>A report describes an address, not a person. It never shows who looked the address up or what they entered. A report can show a rough count of how many accounts have looked up the same address, in bands such as "2 to 5".</p>
+<h2>Cookies and services</h2>
+<ul>
+  <li>One session cookie of our own, to keep the form secure and to attach a lookup to your account when you sign in.</li>
+  <li>Clerk's cookies, which keep you signed in.</li>
+  <li>Cloudflare Turnstile, which checks that the form is used by a person.</li>
+</ul>
+<p>We use no analytics, advertising or tracking of any kind.</p>
+<h2>Deleting</h2>
+<p>You can delete any lookup from <a href="/account">My lookups</a>. Deleting erases what you entered and the link to your account, and keeps only a record that a lookup of that address happened.</p>
+<h2>Contact</h2>
+<p>[To be added.]</p>
+{% endblock %}

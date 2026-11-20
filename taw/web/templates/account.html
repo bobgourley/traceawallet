@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}My lookups · TraceAWallet{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block main %}
+<h1>My lookups</h1>
+{% if deleted %}<p class="ok" role="status">Deleted. We keep only a record that a lookup of that address happened, with nothing linking it to you.</p>{% endif %}
+{% if lookups %}
+<ul class="mine">
+{% for l in lookups %}
+  <li>
+    <a href="/lookups/{{ l.id }}"><code class="id">{{ l.address }}</code></a>
+    <span class="when">{{ l.created_at[:10] }}</span>
+    <form method="post" action="/account/lookups/{{ l.id }}/delete" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button type="submit" class="danger">Delete</button>
+    </form>
+  </li>
+{% endfor %}
+</ul>
+<p class="hint">Deleting removes a lookup from your account and erases what you entered with it, such as amounts, dates and transaction IDs. We keep only a record that a lookup of that address happened, with nothing linking it to you. Reports describe addresses, not people, and stay available.</p>
+{% else %}
+<p>You have no lookups yet. <a href="/">Look up an address</a>.</p>
+{% endif %}
+{% endblock %}
