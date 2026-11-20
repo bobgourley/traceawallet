@@ -1,0 +1,1207 @@
+{
+ "data": {
+  "activity": {
+   "assets": [
+    {
+     "asset": "USDC",
+     "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "decimals": 6,
+     "in": {
+      "count": 11,
+      "total": "387152.909159",
+      "total_raw": "387152909159",
+      "unpriced": 11,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "odd_characters": [],
+     "out": {
+      "count": 16,
+      "total": "387152.909159",
+      "total_raw": "387152909159",
+      "unpriced": 16,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": true,
+     "symbol": "USDC"
+    },
+    {
+     "asset": "ETH",
+     "contract": null,
+     "decimals": 18,
+     "in": {
+      "count": 2,
+      "total": "0.001025815245451354",
+      "total_raw": "1025815245451354",
+      "unpriced": 2,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "native",
+     "odd_characters": [],
+     "out": {
+      "count": 1,
+      "total": "0.000548913764598892",
+      "total_raw": "548913764598892",
+      "unpriced": 1,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": true,
+     "symbol": "ETH"
+    }
+   ],
+   "first_activity": "2025-04-10T02:55:11Z",
+   "last_activity": "2025-08-20T04:58:35Z",
+   "transfers_in": 14,
+   "transfers_out": 43,
+   "unpriced_assets": [
+    "ETH",
+    "USDC"
+   ],
+   "unrecognised_more": 0,
+   "unrecognised_tokens": [
+    {
+     "asset": null,
+     "contract": "0xa5a687485a3f24c371a89142d11524853238e92c",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0xa5a687485a3f24c371a89142d11524853238e92c",
+     "odd_characters": [],
+     "out": {
+      "count": 5,
+      "total": "168000",
+      "total_raw": "168000000000",
+      "unpriced": 5,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "USDC"
+    },
+    {
+     "asset": null,
+     "contract": "0xbe51628936610e1c54ee627d6d0249c3e1bb89a0",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0xbe51628936610e1c54ee627d6d0249c3e1bb89a0",
+     "odd_characters": [],
+     "out": {
+      "count": 5,
+      "total": "154979.56442",
+      "total_raw": "154979564420",
+      "unpriced": 5,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "USDC"
+    },
+    {
+     "asset": null,
+     "contract": "0x40f145f96cbc90b5387a851150c18db939fca821",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0x40f145f96cbc90b5387a851150c18db939fca821",
+     "odd_characters": [],
+     "out": {
+      "count": 3,
+      "total": "147000",
+      "total_raw": "147000000000",
+      "unpriced": 3,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "USDC"
+    },
+    {
+     "asset": null,
+     "contract": "0x4a5103510c7fddf4e398175b2aa7a397c2294fa0",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0x4a5103510c7fddf4e398175b2aa7a397c2294fa0",
+     "odd_characters": [
+      "U+0421"
+     ],
+     "out": {
+      "count": 2,
+      "total": "19927.778458",
+      "total_raw": "19927778458",
+      "unpriced": 2,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "USDС"
+    },
+    {
+     "asset": null,
+     "contract": "0x7f3c4d5b31316ff06d845a121ceb7a973b4717d7",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0x7f3c4d5b31316ff06d845a121ceb7a973b4717d7",
+     "odd_characters": [
+      "U+2063",
+      "U+206F",
+      "U+200E",
+      "U+0421",
+      "U+206A"
+     ],
+     "out": {
+      "count": 2,
+      "total": "70000",
+      "total_raw": "70000000000",
+      "unpriced": 2,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "<U+2063>U<U+2063>S<U+206F>D<U+200E>С<U+206A><U+206A>"
+    },
+    {
+     "asset": null,
+     "contract": "0xacba164135904dc63c5418b57ff87efd341d7c80",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0xacba164135904dc63c5418b57ff87efd341d7c80",
+     "odd_characters": [
+      "U+0421"
+     ],
+     "out": {
+      "count": 2,
+      "total": "30000",
+      "total_raw": "30000000000",
+      "unpriced": 2,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "USDС"
+    },
+    {
+     "asset": null,
+     "contract": "0x26a7a3ce145d5c9904c5dd20b47b349db5f06420",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0x26a7a3ce145d5c9904c5dd20b47b349db5f06420",
+     "odd_characters": [
+      "U+0421"
+     ],
+     "out": {
+      "count": 1,
+      "total": "15000",
+      "total_raw": "15000000000",
+      "unpriced": 1,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "USDС"
+    },
+    {
+     "asset": null,
+     "contract": "0x80c39db187435c1d432b3837ccaf19c9c2bf89ae",
+     "decimals": 0,
+     "in": {
+      "count": 1,
+      "total": "1",
+      "total_raw": "1",
+      "unpriced": 1,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0x80c39db187435c1d432b3837ccaf19c9c2bf89ae",
+     "odd_characters": [],
+     "out": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "Swap your Voucher on bio.link/shibax"
+    },
+    {
+     "asset": null,
+     "contract": "0x888d534385a3727f3bbd2f4e8c3fc322a9cfdbd2",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0x888d534385a3727f3bbd2f4e8c3fc322a9cfdbd2",
+     "odd_characters": [],
+     "out": {
+      "count": 1,
+      "total": "979.56442",
+      "total_raw": "979564420",
+      "unpriced": 1,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "USDC"
+    },
+    {
+     "asset": null,
+     "contract": "0x92a95554c79cf02171fab3112f2b2246481b8cf5",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0x92a95554c79cf02171fab3112f2b2246481b8cf5",
+     "odd_characters": [
+      "U+0421"
+     ],
+     "out": {
+      "count": 1,
+      "total": "230000",
+      "total_raw": "230000000000",
+      "unpriced": 1,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "USDС"
+    },
+    {
+     "asset": null,
+     "contract": "0xa62d50a0fff76cfbaea2fcd493b888d5dafffd8e",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0xa62d50a0fff76cfbaea2fcd493b888d5dafffd8e",
+     "odd_characters": [
+      "U+2063"
+     ],
+     "out": {
+      "count": 1,
+      "total": "15000",
+      "total_raw": "15000000000",
+      "unpriced": 1,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "<U+2063>U<U+2063><U+2063>S<U+2063><U+2063>DC"
+    },
+    {
+     "asset": null,
+     "contract": "0xb9900eebe0105fe719f2b474758f99fe63232a74",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0xb9900eebe0105fe719f2b474758f99fe63232a74",
+     "odd_characters": [
+      "U+200D",
+      "U+200E",
+      "U+2064",
+      "U+206D",
+      "U+0421",
+      "U+200C",
+      "U+2062"
+     ],
+     "out": {
+      "count": 1,
+      "total": "49000",
+      "total_raw": "49000000000",
+      "unpriced": 1,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "<U+200D>U<U+200E>S<U+2064>D<U+206D>С<U+200C><U+2062>"
+    },
+    {
+     "asset": null,
+     "contract": "0xe6a73a771d11c4bf00ebb26f5909e83b0ab3cec1",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0xe6a73a771d11c4bf00ebb26f5909e83b0ab3cec1",
+     "odd_characters": [
+      "U+054D",
+      "U+0421"
+     ],
+     "out": {
+      "count": 1,
+      "total": "12209.45551",
+      "total_raw": "12209455510",
+      "unpriced": 1,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "ՍSDС"
+    },
+    {
+     "asset": null,
+     "contract": "0xfc593c767713859f060570a3376ff4f5669c89f8",
+     "decimals": 6,
+     "in": {
+      "count": 0,
+      "total": "0",
+      "total_raw": "0",
+      "unpriced": 0,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "0xfc593c767713859f060570a3376ff4f5669c89f8",
+     "odd_characters": [],
+     "out": {
+      "count": 1,
+      "total": "35000",
+      "total_raw": "35000000000",
+      "unpriced": 1,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": false,
+     "symbol": "USDC"
+    }
+   ],
+   "unrecognised_transfers": 27
+  },
+  "completeness": {
+   "before_history": null,
+   "checked": true,
+   "checks": [
+    {
+     "marks_incomplete": true,
+     "name": "stablecoin_reconciliation",
+     "reason": null,
+     "status": "passed"
+    },
+    {
+     "marks_incomplete": false,
+     "name": "other_token_reconciliation",
+     "reason": "token 0x26a7a3ce145d5c9904c5dd20b47b349db5f06420 does not reconcile: balance 900000, transfers in minus out -15000000000; token 0x40f145f96cbc90b5387a851150c18db939fca821 does not reconcile: balance 9894006808399627, transfers in minus out -147000000000; token 0x4a5103510c7fddf4e398175b2aa7a397c2294fa0 does not reconcile: balance 77378917504735481029220351089508776673704044996325672990185598960726991720929, transfers in minus out -19927778458; token 0x7f3c4d5b31316ff06d845a121ceb7a973b4717d7 does not reconcile: balance 900000, transfers in minus out -70000000000; token 0x888d534385a3727f3bbd2f4e8c3fc322a9cfdbd2 does not reconcile: balance 22012981719283870, transfers in minus out -979564420; token 0x92a95554c79cf02171fab3112f2b2246481b8cf5 does not reconcile: balance 77378917504735481029220351089508776673704044996325672990185598960726991720929, transfers in minus out -230000000000; token 0xa5a687485a3f24c371a89142d11524853238e92c does not reconcile: balance 0, transfers in minus out -168000000000; token 0xa62d50a0fff76cfbaea2fcd493b888d5dafffd8e does not reconcile: balance 900000, transfers in minus out -15000000000; token 0xacba164135904dc63c5418b57ff87efd341d7c80 does not reconcile: balance 900000, transfers in minus out -30000000000; token 0xb9900eebe0105fe719f2b474758f99fe63232a74 does not reconcile: balance 900000, transfers in minus out -49000000000; token 0xbe51628936610e1c54ee627d6d0249c3e1bb89a0 does not reconcile: balance 0, transfers in minus out -154979564420; token 0xe6a73a771d11c4bf00ebb26f5909e83b0ab3cec1 does not reconcile: balance 77378917504735481029220351089508776673704044996325672990185598960726991720929, transfers in minus out -12209455510; token 0xfc593c767713859f060570a3376ff4f5669c89f8 does not reconcile: balance 3734768537662006, transfers in minus out -35000000000",
+     "status": "failed"
+    },
+    {
+     "marks_incomplete": true,
+     "name": "native_reconciliation",
+     "reason": null,
+     "status": "passed"
+    },
+    {
+     "marks_incomplete": true,
+     "name": "tx_count",
+     "reason": null,
+     "status": "passed"
+    },
+    {
+     "marks_incomplete": true,
+     "name": "token_list_matches_logs",
+     "reason": null,
+     "status": "passed"
+    }
+   ],
+   "history_incomplete": false,
+   "incomplete_reasons": [],
+   "internal": {
+    "from_block": 0,
+    "full": true,
+    "to_block": 26458160
+   },
+   "not_read": [
+    "evm_nft"
+   ],
+   "stablecoins": [
+    {
+     "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "destroyed": false,
+     "reason": null,
+     "stablecoin": true,
+     "status": "reconciled",
+     "symbol": "USDC"
+    }
+   ],
+   "tokens_truncated": false,
+   "transfers": {
+    "oldest_read": "2025-04-10T02:55:11Z",
+    "read": 56,
+    "truncated": false
+   }
+  },
+  "first_hop": {
+   "destinations": [
+    {
+     "address": "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+     "asset": "USDC",
+     "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "count": 5,
+     "first": "2025-05-10T02:29:47Z",
+     "labels": [],
+     "last": "2025-07-28T01:31:11Z",
+     "lookalikes": [
+      "0x584271dd01f59acf382c3a50cef580c679de99a1",
+      "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+      "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+      "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+     ],
+     "symbol": "USDC",
+     "total": "327189.01993",
+     "total_raw": "327189019930",
+     "usd": null
+    },
+    {
+     "address": "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
+     "asset": "USDC",
+     "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "count": 2,
+     "first": "2025-04-12T03:15:23Z",
+     "labels": [],
+     "last": "2025-04-20T03:36:59Z",
+     "lookalikes": [
+      "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
+      "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
+     ],
+     "symbol": "USDC",
+     "total": "24963.889229",
+     "total_raw": "24963889229",
+     "usd": null
+    },
+    {
+     "address": "0x741093cba553d88f60c708f102eaa1fc1f06e217",
+     "asset": "ETH",
+     "contract": null,
+     "count": 1,
+     "first": "2025-07-25T01:25:35Z",
+     "labels": [],
+     "last": "2025-07-25T01:25:35Z",
+     "lookalikes": [],
+     "symbol": "ETH",
+     "total": "0.000548913764598892",
+     "total_raw": "548913764598892",
+     "usd": null
+    }
+   ],
+   "destinations_more": 0,
+   "distinct_senders": 9,
+   "first_funder": {
+    "addresses": [
+     "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43"
+    ],
+    "amount": "24963.889229",
+    "block": 22235668,
+    "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "labels": {},
+    "recognised": true,
+    "symbol": "USDC",
+    "time": "2025-04-10T02:55:11Z",
+    "tx_hash": "0xfdbf75a1030c3231039a9184e06c4b6acde6ee23493035f575ad46c3669f6d97"
+   },
+   "funders": [
+    {
+     "address": "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43",
+     "asset": "USDC",
+     "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "count": 4,
+     "first": "2025-04-10T02:55:11Z",
+     "labels": [],
+     "last": "2025-07-01T04:56:11Z",
+     "lookalikes": [],
+     "symbol": "USDC",
+     "total": "352152.857618",
+     "total_raw": "352152857618",
+     "usd": null
+    },
+    {
+     "address": "0xa4d4c94f77ec6a516eee65249f99523098e9548e",
+     "asset": "ETH",
+     "contract": null,
+     "count": 1,
+     "first": "2025-04-12T03:13:59Z",
+     "labels": [],
+     "last": "2025-04-12T03:13:59Z",
+     "lookalikes": [],
+     "symbol": "ETH",
+     "total": "0.001",
+     "total_raw": "1000000000000000",
+     "usd": null
+    }
+   ],
+   "funders_more": 0
+  },
+  "header": {
+   "address": "0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9",
+   "as_of_block": 26458160,
+   "as_of_time": "2026-11-20T18:40:59Z",
+   "chain": "eth",
+   "chain_name": "Ethereum",
+   "chain_source": {
+    "attribution": "Powered by Etherscan.io APIs",
+    "name": "Etherscan API V2",
+    "slug": "etherscan"
+   },
+   "evm_coverage": {
+    "checked": [
+     {
+      "chain": "eth",
+      "name": "Ethereum"
+     },
+     {
+      "chain": "arbitrum",
+      "name": "Arbitrum One"
+     },
+     {
+      "chain": "optimism",
+      "name": "OP Mainnet"
+     }
+    ],
+    "not_checked": [
+     {
+      "chain": "bsc",
+      "name": "BNB Smart Chain",
+      "reason": "no_source_with_suitable_terms"
+     },
+     {
+      "chain": "polygon",
+      "name": "Polygon",
+      "reason": "needs_paid_blockscout_plan"
+     },
+     {
+      "chain": "base",
+      "name": "Base",
+      "reason": "needs_paid_blockscout_plan"
+     }
+    ],
+    "this_chain": "eth"
+   },
+   "fetched_at": "2026-11-20T18:41:29Z",
+   "is_contract": false,
+   "labels_as_of": "2026-11-20T18:41:39Z",
+   "sources": [
+    {
+     "attribution": "Powered by Etherscan.io APIs",
+     "kind": "chain_data",
+     "name": "Etherscan API V2",
+     "slug": "etherscan",
+     "url": "https://etherscan.io"
+    },
+    {
+     "attribution": "Powered by GoPlus (shown with the GoPlus logo; results unmodified); a flag reads \"flagged by GoPlus\"",
+     "kind": "label",
+     "name": "GoPlus Security",
+     "slug": "goplus",
+     "url": "https://gopluslabs.io"
+    },
+    {
+     "attribution": "frozen by Circle",
+     "kind": "onchain",
+     "name": "Circle USDC contract state",
+     "slug": "usdc-contract",
+     "url": "https://www.circle.com"
+    },
+    {
+     "attribution": "frozen by Tether",
+     "kind": "onchain",
+     "name": "Tether USDT contract state",
+     "slug": "usdt-contract",
+     "url": "https://tether.to"
+    }
+   ]
+  },
+  "holdings": {
+   "freezable": {
+    "held": [],
+    "share_percent": null,
+    "share_status": "missing_prices",
+    "unpriced": [
+     "ETH"
+    ]
+   },
+   "freeze": [
+    {
+     "block": 26458160,
+     "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+     "date_note": null,
+     "destructions": [],
+     "function": "isBlackListed",
+     "issuer": "Tether",
+     "read_at": "2026-11-20T18:41:34Z",
+     "since": null,
+     "since_block": null,
+     "since_tx": null,
+     "status": "not_frozen",
+     "token": "USDT"
+    },
+    {
+     "block": 26458160,
+     "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "date_note": null,
+     "destructions": [],
+     "function": "isBlacklisted",
+     "issuer": "Circle",
+     "read_at": "2026-11-20T18:41:34Z",
+     "since": null,
+     "since_block": null,
+     "since_tx": null,
+     "status": "not_frozen",
+     "token": "USDC"
+    }
+   ],
+   "native": {
+    "amount": "0.000012672133499994",
+    "amount_raw": "12672133499994",
+    "decimals": 18,
+    "price_status": "not_read",
+    "symbol": "ETH",
+    "usd": null
+   },
+   "ofac": {
+    "labels": [],
+    "list_date": "2026-11-19",
+    "listed": false
+   },
+   "tokens": [
+    {
+     "amount": "0.9",
+     "amount_raw": "900000",
+     "asset": null,
+     "contract": "0x26a7a3ce145d5c9904c5dd20b47b349db5f06420",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [
+      "U+0421"
+     ],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "USDС",
+     "usd": null
+    },
+    {
+     "amount": "9894006808.399627",
+     "amount_raw": "9894006808399627",
+     "asset": null,
+     "contract": "0x40f145f96cbc90b5387a851150c18db939fca821",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "USDC",
+     "usd": null
+    },
+    {
+     "amount": "77378917504735481029220351090000000000000000000000000000000000000000000",
+     "amount_raw": "77378917504735481029220351089508776673704044996325672990185598960726991720929",
+     "asset": null,
+     "contract": "0x4a5103510c7fddf4e398175b2aa7a397c2294fa0",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [
+      "U+0421"
+     ],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "USDС",
+     "usd": null
+    },
+    {
+     "amount": "0.9",
+     "amount_raw": "900000",
+     "asset": null,
+     "contract": "0x7f3c4d5b31316ff06d845a121ceb7a973b4717d7",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [
+      "U+2063",
+      "U+206F",
+      "U+200E",
+      "U+0421",
+      "U+206A"
+     ],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "<U+2063>U<U+2063>S<U+206F>D<U+200E>С<U+206A><U+206A>",
+     "usd": null
+    },
+    {
+     "amount": "1",
+     "amount_raw": "1",
+     "asset": null,
+     "contract": "0x80c39db187435c1d432b3837ccaf19c9c2bf89ae",
+     "decimals": 0,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "Swap your Voucher on bio.link/shibax",
+     "usd": null
+    },
+    {
+     "amount": "22012981719.28387",
+     "amount_raw": "22012981719283870",
+     "asset": null,
+     "contract": "0x888d534385a3727f3bbd2f4e8c3fc322a9cfdbd2",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "USDC",
+     "usd": null
+    },
+    {
+     "amount": "77378917504735481029220351090000000000000000000000000000000000000000000",
+     "amount_raw": "77378917504735481029220351089508776673704044996325672990185598960726991720929",
+     "asset": null,
+     "contract": "0x92a95554c79cf02171fab3112f2b2246481b8cf5",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [
+      "U+0421"
+     ],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "USDС",
+     "usd": null
+    },
+    {
+     "amount": "0.9",
+     "amount_raw": "900000",
+     "asset": null,
+     "contract": "0xa62d50a0fff76cfbaea2fcd493b888d5dafffd8e",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [
+      "U+2063"
+     ],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "<U+2063>U<U+2063><U+2063>S<U+2063><U+2063>DC",
+     "usd": null
+    },
+    {
+     "amount": "0.9",
+     "amount_raw": "900000",
+     "asset": null,
+     "contract": "0xacba164135904dc63c5418b57ff87efd341d7c80",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [
+      "U+0421"
+     ],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "USDС",
+     "usd": null
+    },
+    {
+     "amount": "0.9",
+     "amount_raw": "900000",
+     "asset": null,
+     "contract": "0xb9900eebe0105fe719f2b474758f99fe63232a74",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [
+      "U+200D",
+      "U+200E",
+      "U+2064",
+      "U+206D",
+      "U+0421",
+      "U+200C",
+      "U+2062"
+     ],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "<U+200D>U<U+200E>S<U+2064>D<U+206D>С<U+200C><U+2062>",
+     "usd": null
+    },
+    {
+     "amount": "77378917504735481029220351090000000000000000000000000000000000000000000",
+     "amount_raw": "77378917504735481029220351089508776673704044996325672990185598960726991720929",
+     "asset": null,
+     "contract": "0xe6a73a771d11c4bf00ebb26f5909e83b0ab3cec1",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [
+      "U+054D",
+      "U+0421"
+     ],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "ՍSDС",
+     "usd": null
+    },
+    {
+     "amount": "3734768537.662006",
+     "amount_raw": "3734768537662006",
+     "asset": null,
+     "contract": "0xfc593c767713859f060570a3376ff4f5669c89f8",
+     "decimals": 6,
+     "freezable": false,
+     "issuer": null,
+     "odd_characters": [],
+     "price_status": "no_feed",
+     "recognised": false,
+     "symbol": "USDC",
+     "usd": null
+    }
+   ],
+   "tokens_truncated": false,
+   "unrecognised_count": 12
+  },
+  "labels": {
+   "address": [],
+   "counterparties_checked_against": [
+    "ofac-sdn",
+    "exchange-por",
+    "okx-por"
+   ],
+   "goplus": {
+    "data_source": null,
+    "flags": [],
+    "read_at": "2026-11-20T18:41:34Z",
+    "status": "no_flags"
+   },
+   "list_dates": {
+    "exchange-por": "2026-11-10",
+    "ofac-sdn": "2026-11-19",
+    "okx-por": "2026-11-01"
+   }
+  },
+  "links": {
+   "arkham": "https://intel.arkm.com/explorer/address/0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9",
+   "chainabuse": "https://www.chainabuse.com/address/0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9",
+   "explorer": {
+    "name": "etherscan.io",
+    "url": "https://etherscan.io/address/0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9"
+   }
+  },
+  "set_apart": {
+   "tiny": {
+    "count": 7,
+    "more": 0,
+    "rows": [
+     {
+      "amount": "0.000025815245451354",
+      "contract": null,
+      "counterparty": "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
+      "direction": "in",
+      "lookalikes": [
+       "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
+       "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
+      ],
+      "symbol": "ETH",
+      "time": "2025-07-28T01:30:35Z",
+      "tx_hash": "0x7c2bf72158d43b6e591d1bdda7c89273c835240e9701286d9771aec88ec64a8d"
+     },
+     {
+      "amount": "0.0035",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+      "direction": "in",
+      "lookalikes": [
+       "0x584271dd01f59acf382c3a50cef580c679de99a1",
+       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-07-13T12:38:23Z",
+      "tx_hash": "0x957d2088f81d0e2ba08d975b8bc5a15df25cd8c3b367aa7f89bbd57637ab38f1"
+     },
+     {
+      "amount": "0.0049",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+      "direction": "in",
+      "lookalikes": [
+       "0x584271dd01f59acf382c3a50cef580c679de99a1",
+       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-06-29T02:50:23Z",
+      "tx_hash": "0x13073e4e58b3387d95e9e5e51000f41c233f35a78b68ce369e314ac61a827687"
+     },
+     {
+      "amount": "0.00122",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0x584271dd01f59acf382c3a50cef580c679de99a1",
+      "direction": "in",
+      "lookalikes": [
+       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-05-18T03:53:23Z",
+      "tx_hash": "0x76ac6ea9a7c6816b855a0b47951d600aecbbefc955ee8ac376a822403e474141"
+     },
+     {
+      "amount": "0.001996",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
+      "direction": "in",
+      "lookalikes": [
+       "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
+       "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
+      ],
+      "symbol": "USDC",
+      "time": "2025-04-20T04:07:59Z",
+      "tx_hash": "0x153612645413989db736c868311ee852c83fa2c0597db741a47664671ba0893c"
+     },
+     {
+      "amount": "0.019962",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0xb951fd8437f2b079fe0a8f946515b5928222ffa9",
+      "direction": "in",
+      "lookalikes": [
+       "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
+       "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9"
+      ],
+      "symbol": "USDC",
+      "time": "2025-04-20T04:05:11Z",
+      "tx_hash": "0xa43f24c45bfa5903a688022e55af2e1a6859c68eb6961cb610f467d801033b7d"
+     },
+     {
+      "amount": "0.019963",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
+      "direction": "in",
+      "lookalikes": [
+       "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
+       "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
+      ],
+      "symbol": "USDC",
+      "time": "2025-04-20T03:40:23Z",
+      "tx_hash": "0x071c14191056280344963283b838d26ba76dae67032baab9301095023cad69fb"
+     }
+    ]
+   },
+   "zero": {
+    "count": 9,
+    "more": 0,
+    "rows": [
+     {
+      "amount": "0",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+      "direction": "out",
+      "lookalikes": [
+       "0x584271dd01f59acf382c3a50cef580c679de99a1",
+       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-07-28T01:33:11Z",
+      "tx_hash": "0x4ed19f051bafa0eccfe945175872edac3025b12ff75ed33d53e60d1332d25ef7"
+     },
+     {
+      "amount": "0",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+      "direction": "out",
+      "lookalikes": [
+       "0x584271dd01f59acf382c3a50cef580c679de99a1",
+       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-07-11T23:31:47Z",
+      "tx_hash": "0x0861ef6d3205b9c1e5bcf9649b4895e7b4e0f758b4e11c1a2d876247971d7d7b"
+     },
+     {
+      "amount": "0",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0xfa0ac3c12f1d55706fe78b8c1407edee2f5e33a9",
+      "direction": "out",
+      "lookalikes": [],
+      "symbol": "USDC",
+      "time": "2025-07-11T23:28:47Z",
+      "tx_hash": "0x3296c4ed622df7081c7db12274c4fe50f6f51eae07cc1651f1ee269c51e219dc"
+     },
+     {
+      "amount": "0",
+      "contract": "0xa5a687485a3f24c371a89142d11524853238e92c",
+      "counterparty": "0x584271dd01f59acf382c3a50cef580c679de99a1",
+      "direction": "out",
+      "lookalikes": [
+       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-06-29T02:39:11Z",
+      "tx_hash": "0xeb9df264678202b7509a2907f31ae3cff45852e5f9626fde65a112c9f4df9de1"
+     },
+     {
+      "amount": "0",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+      "direction": "out",
+      "lookalikes": [
+       "0x584271dd01f59acf382c3a50cef580c679de99a1",
+       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-06-29T02:38:47Z",
+      "tx_hash": "0x6f5fcdddb3dfd5d573e39af42d5bcd87d6b6cbd61a936bb1f55a89ccefef84ee"
+     },
+     {
+      "amount": "0",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+      "direction": "out",
+      "lookalikes": [
+       "0x584271dd01f59acf382c3a50cef580c679de99a1",
+       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-05-18T03:55:23Z",
+      "tx_hash": "0x4880ff56be81d60cda455a6c7441e27ff25f4cdecf1b1db32f9bacaed12d5e4b"
+     },
+     {
+      "amount": "0",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+      "direction": "out",
+      "lookalikes": [
+       "0x584271dd01f59acf382c3a50cef580c679de99a1",
+       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-05-10T02:33:59Z",
+      "tx_hash": "0x4b0cabf5efcbcf108d8678d8f8734dd7b4182c86088771ae061b7a954a1376a5"
+     },
+     {
+      "amount": "0",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0x5842eaa23779d00bb3c68119ba2123d5096599a1",
+      "direction": "out",
+      "lookalikes": [
+       "0x584271dd01f59acf382c3a50cef580c679de99a1",
+       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1"
+      ],
+      "symbol": "USDC",
+      "time": "2025-05-10T02:33:23Z",
+      "tx_hash": "0x9896f0c3f18dc3c44149c0fe94c9d1f6777d572959d12c13c06a62a4a9f246f6"
+     },
+     {
+      "amount": "0",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "counterparty": "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
+      "direction": "out",
+      "lookalikes": [
+       "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
+       "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
+      ],
+      "symbol": "USDC",
+      "time": "2025-04-20T03:40:11Z",
+      "tx_hash": "0xa39526c0d685a5a715478ec1a7cddc5d0049806bc6547f6cbb658773bd46b601"
+     }
+    ]
+   }
+  }
+ },
+ "sha256": "7e289deda71d8a2d5842dae04dbe4537ba577f52c41b44c2040250fd67416744"
+}

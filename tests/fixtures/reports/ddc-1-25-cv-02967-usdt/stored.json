@@ -1,0 +1,140 @@
+{
+ "blacklist_coverage": {
+  "TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8": 88173811,
+  "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t": 88173787
+ },
+ "blacklist_events": [
+  {
+   "action": "freeze",
+   "amount_raw": null,
+   "block": 66699054,
+   "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+   "event_name": "AddedBlackList",
+   "log_index": 1,
+   "time": "2024-11-04T18:55:48Z",
+   "token": "USDT",
+   "tx_hash": "a3e73759098f09f7547b30286fd6f87570a1f9288487702375b65a41420f6642"
+  },
+  {
+   "action": "destroy",
+   "amount_raw": "465514638375",
+   "block": 70939306,
+   "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+   "event_name": "DestroyedBlackFunds",
+   "log_index": 1,
+   "time": "2025-04-01T01:34:12Z",
+   "token": "USDT",
+   "tx_hash": "d5cbc559c41e460159b793649b8c5f40eba583f4c50d62252b2ba11399060145"
+  }
+ ],
+ "counterparty_labels": {
+  "TM1zzNDZD2DPASbKcgdVoTYhfmYgtfwx9R": [
+   {
+    "category": "exchange",
+    "claim_url": "https://www.okx.com/en-us/proof-of-reserves/download",
+    "label": "listed by OKX as its wallet on 2026-11-01 (type in OKX's file: Non Staking)",
+    "observed_at": "2026-11-20T14:22:19Z",
+    "source": "okx-por",
+    "source_date": "2026-11-01"
+   }
+  ]
+ },
+ "labels": [],
+ "list_dates": {
+  "exchange-por": "2026-11-10",
+  "ofac-sdn": "2026-11-19",
+  "okx-por": "2026-11-01"
+ },
+ "sources": {
+  "blockscout": {
+   "attribution": "Blockscout",
+   "kind": "chain_data",
+   "name": "Blockscout PRO API",
+   "url": "https://blockscout.com"
+  },
+  "blockstream": {
+   "attribution": "Blockstream",
+   "kind": "chain_data",
+   "name": "Blockstream Esplora API",
+   "url": "https://blockstream.info"
+  },
+  "chainlink": {
+   "attribution": "USD value estimated from a Chainlink price feed; approximate, not an exchange price; not affiliated with or endorsed by Chainlink",
+   "kind": "price",
+   "name": "Chainlink price feeds (read on-chain)",
+   "url": "https://data.chain.link"
+  },
+  "defillama": {
+   "attribution": "DefiLlama",
+   "kind": "price",
+   "name": "DefiLlama",
+   "url": "https://defillama.com"
+  },
+  "etherscan": {
+   "attribution": "Powered by Etherscan.io APIs",
+   "kind": "chain_data",
+   "name": "Etherscan API V2",
+   "url": "https://etherscan.io"
+  },
+  "exchange-por": {
+   "attribution": "listed by <exchange> as its wallet",
+   "kind": "manual",
+   "name": "Exchange wallet lists (data/exchange_wallets.csv)",
+   "url": null
+  },
+  "goplus": {
+   "attribution": "Powered by GoPlus (shown with the GoPlus logo; results unmodified); a flag reads \"flagged by GoPlus\"",
+   "kind": "label",
+   "name": "GoPlus Security",
+   "url": "https://gopluslabs.io"
+  },
+  "mempool-space": {
+   "attribution": "mempool.space",
+   "kind": "chain_data",
+   "name": "mempool.space",
+   "url": "https://mempool.space"
+  },
+  "moralis": {
+   "attribution": "Moralis",
+   "kind": "chain_data",
+   "name": "Moralis",
+   "url": "https://moralis.com"
+  },
+  "nbctf": {
+   "attribution": "named in an NBCTF seizure order",
+   "kind": "sanctions",
+   "name": "Israel NBCTF seizure orders",
+   "url": "https://matal.mod.gov.il"
+  },
+  "ofac-sdn": {
+   "attribution": "listed by OFAC",
+   "kind": "sanctions",
+   "name": "OFAC SDN list",
+   "url": "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.XML"
+  },
+  "okx-por": {
+   "attribution": "listed by OKX as its wallet",
+   "kind": "label",
+   "name": "OKX proof-of-reserves address file",
+   "url": "https://www.okx.com/en-us/proof-of-reserves/download"
+  },
+  "trongrid": {
+   "attribution": "TronGrid",
+   "kind": "chain_data",
+   "name": "TronGrid",
+   "url": "https://www.trongrid.io"
+  },
+  "usdc-contract": {
+   "attribution": "frozen by Circle",
+   "kind": "onchain",
+   "name": "Circle USDC contract state",
+   "url": "https://www.circle.com"
+  },
+  "usdt-contract": {
+   "attribution": "frozen by Tether",
+   "kind": "onchain",
+   "name": "Tether USDT contract state",
+   "url": "https://tether.to"
+  }
+ }
+}

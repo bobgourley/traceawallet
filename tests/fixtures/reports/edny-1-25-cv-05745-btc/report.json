@@ -1,0 +1,433 @@
+{
+ "data": {
+  "activity": {
+   "assets": [
+    {
+     "asset": "BTC",
+     "contract": null,
+     "decimals": 8,
+     "in": {
+      "count": 12,
+      "total": "625.1975312",
+      "total_raw": "62519753120",
+      "unpriced": 12,
+      "usd": null,
+      "usd_partial": null
+     },
+     "key": "native",
+     "odd_characters": [],
+     "out": {
+      "count": 12,
+      "total": "625.1975312",
+      "total_raw": "62519753120",
+      "unpriced": 12,
+      "usd": null,
+      "usd_partial": null
+     },
+     "recognised": true,
+     "symbol": "BTC"
+    }
+   ],
+   "first_activity": "2019-09-08T07:34:27Z",
+   "last_activity": "2024-07-25T21:05:00Z",
+   "transfers_in": 12,
+   "transfers_out": 12,
+   "unpriced_assets": [
+    "BTC"
+   ],
+   "unrecognised_more": 0,
+   "unrecognised_tokens": [],
+   "unrecognised_transfers": 0
+  },
+  "completeness": {
+   "before_history": null,
+   "checked": true,
+   "checks": [
+    {
+     "marks_incomplete": true,
+     "name": "native_reconciliation",
+     "reason": null,
+     "status": "passed"
+    },
+    {
+     "marks_incomplete": true,
+     "name": "tx_count",
+     "reason": null,
+     "status": "passed"
+    },
+    {
+     "marks_incomplete": false,
+     "name": "other_party_rows_capped",
+     "reason": "2 transaction(s) had more than 200 inputs and outputs of other addresses; only the first 200 of those are stored",
+     "status": "failed"
+    }
+   ],
+   "history_incomplete": false,
+   "incomplete_reasons": [],
+   "internal": null,
+   "not_read": [
+    "btc_unconfirmed"
+   ],
+   "stablecoins": [],
+   "tokens_truncated": false,
+   "transfers": {
+    "oldest_read": "2019-09-08T07:34:27Z",
+    "read": 456,
+    "truncated": false
+   }
+  },
+  "first_hop": {
+   "btc_returned": {
+    "count": 2,
+    "total": "212.5897816",
+    "total_raw": "21258978160",
+    "transactions": 2
+   },
+   "btc_spending_transactions": 12,
+   "destinations": [
+    {
+     "address": "bc1q343gc0p9kjyltfa30ze5nce4tdrtshwl9yd6lg",
+     "asset": "BTC",
+     "contract": null,
+     "count": 3,
+     "first": "2020-12-28T19:43:53Z",
+     "labels": [],
+     "last": "2022-07-03T16:00:55Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "212.5015216",
+     "total_raw": "21250152160",
+     "usd": null
+    },
+    {
+     "address": "3JQDrsy65fy218VUsSMQiWP6UHEjDFUpat",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2020-05-07T13:10:13Z",
+     "labels": [],
+     "last": "2020-05-07T13:10:13Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "200",
+     "total_raw": "20000000000",
+     "usd": null
+    },
+    {
+     "address": "bc1qv360g37p53wsuln7uyw9hv4x2kqh3qn3jnfs89",
+     "asset": "BTC",
+     "contract": null,
+     "count": 3,
+     "first": "2020-12-28T20:19:04Z",
+     "labels": [],
+     "last": "2022-07-03T16:00:55Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "0.0916728",
+     "total_raw": "9167280",
+     "usd": null
+    },
+    {
+     "address": "357R3FeNmySYeHuRfyhFd6nMwzoLDdjfwV",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2019-09-08T09:26:15Z",
+     "labels": [],
+     "last": "2019-09-08T09:26:15Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "0.01",
+     "total_raw": "1000000",
+     "usd": null
+    },
+    {
+     "address": "34rzDEUhY4sUiuhpVaiZsbTqjgEmEbyWmT",
+     "asset": "BTC",
+     "contract": null,
+     "count": 2,
+     "first": "2024-07-25T20:17:26Z",
+     "labels": [],
+     "last": "2024-07-25T21:05:00Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "0.001244",
+     "total_raw": "124400",
+     "usd": null
+    },
+    {
+     "address": "bc1qmmyzwldzr7dpv8tz5rvt885z5flg65s023ep4y",
+     "asset": "BTC",
+     "contract": null,
+     "count": 2,
+     "first": "2024-07-25T20:17:26Z",
+     "labels": [],
+     "last": "2024-07-25T21:05:00Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "0.001244",
+     "total_raw": "124400",
+     "usd": null
+    }
+   ],
+   "destinations_more": 0,
+   "distinct_senders": 11,
+   "first_funder": {
+    "addresses": [
+     "32cizna4vaCgvr4cEmjco54mfmE7Dzp5yj",
+     "357R3FeNmySYeHuRfyhFd6nMwzoLDdjfwV"
+    ],
+    "amount": "0.1",
+    "block": 593800,
+    "labels": {},
+    "symbol": "BTC",
+    "time": "2019-09-08T07:34:27Z",
+    "tx_hash": "53ca91a5b6c84f1b9bc032f07cf2acfb7efb4b8f11716563708e14e46f2d924d"
+   },
+   "funders": [
+    {
+     "address": "3CRywj5tDJz171MsocRTBKgMbWy26KodqS",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2019-09-08T16:59:01Z",
+     "labels": [],
+     "last": "2019-09-08T16:59:01Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "99.41772428",
+     "total_raw": "9941772428",
+     "usd": null
+    },
+    {
+     "address": "3BXXV6cWw91RsnDDMF8R8YPM8aDrVEAa6P",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2019-09-08T16:59:01Z",
+     "labels": [],
+     "last": "2019-09-08T16:59:01Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "96.62572428",
+     "total_raw": "9662572428",
+     "usd": null
+    },
+    {
+     "address": "3C6RjUP38aiH2bnwTUkeSWjrARnnA6PFsW",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2019-09-08T16:59:01Z",
+     "labels": [],
+     "last": "2019-09-08T16:59:01Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "95.57477552",
+     "total_raw": "9557477552",
+     "usd": null
+    },
+    {
+     "address": "3KdPUEoqueNtdMzwYwgsrV4zRP5gYJ8Ncr",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2019-09-08T16:59:01Z",
+     "labels": [],
+     "last": "2019-09-08T16:59:01Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "90.81672428",
+     "total_raw": "9081672428",
+     "usd": null
+    },
+    {
+     "address": "39U3Ks45mxCCoKz9FZajQSynXfLedrLFau",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2019-09-08T16:59:01Z",
+     "labels": [],
+     "last": "2019-09-08T16:59:01Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "29.14346641",
+     "total_raw": "2914346641",
+     "usd": null
+    },
+    {
+     "address": "3AAd9bDZNhfGsJ6xacyBrtdB9UttPfsiWT",
+     "asset": "BTC",
+     "contract": null,
+     "count": 2,
+     "first": "2022-07-03T14:32:51Z",
+     "labels": [],
+     "last": "2024-07-25T19:04:35Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "2.05385608",
+     "total_raw": "205385608",
+     "usd": null
+    },
+    {
+     "address": "32cizna4vaCgvr4cEmjco54mfmE7Dzp5yj",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2019-09-08T07:34:27Z",
+     "labels": [],
+     "last": "2019-09-08T07:34:27Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "0.98877552",
+     "total_raw": "98877552",
+     "usd": null
+    },
+    {
+     "address": "3DhRhXY5USqpgiCrDjh5mjBdGfmScsUycP",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2019-09-08T16:59:01Z",
+     "labels": [],
+     "last": "2019-09-08T16:59:01Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "0.88869908",
+     "total_raw": "88869908",
+     "usd": null
+    },
+    {
+     "address": "357R3FeNmySYeHuRfyhFd6nMwzoLDdjfwV",
+     "asset": "BTC",
+     "contract": null,
+     "count": 2,
+     "first": "2019-09-08T16:59:01Z",
+     "labels": [],
+     "last": "2019-09-08T16:59:01Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "0.02",
+     "total_raw": "2000000",
+     "usd": null
+    },
+    {
+     "address": "3H5j1d99KjGp1jBapR4rFYCojjSx2AWm2Y",
+     "asset": "BTC",
+     "contract": null,
+     "count": 1,
+     "first": "2019-09-08T16:59:01Z",
+     "labels": [],
+     "last": "2019-09-08T16:59:01Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "0.01",
+     "total_raw": "1000000",
+     "usd": null
+    },
+    {
+     "address": "3LrBL5gvxZtAcTDHAhHkwVFFJShxrqsTaQ",
+     "asset": "BTC",
+     "contract": null,
+     "count": 5,
+     "first": "2019-09-08T16:59:01Z",
+     "labels": [],
+     "last": "2019-09-08T16:59:01Z",
+     "lookalikes": [],
+     "symbol": "BTC",
+     "total": "0.005",
+     "total_raw": "500000",
+     "usd": null
+    }
+   ],
+   "funders_more": 0
+  },
+  "header": {
+   "address": "39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq",
+   "as_of_block": 976769,
+   "as_of_time": "2026-11-20T18:27:44Z",
+   "chain": "btc",
+   "chain_name": "Bitcoin",
+   "chain_source": {
+    "attribution": "mempool.space",
+    "name": "mempool.space",
+    "slug": "mempool-space"
+   },
+   "evm_coverage": null,
+   "fetched_at": "2026-11-20T18:28:14Z",
+   "is_contract": false,
+   "labels_as_of": "2026-11-20T18:28:24Z",
+   "sources": [
+    {
+     "attribution": "mempool.space",
+     "kind": "chain_data",
+     "name": "mempool.space",
+     "slug": "mempool-space",
+     "url": "https://mempool.space"
+    }
+   ]
+  },
+  "holdings": {
+   "freezable": {
+    "held": [],
+    "share_percent": null,
+    "share_status": "nothing_held",
+    "unpriced": []
+   },
+   "freeze": [],
+   "native": {
+    "amount": "0",
+    "amount_raw": "0",
+    "decimals": 8,
+    "price_status": "not_read",
+    "symbol": "BTC",
+    "usd": null
+   },
+   "ofac": {
+    "labels": [],
+    "list_date": "2026-11-19",
+    "listed": false
+   },
+   "tokens": [],
+   "tokens_truncated": false,
+   "unrecognised_count": 0
+  },
+  "labels": {
+   "address": [],
+   "counterparties_checked_against": [
+    "ofac-sdn",
+    "exchange-por",
+    "okx-por"
+   ],
+   "goplus": {
+    "status": "never_asked_btc"
+   },
+   "list_dates": {
+    "exchange-por": "2026-11-10",
+    "ofac-sdn": "2026-11-19",
+    "okx-por": "2026-11-01"
+   }
+  },
+  "links": {
+   "arkham": "https://intel.arkm.com/explorer/address/39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq",
+   "chainabuse": "https://www.chainabuse.com/address/39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq",
+   "explorer": {
+    "name": "mempool.space",
+    "url": "https://mempool.space/address/39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq"
+   }
+  },
+  "set_apart": {
+   "tiny": {
+    "count": 0,
+    "more": 0,
+    "rows": []
+   },
+   "zero": {
+    "count": 0,
+    "more": 0,
+    "rows": []
+   }
+  }
+ },
+ "sha256": "543966764ffdd130f093c5ebe8549e19778a014b33dd1def6dce6f685afe9478"
+}
