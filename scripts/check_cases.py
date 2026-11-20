@@ -4,9 +4,11 @@
 
 Each case's expected.json lists the facts its complaint states, each with the
 paragraph and the complaint's own words. A fact with a "check" is tested here
-through our adapters (Blockscout for EVM chains, mempool.space for Bitcoin) and
-reported as CONFIRMED, DIFFERS or NOT FOUND, with what the chain shows. A
-fact without one says why it cannot be checked yet.
+through our adapters (Blockscout for EVM chains, TronGrid for Tron, mempool.space
+for Bitcoin) and reported as CONFIRMED, DIFFERS or NOT FOUND, with what the chain
+shows. A fact without one says why it cannot be checked yet. Blockscout calls come
+out of the scripts' 30% of the daily allowance (taw/budget.py), which is why this
+runs on the worker; Tron and Bitcoin cases need no database.
 
 Amounts: "approximately" allows 1%; any other amount must match to the precision
 it is printed with. Dates: complaints give dates "on or about", in US local time,
@@ -33,11 +35,18 @@ from taw.adapters.base import LocalRawStore  # noqa: E402
 from taw.adapters.chains import evm_etherscan as es  # noqa: E402
 from taw.adapters.chains.btc_esplora import BtcEsploraAdapter  # noqa: E402
 from taw.adapters.chains.evm_blockscout import BlockscoutAdapter  # noqa: E402
+from taw.adapters.chains.tron_trongrid import TronGridAdapter  # noqa: E402
 from taw.budget import BudgetExhausted, script_budget_or_exit  # noqa: E402
 
 CASES = pathlib.Path(__file__).resolve().parent.parent / "tests" / "cases"
 TOKENS = {"eth": {"USDT": ("0xdac17f958d2ee523a2206206994597c13d831ec7", 6),
-                  "USDC": ("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", 6)}}
+                  "USDC": ("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", 6)},
+          "tron": {"USDT": ("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t", 6)}}
+
+
+def same(a: str | None, b: str | None) -> bool:
+    """Addresses compared without case: EVM rows are lower case, Tron's are base58."""
+    return (a or "").lower() == (b or "").lower()
 
 
 def tolerance(amount: str, approx: bool) -> Decimal:
@@ -82,6 +91,18 @@ class Chains:
             self.batches[key] = adapter.fetch_transfers(address)
         return self.adapters[key], self.batches[key]
 
+    def tron(self, address: str):
+        key = ("tron", address)
+        if key not in self.batches:
+            adapter = TronGridAdapter(LocalRawStore(self.raw_root / f"tron-{address}"),
+                                      os.environ.get("TRONGRID_API_KEY"))
+            self.adapters[key] = adapter
+            self.batches[key] = adapter.fetch_transfers(address)
+        return self.adapters[key], self.batches[key]
+
+    def history(self, chain: str, address: str):
+        return self.tron(address) if chain == "tron" else self.evm(chain, address)
+
     def btc(self, address: str):
         key = ("btc", address)
         if key not in self.batches:
@@ -107,12 +128,42 @@ class Chains:
 
 
 def token_rows(batch, contract):
-    return [t for t in batch.transfers if t.kind == "token" and t.token_contract == contract]
+    return [t for t in batch.transfers if t.kind == "token" and same(t.token_contract, contract)]
+
+
+def balance_through(batch, contract, address, until=None):
+    """The token balance from the address's transfer history, up to (not including) `until`."""
+    total = Decimal(0)
+    for t in token_rows(batch, contract):
+        if until is not None and t.block_time >= until:
+            continue
+        total += t.amount() if same(t.to_address, address) else 0
+        total -= t.amount() if same(t.from_address, address) else 0
+    return total
+
+
+def activation(batch, address):
+    """The first incoming TRX transfer. On Tron that is what creates (activates) an
+    account; a TRC-20 transfer can arrive earlier without creating it."""
+    rows = [t for t in batch.transfers if t.kind == "native" and same(t.to_address, address)]
+    return min(rows, key=lambda t: (t.block_number, t.event_index)) if rows else None
 
 
 def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
     c = fact["check"]
     kind = c["kind"]
+    if kind == "token_balance_at" and c["chain"] == "tron":
+        # TronGrid has no balance at a past block: rebuild it from the complete transfer history.
+        contract, _ = TOKENS["tron"][c["token"]]
+        adapter, batch = chains.tron(c["address"])
+        if batch.truncated:
+            return "NOT CHECKED", "history truncated"
+        end = dt.datetime.combine(dt.date.fromisoformat(c["date"]) + dt.timedelta(days=1), dt.time(), dt.timezone.utc)
+        actual = balance_through(batch, contract, c["address"], end)
+        ok = close(actual, c["amount"], c.get("approx", False))
+        return ("CONFIRMED" if ok else "DIFFERS"), (
+            f"balance at the end of {c['date']} UTC from {len(token_rows(batch, contract))} {c['token']} transfers: "
+            f"{actual}; from all transfers to date: {balance_through(batch, contract, c['address'])}")
     if kind == "token_balance_at":
         contract, decimals = TOKENS[c["chain"]][c["token"]]
         adapter, _ = chains.evm(c["chain"], c["address"])
@@ -128,10 +179,12 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
         sides = [c.get(c.get("read", "from"))] + [c.get(r) for r in ("from", "to") if r != c.get("read", "from")]
         truncated, last_rows = [], []
         for side in [s for s in sides if s]:
-            _, batch = chains.evm(c["chain"], side)
+            _, batch = chains.history(c["chain"], side)
             rows = [t for t in token_rows(batch, contract)
-                    if (not c.get("from") or t.from_address == c["from"].lower())
-                    and (not c.get("to") or t.to_address == c["to"].lower())]
+                    if (not c.get("from") or same(t.from_address, c["from"]))
+                    and (not c.get("to") or same(t.to_address, c["to"]))
+                    # Only the characters the complaint prints; the address is never completed.
+                    and (not c.get("from_prefix") or t.from_address.startswith(c["from_prefix"]))]
             if c.get("date"):
                 lo, hi = day_window(c["date"])
                 rows = [t for t in rows if lo <= t.block_time < hi]
@@ -155,8 +208,9 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
                 if hits:
                     t = hits[0]
                     found[fact["id"]] = t.block_time
+                    sender = f", from an address beginning {c['from_prefix']}" if c.get("from_prefix") else ""
                     return "CONFIRMED", (f"{t.amount()} {c['token']} at {t.block_time:%Y-%m-%d %H:%M:%S} UTC, block "
-                                         f"{t.block_number:,}, tx {t.tx_hash}, log {t.event_index}")
+                                         f"{t.block_number:,}, tx {t.tx_hash}, log {t.event_index}{sender}")
             if batch.truncated:
                 truncated.append(side)
             else:
@@ -172,23 +226,21 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
         when = found.get(c["before"])
         if when is None:
             return "NOT CHECKED", f"depends on {c['before']}, which was not found"
-        _, batch = chains.evm(c["chain"], c["address"])
+        _, batch = chains.history(c["chain"], c["address"])
         if batch.truncated:
             return "NOT CHECKED", "history truncated"
-        me = c["address"].lower()
-        running = sum((t.amount() if t.to_address == me else -t.amount())
-                      for t in token_rows(batch, contract) if t.block_time < when and me in (t.from_address, t.to_address))
+        running = balance_through(batch, contract, c["address"], when)
         ok = close(Decimal(running), c["amount"], c.get("approx", False))
         return ("CONFIRMED" if ok else "DIFFERS"), f"balance just before {when:%Y-%m-%d %H:%M:%S} UTC: {running}"
     if kind == "token_balance_reached":
         contract, _ = TOKENS[c["chain"]][c["token"]]
-        _, batch = chains.evm(c["chain"], c["address"])
+        _, batch = chains.history(c["chain"], c["address"])
         if batch.truncated:
             return "NOT CHECKED", "history truncated"
         running, reached = Decimal(0), []
         for t in sorted(token_rows(batch, contract), key=lambda t: (t.block_number, t.event_index)):
-            running += t.amount() if t.to_address == c["address"].lower() else 0
-            running -= t.amount() if t.from_address == c["address"].lower() else 0
+            running += t.amount() if same(t.to_address, c["address"]) else 0
+            running -= t.amount() if same(t.from_address, c["address"]) else 0
             if close(running, c["amount"], c.get("approx", False)):
                 reached.append((t.block_time, running))
         if reached:
@@ -233,6 +285,65 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
             f"balance at the start of {c['month']}: {Decimal(at_start if at_start is not None else at_end).scaleb(-8)} "
             f"BTC, at the end: {Decimal(at_end).scaleb(-8)} BTC; balances held during the month: "
             f"{sorted(str(v) for v in held)}")
+    if kind == "activated_on":
+        lo, hi = day_window(c["date"])
+        seen, off = [], []
+        for a in c["addresses"]:
+            _, batch = chains.history(c["chain"], a)
+            if batch.truncated:
+                return "NOT CHECKED", f"history truncated for {a}"
+            first = activation(batch, a)
+            if first is None:
+                off.append(f"{a}: no incoming TRX transfer")
+                continue
+            seen.append(first.block_time)
+            if not lo <= first.block_time < hi:
+                off.append(f"{a}: first incoming TRX transfer {first.block_time:%Y-%m-%d %H:%M} UTC")
+        if off:
+            return "DIFFERS", "; ".join(off)
+        return "CONFIRMED", (f"first incoming TRX transfer (activation) of {len(seen)} address(es) between "
+                             f"{min(seen):%Y-%m-%d %H:%M} and {max(seen):%Y-%m-%d %H:%M} UTC")
+    if kind == "activated_by_one_address":
+        senders = {}
+        for a in c["addresses"]:
+            _, batch = chains.history(c["chain"], a)
+            if batch.truncated:
+                return "NOT CHECKED", f"history truncated for {a}"
+            first = activation(batch, a)
+            senders[a] = first.from_address if first else None
+        distinct = set(senders.values())
+        if len(distinct) == 1 and None not in distinct:
+            return "CONFIRMED", f"all {len(senders)} activating TRX transfers came from {distinct.pop()}"
+        return "DIFFERS", "activating TRX transfers came from " + ", ".join(f"{a}: {s}" for a, s in senders.items())
+    if kind in ("token_received_run", "received_share"):
+        contract, _ = TOKENS[c["chain"]][c["token"]]
+        _, batch = chains.history(c["chain"], c["address"])
+        if batch.truncated:
+            return "NOT CHECKED", "history truncated"
+        incoming = sorted((t for t in token_rows(batch, contract) if same(t.to_address, c["address"])),
+                          key=lambda t: (t.block_number, t.event_index))
+        if kind == "received_share":
+            received = sum((t.amount() for t in incoming), Decimal(0))
+            share = Decimal(c["amount"]) / received * 100
+            ok = close(share, c["percent"], c.get("approx", False))
+            return ("CONFIRMED" if ok else "DIFFERS"), (
+                f"{c['amount']} is {share:.4f}% of the {received} {c['token']} received in {len(incoming)} transfers")
+        if c.get("date"):
+            lo, hi = day_window(c["date"])
+            incoming = [t for t in incoming if lo <= t.block_time < hi]
+        # The complaint gives a total, not the transfers: look for consecutive receipts that add up to it.
+        for i in range(len(incoming)):
+            total = Decimal(0)
+            for k in range(i, len(incoming)):
+                total += incoming[k].amount()
+                if close(total, c["amount"], c.get("approx", False)):
+                    run = incoming[i:k + 1]
+                    return "CONFIRMED", (f"{len(run)} consecutive receipts total {total} {c['token']}, "
+                                         f"{run[0].block_time:%Y-%m-%d %H:%M} to {run[-1].block_time:%Y-%m-%d %H:%M} UTC, "
+                                         f"first tx {run[0].tx_hash}")
+        return "NOT FOUND", (f"no run of consecutive receipts among {len(incoming)} adds up to {c['amount']}; the "
+                             "complaint does not identify the transfers, so a set that is not consecutive is not "
+                             "ruled out")
     raise ValueError(f"unknown check kind {kind}")
 
 
