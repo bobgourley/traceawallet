@@ -58,3 +58,25 @@ def test_different_blocks_are_reported(seen):
     snap, batch = seen
     later = dataclasses.replace(snap, as_of_block=snap.as_of_block + 1)
     assert [m.what for m in compare(snap, batch, later, batch)] == ["as_of_block"]
+
+
+@pytest.mark.parametrize("chain, address, block", [
+    ("eth", ADDR, 26_452_607),
+    ("arbitrum", "0x9be85deda2de03605af25fe6f33652559519e377", 525_767_251),
+])
+def test_blockscout_and_etherscan_agree(tmp_path, chain, address, block):
+    """The live cross-check of 2026-11-20, replayed: same transfers, balances and first
+    activity at the same block."""
+    from taw.adapters.chains.evm_blockscout import BlockscoutAdapter, clear_range_cache
+    clear_range_cache()
+    clock = FakeClock()
+    ether = EtherscanAdapter(chain, LocalRawStore(tmp_path / "e"), "k" * 20,
+                             http=Replay(FIXTURES / chain / address).client(), clock=clock.clock, sleep=clock.sleep)
+    blocks = BlockscoutAdapter(chain, LocalRawStore(tmp_path / "b"), "proapi_test_not_real", at_block=block,
+                               http=Replay(FIXTURES / f"blockscout-rest-{chain}" / address).client(),
+                               clock=clock.clock, sleep=clock.sleep)
+    snap_e = ether.fetch_snapshot(address)
+    snap_b = blocks.fetch_snapshot(address)
+    batch_e, batch_b = ether.fetch_transfers(address), blocks.fetch_transfers(address)
+    assert snap_e.as_of_block == snap_b.as_of_block == block
+    assert compare(snap_e, batch_e, snap_b, batch_b) == []

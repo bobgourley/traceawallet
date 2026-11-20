@@ -21,6 +21,8 @@ from taw.adapters.base import LocalRawStore  # noqa: E402
 from taw.adapters.chains.evm_blockscout import BlockscoutAdapter  # noqa: E402
 from taw.adapters.chains.evm_crosscheck import compare  # noqa: E402
 from taw.adapters.chains.evm_etherscan import EtherscanAdapter  # noqa: E402
+from taw.adapters.registry import stablecoins_for  # noqa: E402
+from taw.reconcile import run_checks  # noqa: E402
 
 
 def run(adapter, address, limit):
@@ -57,6 +59,19 @@ def main() -> int:
               f"  native {snap.native_balance()}  tokens {len(snap.token_balances)}"
               f"  unmatched token rows {adapter.unmatched_token_rows}")
 
+    for name, snap, batch in (("Etherscan", snap_e, batch_e), ("Blockscout", snap_b, batch_b)):
+        result = run_checks(snap, batch, stablecoins_for(args.chain))
+        r = batch.internal_range
+        print(f"\n{name} checks (internal transfers read for blocks {r[0]:,} to {r[1]:,}; "
+              f"history_incomplete={result.history_incomplete})" if r else f"\n{name} checks")
+        for c in result.checks:
+            print(f"  {c.name:<28} {c.status:<8} {c.reason or ''}")
+            if c.details:
+                print(f"  {'':<28} {dict(c.details)}")
+        for t in result.tokens:
+            print(f"  token {t.contract} {t.symbol or ''}: {t.status} balance {t.balance_raw} in-out {t.net_flow_raw}"
+                  + (f" ({t.reason})" if t.reason else ""))
+    print()
     mismatches = compare(snap_e, batch_e, snap_b, batch_b)
     if not mismatches:
         print("No mismatches: same transfers, balances and first activity.")

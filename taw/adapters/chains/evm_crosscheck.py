@@ -10,7 +10,9 @@ What must agree:
     token contract, decimals and amount
   - internal transfers by tx hash, from, to and amount. Not by event_index:
     Etherscan's is an encoded trace path and Blockscout's is its own index, so
-    the numbers differ by design while the movement is the same.
+    the numbers differ by design while the movement is the same. Only over the
+    blocks both read in full (TransferBatch.internal_range): Blockscout reads
+    internal transfers only where it has finished indexing.
   - first activity (oldest transfer) and first incoming transfer
   - whether the transfer list was truncated
 
@@ -66,8 +68,16 @@ def compare(snap_a: AddressSnapshot, batch_a: TransferBatch,
     for contract in sorted(set(tokens_a) | set(tokens_b)):
         check(f"token balance {contract} (raw, decimals)", tokens_a.get(contract), tokens_b.get(contract))
 
-    keys_a = Counter(_transfer_key(t) for t in batch_a.transfers)
-    keys_b = Counter(_transfer_key(t) for t in batch_b.transfers)
+    lo, hi = 0, snap_a.as_of_block
+    for r in (batch_a.internal_range, batch_b.internal_range):
+        if r is not None:
+            lo, hi = max(lo, r[0]), min(hi, r[1])
+
+    def comparable(t: TransferRecord) -> bool:
+        return t.kind != "internal" or lo <= t.block_number <= hi
+
+    keys_a = Counter(_transfer_key(t) for t in batch_a.transfers if comparable(t))
+    keys_b = Counter(_transfer_key(t) for t in batch_b.transfers if comparable(t))
     for key in sorted((keys_a - keys_b).elements(), key=str):
         out.append(Mismatch("transfer only in first", key, None))
     for key in sorted((keys_b - keys_a).elements(), key=str):
