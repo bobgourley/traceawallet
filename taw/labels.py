@@ -18,6 +18,7 @@ an address source it covers only the address that was asked about.
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 from collections import defaultdict
 from dataclasses import dataclass
@@ -49,10 +50,64 @@ WHERE l.source_id = %s AND l.claim_key IS NOT NULL {scope}
 
 _INSERT = """
 INSERT INTO label (address_id, source_id, category, label, claim_url, source_date, observed_at, status,
-                   supersedes_id, raw_response_id, claim_key)
+                   supersedes_id, raw_response_id, claim_key, load_id)
 SELECT * FROM unnest(%s::bigint[], %s::int[], %s::text[], %s::text[], %s::text[], %s::date[], %s::timestamptz[],
-                     %s::label_status[], %s::bigint[], %s::bigint[], %s::text[])
+                     %s::label_status[], %s::bigint[], %s::bigint[], %s::text[], %s::bigint[])
 """
+
+# One line per loaded row, in id order. Every field is text in a fixed form (UTC
+# times, ISO dates), so anyone can recompute the digest from the table alone.
+DIGEST_METHOD = "label rows by id: json_build_array(id, chain, address, source, category, label, claim_url, " \
+                "source_date, observed_at UTC, status, supersedes_id, raw_response_id, claim_key), one per line, sha256"
+_DIGEST_ROWS = """
+SELECT json_build_array(l.id, a.chain, a.address, s.slug, l.category, l.label, l.claim_url, l.source_date::text,
+                        to_char(l.observed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US'), l.status::text,
+                        l.supersedes_id, l.raw_response_id, l.claim_key)::text
+FROM label l JOIN address a ON a.id = l.address_id JOIN source s ON s.id = l.source_id
+WHERE l.load_id = %s ORDER BY l.id
+"""
+
+
+def load_digest(conn, load_id: int) -> tuple[int, str]:
+    """(row count, sha256) over the label rows a load wrote. scripts/verify_label_loads.py
+    recomputes this and compares it with the load's event_log entry."""
+    h, n = hashlib.sha256(), 0
+    for (line,) in conn.execute(_DIGEST_ROWS, (load_id,)):
+        h.update(line.encode() + b"\n")
+        n += 1
+    return n, h.hexdigest()
+
+
+def verify_loads(conn, load_id: int | None = None) -> list[tuple[int, bool, str]]:
+    """[(load id, ok, what was compared)] for every audited label load (or one)."""
+    sql = ("SELECT e.entity_id::bigint, e.payload, l.file_sha256 FROM event_log e"
+           " JOIN label_load l ON l.id = e.entity_id::bigint"
+           " WHERE e.entity = 'label_load' AND e.action = 'load'")
+    params: tuple = ()
+    if load_id is not None:
+        sql += " AND e.entity_id = %s"
+        params = (str(load_id),)
+    out = []
+    for lid, payload, file_sha in conn.execute(sql + " ORDER BY 1", params).fetchall():
+        n, digest = load_digest(conn, lid)
+        problems = []
+        if n != payload["rows"]:
+            problems.append(f"rows {n} now, {payload['rows']} logged")
+        if digest != payload["rows_sha256"]:
+            problems.append(f"rows sha256 {digest[:12]} now, {payload['rows_sha256'][:12]} logged")
+        if (file_sha or None) != payload.get("file_sha256"):
+            problems.append("file sha256 differs from label_load")
+        out.append((lid, not problems, "; ".join(problems) or f"{n} rows, sha256 {digest[:12]}"))
+    return out
+
+
+@dataclass(frozen=True)
+class LoadInfo:
+    """A file load: recorded in label_load, audited by one event_log entry."""
+    source_date: dt.date
+    file_sha256: str | None
+    unmapped: int = 0
+    detail: dict | None = None
 
 
 def _address_ids(conn, claims: list[LabelClaim], extra: dict[str, set[str]] | None = None) -> dict[tuple[str, str], int]:
@@ -70,11 +125,16 @@ def _address_ids(conn, claims: list[LabelClaim], extra: dict[str, set[str]] | No
 
 def sync(conn, actor: str, source_slug: str, claims: list[LabelClaim], *, raw_sha256: str | None,
          source_date: dt.date | None, observed_at: dt.datetime | None = None,
-         only_address: tuple[str, str] | None = None, raw_source: str | None = None) -> SyncResult:
+         only_address: tuple[str, str] | None = None, raw_source: str | None = None,
+         load: LoadInfo | None = None) -> SyncResult:
     """Make the label table agree with `claims`. only_address=(chain, address) limits
     withdrawals to that address (address sources); None covers the whole source.
     raw_source: the source the raw response was saved under, when it isn't the
-    label's (a contract read served by Blockscout or TronGrid)."""
+    label's (a contract read served by Blockscout or TronGrid).
+
+    load: this is a file load. In the same transaction it writes the label_load row,
+    gives every row it inserts that load's id (so they skip the per-row audit
+    copy), and writes one event_log entry with the load's digest."""
     observed_at = observed_at or dt.datetime.now(dt.timezone.utc)
     source = store.source_id(conn, source_slug)
     raw_id = None
@@ -102,32 +162,48 @@ def sync(conn, actor: str, source_slug: str, claims: list[LabelClaim], *, raw_sh
                     head[2] == c.label or (c.dated_label and c.source_date and head[5]
                                            and head[2] == c.label.replace(str(c.source_date), str(head[5])))):
                 continue
-            rows.append((key[0], source, c.category, c.label, c.claim_url, c.source_date, observed_at, "asserted",
-                         head[0] if head else None, raw_id, c.claim_key))
+            rows.append([key[0], source, c.category, c.label, c.claim_url, c.source_date, observed_at, "asserted",
+                         head[0] if head else None, raw_id, c.claim_key, None])
             if head is None:
                 added += 1
             else:
                 changed += 1
         for key, (i, cat, lab, url, status, _) in heads.items():
             if status == "asserted" and key not in seen:
-                rows.append((key[0], source, cat, lab, url, source_date, observed_at, "withdrawn", i, raw_id, key[1]))
+                rows.append([key[0], source, cat, lab, url, source_date, observed_at, "withdrawn", i, raw_id, key[1],
+                             None])
                 withdrawn += 1
+        result = SyncResult(len(seen), added, changed, withdrawn)
+        load_id = None
+        if load is not None:
+            load_id = conn.execute(
+                "INSERT INTO label_load (source_id, source_date, raw_response_id, claims, added, changed, withdrawn,"
+                " unmapped, detail, file_sha256) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s) RETURNING id",
+                (source, load.source_date, raw_id, result.claims, added, changed, withdrawn, load.unmapped,
+                 json.dumps(load.detail or {}), load.file_sha256)).fetchone()[0]
+            for r in rows:
+                r[11] = load_id
         for i in range(0, len(rows), INSERT_CHUNK):
             conn.execute(_INSERT, [list(col) for col in zip(*rows[i:i + INSERT_CHUNK])])
-    return SyncResult(len(seen), added, changed, withdrawn)
+        if load_id is not None:
+            n, digest = load_digest(conn, load_id)
+            if n != len(rows):
+                raise RuntimeError(f"load {load_id} wrote {len(rows)} rows but the digest read {n}")
+            conn.execute(
+                "INSERT INTO event_log (actor, action, entity, entity_id, payload) VALUES (%s, 'load', 'label_load',"
+                " %s, %s::jsonb)",
+                (actor, str(load_id), json.dumps({"source": source_slug, "source_date": str(load.source_date),
+                                                  "file_sha256": load.file_sha256, "rows": n, "rows_sha256": digest,
+                                                  "method": DIGEST_METHOD})))
+    return result
 
 
 def load_publication(conn, actor: str, pub: Publication) -> SyncResult:
-    """Sync a bulk source's whole publication and record the load."""
-    result = sync(conn, actor, pub.source_slug, pub.claims, raw_sha256=pub.raw_sha256, source_date=pub.source_date)
-    raw_id = store.raw_response_ids(conn, pub.source_slug, [pub.raw_sha256])[pub.raw_sha256] if pub.raw_sha256 else None
-    with store.actor_transaction(conn, actor):
-        conn.execute(
-            "INSERT INTO label_load (source_id, source_date, raw_response_id, claims, added, changed, withdrawn,"
-            " unmapped, detail) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)",
-            (store.source_id(conn, pub.source_slug), pub.source_date, raw_id, result.claims, result.added,
-             result.changed, result.withdrawn, pub.unmapped, json.dumps(pub.detail)))
-    return result
+    """Sync a bulk source's whole publication, recording and auditing the load in
+    the same transaction."""
+    file_sha = pub.raw_sha256 or (pub.detail or {}).get("file_sha256")
+    return sync(conn, actor, pub.source_slug, pub.claims, raw_sha256=pub.raw_sha256, source_date=pub.source_date,
+                load=LoadInfo(pub.source_date, file_sha, pub.unmapped, pub.detail))
 
 
 def current(conn, chain: str, addresses: list[str], *, sources: list[str] | None = None) -> dict[str, list[dict]]:

@@ -948,3 +948,40 @@ def test_exchange_refresh_job(conns):
     assert "OKX 2026-11: 11 claim(s): 11 added" in loaded
     assert "OKX 2026-11: already loaded" in refresh_exchanges(data_conn=data, raw_store=raw_store, actor=ACTOR,
                                                               today=dt.date(2026, 11, 23), okx=FixtureOkx())
+
+
+# -- audit for bulk label loads (0015) ----------------------------------------------------------------
+
+def test_a_file_load_is_audited_once_and_verifies(conns):
+    from taw import labels
+    from taw.adapters.labels import freeze
+    from taw.worker.enrich import save_freeze_checks
+    data, raw = conns
+    pub, raw_store = ofac_publication(raw)
+    before = count(data, "SELECT count(*) FROM event_log WHERE entity = 'label'")
+    result = labels.load_publication(data, ACTOR, pub)
+    assert count(data, "SELECT count(*) FROM event_log WHERE entity = 'label'") == before     # no per-row copies
+    entry = data.execute("SELECT entity_id, payload, actor FROM event_log WHERE action = 'load'").fetchone()
+    load_id = int(entry[0])
+    assert entry[2] == ACTOR and entry[1]["source"] == "ofac-sdn" and entry[1]["rows"] == result.added
+    assert entry[1]["file_sha256"] == pub.raw_sha256 and len(entry[1]["rows_sha256"]) == 64
+    assert count(data, "SELECT count(*) FROM label WHERE load_id = %s", load_id) == result.added
+    assert labels.verify_loads(data) == [(load_id, True, f"{result.added} rows, sha256 {entry[1]['rows_sha256'][:12]}")]
+
+    labels.load_publication(data, ACTOR, pub)                       # unchanged: a load with no rows, still logged
+    assert [ok for _, ok, _ in labels.verify_loads(data)] == [True, True]
+
+    # A label written one at a time keeps its full copy.
+    addr = "0xc1b68434d0ef9a78e7f62e3b9850b70b3d0174bf"
+    usdt = next(c for c in freeze.CONTRACTS if c.chain == "eth" and c.token == "USDT")
+    sha = raw_store.save("blockscout", "https://api.blockscout.com/1/json-rpc", {"x": 1}, 200, b'{"r": 1}')
+    save_freeze_checks(data, ACTOR, "eth", addr, [freeze.FreezeCheck(usdt, addr, True, 900, sha)])
+    assert count(data, "SELECT count(*) FROM event_log WHERE entity = 'label'") == before + 1
+
+    # Tampering with a loaded row shows up.
+    data.execute("ALTER TABLE label DISABLE TRIGGER label_immutable")
+    data.execute("UPDATE label SET label = label || ' (edited)' WHERE id = (SELECT min(id) FROM label WHERE load_id = %s)",
+                 (load_id,))
+    data.execute("ALTER TABLE label ENABLE TRIGGER label_immutable")
+    [(lid, ok, what)] = labels.verify_loads(data, load_id)
+    assert not ok and "rows sha256" in what
