@@ -71,6 +71,27 @@ PAGE = 25                       # Esplora's page size for /txs/chain
 MAX_TXS = 1000
 OTHER_CAP = 200
 EARLIEST_PAGES = 400            # 10,000 transactions; beyond that first activity is not reached
+# An address with more confirmed transactions than this gets a summary only: its balance and
+# the provider's totals, and no transfers. Past this many the earliest transaction cannot be
+# reached, so a detailed read could never be complete, and very busy addresses (exchanges,
+# services) have history pages of a megabyte or more each.
+SUMMARY_ONLY_ABOVE = EARLIEST_PAGES * 25
+
+
+def timeout_for(path: str) -> httpx.Timeout:
+    """How long to wait, by kind of request. The read limit is per wait for data, so a large
+    page that keeps arriving is not cut off; a provider that stops answering is."""
+    if path.startswith(("/blocks/tip", "/block-height/", "/block/")):
+        read = 10.0
+    elif "/txs/chain" in path:
+        read = 30.0                 # history pages: up to about 1.3 MB on a busy address
+    elif path.endswith("/utxo"):
+        read = 45.0                 # every unspent output; slow for large wallets
+    elif path.startswith("/tx/"):
+        read = 20.0
+    else:
+        read = 15.0                 # the address summary
+    return httpx.Timeout(read, connect=5.0, write=10.0, pool=5.0)
 _KIND_ORDER = {"utxo_in": 0, "utxo_out": 1}
 
 
@@ -98,6 +119,10 @@ class _Head:
     shas: tuple[str, ...]
 
 
+class EsploraTimeout(EsploraError):
+    """The provider stopped answering within the time allowed for that kind of request."""
+
+
 class EsploraClient:
     """GET requests with pacing, retries and raw storage. No key: both APIs are public."""
 
@@ -119,7 +144,13 @@ class EsploraClient:
         for attempt in range(1, self.max_attempts + 1):
             self._pacer.wait()
             self.request_count += 1
-            resp = self.http.get(url)
+            limit = timeout_for(path)
+            try:
+                resp = self.http.get(url, timeout=limit)
+            except httpx.TimeoutException as err:
+                exc = EsploraTimeout(f"{path}: no answer within {limit.read:.0f} s")
+                exc.provider, exc.path, exc.waited = self.provider_name, path, limit.read
+                raise exc from err
             sha = self.raw_store.save(self.source, url, None, resp.status_code, resp.content)
             if resp.status_code in (429, 500, 502, 503, 504):
                 if attempt == self.max_attempts:
@@ -240,9 +271,11 @@ class BtcEsploraAdapter:
         head = self.head()
         info = self.client.get(f"/address/{addr}", memo=False)
         self._info = info.data
-        hist = self._read_history(addr)
         stats = info.data.get("chain_stats") or {}
         funded, spent = int(stats.get("funded_txo_sum", 0)), int(stats.get("spent_txo_sum", 0))
+        self._summary_only = int(stats.get("tx_count", 0)) > SUMMARY_ONLY_ABOVE
+        self._totals = (funded, spent)
+        hist = {"above": [], "kept": [], "more": True} if self._summary_only else self._read_history(addr)
         # undo what the transactions above H added or spent
         for tx in hist["above"]:
             funded -= sum(int(o["value"]) for o in tx.get("vout") or [] if o.get("scriptpubkey_address") == addr)
@@ -265,6 +298,8 @@ class BtcEsploraAdapter:
             self._history.pop(addr, None)
         if not hasattr(self, "_provider_balance"):
             self.fetch_snapshot(addr)
+        if self._summary_only:
+            return self._summary_batch(addr, limit)
         hist = self._read_history(addr)
         kept = hist["kept"][:limit]
         truncated = len(hist["kept"]) > limit or hist["more"]
@@ -325,6 +360,28 @@ class BtcEsploraAdapter:
                 f"{self.other_cap} are read") if capped else None
         return TransactionFetch(CHAIN, h, True, tuple(rows), int(tx["status"]["block_height"]), _block_time(tx), None,
                                 self.source, (r.sha,), note)
+
+    def _summary_batch(self, addr: str, limit: int) -> TransferBatch:
+        """A busy address: no transfers, and a failed check that says why and carries the
+        provider's totals, so the report can show a summary and never a history."""
+        funded, spent = self._totals
+        details = {"provider_tx_count": self._provider_tx_count, "received_sat": str(funded),
+                   "sent_sat": str(spent), "summary_only_above": SUMMARY_ONLY_ABOVE, "provider": self.provider_name}
+        why = (f"the address has {self._provider_tx_count:,} transactions, more than the {SUMMARY_ONLY_ABOVE:,} that can "
+               "be read in detail, so no transfers were read")
+        checks = (CheckResult("history_not_read", FAILED, why, details),
+                  CheckResult("native_reconciliation", NOT_RUN, "No transfers were read.", None),
+                  CheckResult("tx_count", NOT_RUN, "No transfers were read.", None))
+        return TransferBatch(CHAIN, addr, (), True, limit, checks=checks)
+
+    def fallback(self) -> "BtcEsploraAdapter":
+        """The same reader on Blockstream, pinned to the height already read, for when
+        mempool.space stops answering. None when this already is Blockstream."""
+        if self.source == BLOCKSTREAM[1]:
+            return None
+        height = self._head.height if self._head is not None else None
+        return BtcEsploraAdapter(self.client.raw_store, provider=BLOCKSTREAM, at_height=height,
+                                 max_txs=self.max_txs, other_cap=self.other_cap, earliest_pages=self.earliest_pages)
 
     # -- rows ------------------------------------------------------------------------------
 

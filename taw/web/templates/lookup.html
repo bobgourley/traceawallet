@@ -5,15 +5,47 @@
 <h1>Your lookup</h1>
 <p class="addr-line">Address <code class="id">{{ lookup.address }}</code><button type="button" class="copy" data-copy="{{ lookup.address }}" aria-label="Copy {{ lookup.address }}"></button></p>
 
-{% if pending %}
-<section class="status" aria-live="polite">
-  <h2>Reading public records…</h2>
-  <p>This usually takes under a minute, and can take longer for a busy address. This page refreshes by itself.</p>
-  <ul>
-  {% for c in lookup.chains %}
-    <li>{{ c.chain|replace("eth","Ethereum")|replace("arbitrum","Arbitrum One")|replace("optimism","OP Mainnet")|replace("tron","Tron")|replace("btc","Bitcoin") }}: {% if c.job_status == "done" %}done{% elif c.job_status == "failed" %}could not be read{% else %}waiting{% endif %}{% if c.message and c.job_status != "done" %}. {{ c.message }}{% endif %}</li>
+{% macro status(c, v) %}
+{% if v.state == "running" %}
+  <p><strong>{{ v.step }}.</strong> Started {{ v.elapsed or "just now" }} ago{% if v.attempt and v.attempt > 1 %}, try {{ v.attempt }} of {{ v.max_attempts }}{% endif %}.</p>
+  <ol class="steps">
+  {% for key, words, mark in v.steps %}
+    <li class="step-{{ mark }}">{{ words }}: {% if mark == "done" %}done{% elif mark == "now" %}in progress{% if v.step_elapsed %} ({{ v.step_elapsed }}){% endif %}{% else %}not started{% endif %}</li>
   {% endfor %}
-  </ul>
+  </ol>
+{% elif v.state == "retrying" %}
+  <p>The last try did not finish: {{ v.reason }}. We will try again {% if v.next_at %}at {{ v.next_at.strftime("%H:%M") }} UTC{% if v.next_in %} (in about {{ v.next_in }}){% endif %}{% else %}shortly{% endif %}. This will be try {{ v.attempt }} of {{ v.max_attempts }}.</p>
+{% elif v.state == "allowance" %}
+  <p>Waiting: today's data allowance for this network is used up. It resets at 00:00 UTC{% if v.next_at %}, and this lookup will start at about {{ v.next_at.strftime("%H:%M") }} UTC{% endif %}.</p>
+{% elif v.state == "waiting" %}
+  <p>Waiting to start.</p>
+{% elif v.state == "done" %}
+  <p>Ready.</p>
+{% elif v.state == "failed" %}
+  {{ failed(c, v) }}
+{% endif %}
+{% endmacro %}
+{% macro failed(c, v) %}
+  <p class="alert">We could not read {{ c.name }}: {{ v.reason or "something went wrong" }}. We tried {{ c.attempts or 1 }} {{ "time" if (c.attempts or 1) == 1 else "times" }} and stopped.</p>
+  {% if v.can_retry %}
+  <form method="post" action="/lookups/{{ lookup_id }}/retry">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button type="submit" class="primary">Try again</button>
+  </form>
+  <p class="hint">Trying again starts a new lookup with the same details. It counts toward your daily limit.</p>
+  {% endif %}
+{% endmacro %}
+{% if pending %}
+<section class="status" aria-live="polite" aria-atomic="false">
+  <h2>Reading public records</h2>
+  {% if refresh %}<p class="hint">This page updates every {{ refresh }} seconds. <a href="/lookups/{{ lookup_id }}?stop=1">Stop updating</a></p>
+  {% elif stopped %}<p class="hint">Updates are paused. <a href="/lookups/{{ lookup_id }}">Update now and resume</a></p>{% endif %}
+  {% for c in lookup.chains %}
+  <div class="chain-status">
+    <h3>{{ c.name }}</h3>
+    {{ status(c, c.view) }}
+  </div>
+  {% endfor %}
 </section>
 {% else %}
 {% if lookup.chains|length > 1 %}
@@ -26,7 +58,7 @@
 <section class="chain">
   <h2 class="chain-name">{{ s.name }}</h2>
   {% if s.status == "failed" %}
-  <p class="alert">We could not read {{ s.name }}. {{ s.message or "" }}</p>
+  {{ failed(lookup.chains|selectattr("chain", "equalto", s.chain)|first, s.view) }}
   {% elif not s.html %}
   <p>The report for {{ s.name }} is not ready.</p>
   {% else %}

@@ -77,6 +77,7 @@ HISTORY_WORDS = {
     "truncated": "partial: only the newest transfers were read",
     "incomplete": "may be incomplete",
     "not_checked": "not checked",
+    "summary_only": "summary only: no transfers were read",
 }
 SKIP_CHECKS = {("tron", "tx_count"), ("btc", "tx_count")}     # nothing to check on that chain
 PRIOR_BUCKETS = (

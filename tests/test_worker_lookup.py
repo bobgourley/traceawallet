@@ -380,7 +380,8 @@ def test_used_up_allowance_waits_for_the_reset_without_counting_an_attempt(tmp_p
     status, conn, logs = run(tmp_path, job({"chain": "eth", "address": EVM_ADDR}, attempts=3, max_attempts=3),
                              raising(make_exc()))
     assert status == "queued" and conn.status_set() == ["queued"]
-    sql, (when, message, job_id) = conn.sql[-1]
+    sql, (when, message, job_id) = next(x for x in conn.sql if "GREATEST" in x[0])
+    assert any("failure_kind" in q and p[0] == "allowance" for q, p in conn.sql)
     assert "attempts = GREATEST(attempts - 1, 0)" in sql and job_id == 11
     assert when == next_reset() + dt.timedelta(minutes=5)
     assert message.startswith("Blockscout's daily allowance used up, resets at 00:00 UTC.")

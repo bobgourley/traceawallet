@@ -149,6 +149,27 @@ def later(seconds: int):
 NO_HANDLER = "No handler for job kind"
 
 
+STEPS = ("reading_balances", "reading_transfers", "checking", "checking_lists", "building_report")
+
+
+def set_step(conn, job_id: int, step: str) -> None:
+    """Record the step a running job is on. Never fails the job: during a deploy the
+    worker can start before the web service has added the column (migration 0018)."""
+    import psycopg
+    try:
+        conn.execute("UPDATE job SET step = %s, step_at = now() WHERE id = %s", (step, job_id))
+    except psycopg.errors.UndefinedColumn:
+        pass
+
+
+def set_failure_kind(conn, job_id: int, kind: str | None) -> None:
+    import psycopg
+    try:
+        conn.execute("UPDATE job SET failure_kind = %s WHERE id = %s", (kind, job_id))
+    except psycopg.errors.UndefinedColumn:
+        pass
+
+
 def mark_failed(conn, job_id: int, message: str) -> None:
     conn.execute("UPDATE job SET status = 'failed', last_error = %s, finished_at = now() WHERE id = %s",
                  (message, job_id))

@@ -77,3 +77,10 @@ a.button { display: inline-block; text-decoration: none; text-align: center; }
 a.button.primary { background: var(--accent); color: var(--accent-ink); border-radius: 6px; padding: .85rem 1.4rem; font-size: 1.1rem; font-weight: 700; }
 .goplus { display: inline-flex; align-items: center; gap: .4rem; vertical-align: middle; }
 .goplus img { height: 1.1rem; width: auto; background: #151515; padding: .25rem .45rem; border-radius: 4px; box-sizing: content-box; }
+
+.chain-status { border-top: 1px solid var(--line); padding: .6rem 0; }
+.chain-status h3 { margin: .2rem 0; font-size: 1.1rem; }
+ol.steps { padding-left: 1.4rem; margin: .4rem 0; }
+ol.steps li { margin: .15rem 0; }
+ol.steps li.step-now { font-weight: 700; }
+ol.steps li.step-next { color: var(--muted); }

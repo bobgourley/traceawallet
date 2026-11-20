@@ -34,9 +34,21 @@ class Outcome:
     address: str | None = None
 
 
+def _read(adapter, address: str, step: Callable):
+    step("reading_balances")
+    snap = adapter.fetch_snapshot(address)
+    step("reading_transfers")
+    return snap, adapter.fetch_transfers(snap.address, limit=TRANSFER_LIMIT)
+
+
+def _timed_out(exc: BaseException) -> bool:
+    from taw.adapters.chains.btc_esplora import EsploraTimeout
+    return isinstance(exc, (EsploraTimeout, httpx.TimeoutException))
+
+
 def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
                adapter_for: Callable, store_module=store, enrich: Callable | None = None,
-               prepare: Callable | None = None) -> Outcome:
+               prepare: Callable | None = None, progress: Callable | None = None) -> Outcome:
     """enrich(snap, batch, raw_store) -> list of notes runs after the lookup is saved
     (prices, labels). It must not raise for a provider problem; the lookup stands.
 
@@ -53,9 +65,20 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
                        f"{fresh.fetched_at:%Y-%m-%d %H:%M:%S} UTC)", reused=True, snapshot_id=fresh.id,
                        chain=chain, address=address)
 
+    step = progress or (lambda name: None)
     adapter = adapter_for(chain, raw_store)
-    snap = adapter.fetch_snapshot(address)
-    batch = adapter.fetch_transfers(snap.address, limit=TRANSFER_LIMIT)
+    fallback_note = None
+    try:
+        snap, batch = _read(adapter, address, step)
+    except Exception as exc:
+        alt = adapter.fallback() if _timed_out(exc) and hasattr(adapter, "fallback") else None
+        if alt is None:
+            raise
+        fallback_note = (f"{getattr(exc, 'provider', 'the provider')} did not answer within "
+                         f"{getattr(exc, 'waited', 0):.0f} s ({getattr(exc, 'path', '?')}); read from "
+                         f"{alt.provider_name} instead")
+        snap, batch = _read(alt, address, step)
+    step("checking")
     context, prep_note = None, None
     if prepare is not None:
         try:
@@ -66,7 +89,8 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
     saved = store_module.save_lookup(data_conn, actor, snap, batch, recon=recon)
     note = ", truncated at the limit" if batch.truncated else ""
     warning = ("; HISTORY MAY BE INCOMPLETE: " + "; ".join(recon.incomplete_reasons)) if recon.history_incomplete else ""
-    notes = ([prep_note] if prep_note else []) + (enrich(snap, batch, raw_store) if enrich else [])
+    step("checking_lists")
+    notes = [n for n in (fallback_note, prep_note) if n] + (enrich(snap, batch, raw_store) if enrich else [])
     extra = "".join(f"; {n}" for n in notes)
     return Outcome(
         f"snapshot {saved.snapshot_id} at block {snap.as_of_block}; {saved.transfers_seen} transfers "
@@ -86,6 +110,34 @@ def allowance_reset(exc: BaseException):
     if isinstance(exc, es.EtherscanDailyLimit):
         return next_reset() + dt.timedelta(minutes=5)
     return None
+
+
+def failure_kind(exc: BaseException) -> str:
+    """A code for why an attempt failed, which the waiting page words for people. The
+    technical message stays in job.last_error."""
+    from taw.adapters.chains import evm_etherscan as es
+    from taw.adapters.chains.btc_esplora import EsploraError, EsploraRateLimited
+    from taw.adapters.chains.tron_trongrid import TronGridBlocked, TronGridError
+    from taw.budget import BudgetExhausted
+    if _timed_out(exc):
+        return "provider_slow"
+    if isinstance(exc, (BudgetExhausted, es.EtherscanDailyLimit)):
+        return "allowance"
+    if isinstance(exc, (PayloadError, InvalidTronAddress, InvalidEvmAddress, InvalidBitcoinAddress, UnsupportedChain)):
+        return "cannot_look_up"
+    if isinstance(exc, (EsploraRateLimited, es.EtherscanRateLimited)) or (
+            isinstance(exc, TronGridError) and getattr(exc, "status", None) in (429, 503)):
+        return "provider_busy"
+    if isinstance(exc, (TronGridBlocked, es.EtherscanKeyRejected, es.EtherscanPaidEndpoint, MissingSetting, SecretLeak,
+                        RawIntegrityError, psycopg.Error)):
+        return "service_problem"
+    if getattr(exc, "incomplete", False):
+        return "provider_indexing"
+    if isinstance(exc, httpx.TransportError):
+        return "provider_unreachable"
+    if isinstance(exc, (EsploraError, es.EtherscanError, TronGridError)):
+        return "provider_error"
+    return "service_problem"
 
 
 def describe_failure(exc: BaseException) -> tuple[bool, str]:
@@ -115,7 +167,9 @@ def describe_failure(exc: BaseException) -> tuple[bool, str]:
             return False, (f"{who} has not finished indexing this address yet ({exc}). Nothing was saved; "
                            "the lookup will be tried again.")
         return False, f"{who} returned an error: {exc}."
-    from taw.adapters.chains.btc_esplora import EsploraError, EsploraRateLimited
+    from taw.adapters.chains.btc_esplora import EsploraError, EsploraRateLimited, EsploraTimeout
+    if isinstance(exc, EsploraTimeout):
+        return False, f"{exc.provider} did not answer within {exc.waited:.0f} s ({exc.path})."
     if isinstance(exc, EsploraRateLimited):
         return False, f"{exc.provider} kept saying we were calling too fast, even after backing off."
     if isinstance(exc, EsploraError):

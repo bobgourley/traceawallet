@@ -3,6 +3,69 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (late night): Busy addresses, timeouts, and a waiting page that shows its work
+
+**What happened.** A live lookup of `bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz`
+failed with "Could not reach the data provider (ReadTimeout)". Job 22 ran three
+attempts between 23:01 and 23:09 UTC.
+- **The address.** mempool.space and Blockstream both report 86,570
+  transactions for it.
+- **What each attempt did.** It started again from the first history page and
+  read 30, 29 and then 53 pages (18, 17 and 34 MB; the largest page was
+  1.3 MB), with a few HTTP 429 "slow down" replies along the way.
+- **Where it failed.** Each attempt ended when mempool.space stopped answering
+  the next history page: the single 60-second limit ran out, and the timeout
+  was not retried.
+- **Why it could never have worked.** Past 10,000 transactions the reader
+  cannot reach the earliest one, so a detailed read of this address could
+  never have been complete.
+
+**Fixes.**
+- **Summary first.** The Bitcoin reader reads the address summary before any
+  history. Above 10,000 transactions (`SUMMARY_ONLY_ABOVE`) it reads no history
+  at all. The lookup stores the balance with a failed check,
+  `history_not_read`, which carries the transaction count and the totals
+  received and spent. That check marks the history incomplete, and the report
+  says plainly that it is a summary only and that no transfers were read; its
+  transfer sections are replaced by one "Transfers: not read" section.
+- **Time limits by kind of request** (seconds to wait for data):
+
+  | Request | Limit |
+  |---|---|
+  | block | 10 |
+  | address summary | 15 |
+  | history page | 30 |
+  | unspent outputs | 45 |
+  | one transaction | 20 |
+
+  Connecting gets 5 seconds. A timeout is its own error, `EsploraTimeout`,
+  naming the provider, the request and the wait.
+- **Blockstream fallback.** When mempool.space times out, the whole read runs
+  again on Blockstream at the same height. The snapshot then has one source,
+  and the job log says which provider answered.
+
+**The waiting page** (migration 0018: `job.step`, `step_at`, `failure_kind`).
+- **Steps.** The worker records its step as it goes: reading balances, reading
+  transfers, checking that the figures add up, checking lists and labels,
+  building the report. The page shows each step as done, in progress (with
+  its time) or not started, and the elapsed time since the try began.
+- **Failure categories.** A failed attempt gets a code: provider_slow,
+  provider_busy, provider_error, provider_unreachable, provider_indexing,
+  allowance, cannot_look_up or service_problem. The page words the code; the
+  API no longer returns `last_error`, which keeps the technical detail for us.
+- **What the page says.** For a retry: why, when the next try is, and which try
+  it will be. For the allowance: when it resets. For a final failure: what
+  happened, and a Try again button, except for an address that cannot be
+  looked up on that network.
+- **Try again.** It starts a new lookup with the same details, under the
+  account limits, with no Turnstile since the person is signed in.
+- **Accessibility.** No animation. The page refreshes every 10 seconds with a
+  plain meta refresh, has a "Stop updating" link, and uses no inline script.
+
+**Form tokens on every page.** Every page now sets our session cookie when it
+is missing. Before, a signed-in person who opened a lookup or My lookups
+directly had no form token, so Delete and Try again would have failed.
+
 ## 2026-11-20 (night): Pages final, other accounts banded, lookups kept 12 months
 
 **No more drafts.** The owner had the DRAFT marks removed from the

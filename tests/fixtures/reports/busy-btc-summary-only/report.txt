@@ -1,0 +1,93 @@
+TraceAWallet report
+Bitcoin address bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz
+
+As of block 976,794 (2026-11-20 23:10). Lists and labels as they stood at 2026-11-20 23:11.
+All times in this report are UTC.
+This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
+
+== Summary ==
+This is a summary only. This address is too busy to read in detail: it has 86,570 transactions, and no transfers were read.
+BTC: received 389,811.58299377, spent 389,811.55161877, according to mempool.space's summary of the address. 0.031375 BTC remains.
+History read: summary only: no transfers were read. See "Is the history complete?"
+Prices: no price data was available for this report, so no US dollar values are shown.
+
+== Chains ==
+This report covers Bitcoin.
+
+== Holdings at block 976,794 ==
+BTC: 0.031375
+
+Freeze status:
+  No stablecoin on Bitcoin is checked for freezes.
+
+OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026-11-19.
+
+== Transfers ==
+Not read. This address has 86,570 transactions, too many to read in detail, so this report has no activity, no destinations or funders, and no list matches. Nothing in it comes from transfers.
+
+== Claims about this address ==
+  - None of our sources makes a claim about this address.
+GoPlus: not asked. GoPlus answers every Bitcoin address with no flags, so its answer would say nothing.
+
+== Is the history complete? ==
+Summary only: no transfers were read. The balance, the totals received and spent, and the transaction count all come from mempool.space's summary of the address when it was read.
+
+What we checked:
+  - Nothing could be checked against transfers, because none were read.
+
+What we did not read or could not check:
+  - The native coin balance matches the transfers read: not checked. No transfers were read.
+  - Transactions not yet in a block are not counted.
+  - First-hop addresses are matched against the lists above only. GoPlus and the token contracts are asked about this address alone.
+
+== Prior lookups ==
+Not counted yet for this address.
+This count is read when the report is shown and is not part of the report's fingerprint.
+
+== Look further ==
+  mempool.space: https://mempool.space/address/bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz
+  Chainabuse: https://www.chainabuse.com/address/bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz
+  Arkham: https://intel.arkm.com/explorer/address/bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz
+These sites are run by others. What they show is their own.
+
+== Sources ==
+  - mempool.space: balances and transfers
+
+<<< fixed section: recovery scams >>>
+== Watch out for recovery scams ==
+After a loss, people are often contacted by someone who says they can get the money back: a "recovery service", a "blockchain investigator", someone claiming to be a lawyer, or someone claiming to be from a government agency. Many of these are a second scam aimed at the same victim.
+
+  - No one can reverse a confirmed blockchain transaction. Funds come back only when an exchange or issuer freezes them and a court or law enforcement acts.
+  - Law enforcement does not charge victims a fee, and does not ask for payment in crypto, gift cards or wire transfers.
+  - Tokens or messages sent to an address that advertise "unfreezing" or recovery are the same scheme. Do not contact the names, handles or websites in them.
+  - If a platform says you must pay a fee or a tax before you can withdraw your money, that request is part of the scam. Do not send more money: paying does not release anything.
+  - Be wary of anyone who contacts you first, asks for an upfront fee, asks for your wallet's recovery phrase or private key, or asks you to install remote-access software.
+  - TraceAWallet will never contact you to offer recovery, and never asks for payment.
+
+If someone offers recovery, report that contact at ic3.gov as well.
+<<< end of fixed section >>>
+
+<<< fixed section: IC3 checklist >>>
+== Reporting what happened ==
+Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
+
+  [ ] First, tell the exchange or wallet provider you sent from, and your bank, if the money started in a bank account. Ask them to flag the transfer and record your report.
+  [ ] File with the FBI's Internet Crime Complaint Center (IC3) at ic3.gov.
+  [ ] In the US, also report to the Federal Trade Commission at reportfraud.ftc.gov.
+  [ ] Outside the US, report to your national police or fraud reporting centre, and at econsumer.gov, which consumer protection agencies in many countries use for cross-border scams.
+
+Gather these for the report:
+  [ ] Each payment you made: the date, the amount, the asset (for example USDT on Tron) and the transaction hash
+  [ ] The address you sent from, and the address you sent to (this report's address: bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz on Bitcoin)
+  [ ] The exchange or wallet app you sent from, and your account details there
+  [ ] The names, usernames, phone numbers, email addresses and websites the other party used
+  [ ] Messages, screenshots and any documents they sent you
+  [ ] The platform or app you were told to use, with its web address
+
+Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
+<<< end of fixed section >>>
+
+== Report fingerprint ==
+Report id: assigned when the report is stored
+Fingerprint (SHA-256): ffce49f974c3bd95c6be1cf0fe5a15d9a39851257ec58d0449e58b3e1c1e2ebe
+The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

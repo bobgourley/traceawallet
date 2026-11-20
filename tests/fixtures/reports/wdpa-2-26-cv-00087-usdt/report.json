@@ -313,6 +313,7 @@
      "symbol": "USDC"
     }
    ],
+   "summary_only": false,
    "tokens_truncated": false,
    "transfers": {
     "oldest_read": "2025-04-10T02:55:11Z",
@@ -1061,7 +1062,8 @@
     "total": "327189.01993"
    },
    "list_matches": 0
-  }
+  },
+  "summary_only": null
  },
- "sha256": "8d107f80c72949b7d2ff7d55ff5cd2db2166409ff03b159e74b4c7958fbfd7ee"
+ "sha256": "6ad6d3de6f478c591b8540309641cdd7ff5a30d1f9302e5a3749574704aec608"
 }

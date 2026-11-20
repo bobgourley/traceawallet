@@ -91,6 +91,7 @@
     "btc_unconfirmed"
    ],
    "stablecoins": [],
+   "summary_only": false,
    "tokens_truncated": false,
    "transfers": {
     "oldest_read": "2019-09-08T07:34:27Z",
@@ -552,7 +553,8 @@
     "total": "212.5015216"
    },
    "list_matches": 0
-  }
+  },
+  "summary_only": null
  },
- "sha256": "a9578e2fcbd5ebcd150adb5ababdbccb6811b821c9c28995e429fc50ccd39c5d"
+ "sha256": "2ed0a43aef6a844aded512d1a31c080fc3311be4f5c8fa57b6a639d772ef4456"
 }

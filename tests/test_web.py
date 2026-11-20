@@ -442,3 +442,90 @@ def test_pages_are_final_and_name_who_processes_data(browser):
         assert need in privacy, need
     assert "<!--email_off-->" in privacy                                  # left alone by Cloudflare
     assert "contact@traceawallet.com" in browser.get("/about").text.split("<footer")[0]
+
+
+# -- the waiting page ----------------------------------------------------------------------------
+
+def _tron_lookup(browser):
+    sign_in(browser)
+    return submit(browser, rf.CASES[KNWAN][1]).headers["location"].rsplit("/", 1)[1]
+
+
+def _job(db_url, lid, sql, *params):
+    with psycopg.connect(db_url, autocommit=True) as c:
+        jid = c.execute("SELECT job_id FROM lookup_job WHERE lookup_id = %s", (lid,)).fetchone()[0]
+        c.execute(sql + " WHERE id = %s", (*params, jid))
+
+
+def test_waiting_page_shows_the_current_step_and_time(browser, db_url):
+    lid = _tron_lookup(browser)
+    _job(db_url, lid, "UPDATE job SET status = 'running', attempts = 1, locked_at = now() - interval '80 seconds',"
+                      " step = 'reading_transfers', step_at = now() - interval '20 seconds'")
+    page = browser.get(f"/lookups/{lid}").text
+    assert "<strong>Reading transfers.</strong> Started 1 min 20 s ago." in page
+    assert "Reading balances: done" in page and "Reading transfers: in progress (20 s)" in page
+    assert "Building the report: not started" in page
+    assert 'http-equiv="refresh" content="10"' in page and "Stop updating" in page
+    stopped = browser.get(f"/lookups/{lid}?stop=1").text
+    assert 'http-equiv="refresh"' not in stopped and "Updates are paused" in stopped
+    assert "<script>" not in page
+
+
+def test_waiting_to_retry_says_why_and_when_without_error_names(browser, db_url):
+    lid = _tron_lookup(browser)
+    _job(db_url, lid, "UPDATE job SET status = 'queued', attempts = 1, failure_kind = 'provider_slow',"
+                      " run_after = now() + interval '125 seconds',"
+                      " last_error = 'Could not reach the data provider (ReadTimeout).'")
+    page = browser.get(f"/lookups/{lid}").text
+    assert "The last try did not finish: the data provider took too long to answer. We will try again at" in page
+    assert "(in about 2 min" in page and "This will be try 2 of 3." in page
+    assert "ReadTimeout" not in page and "Could not reach" not in page
+    api = browser.get(f"/api/v1/lookups/{lid}", headers={"Authorization": f"Bearer {token('user_tester', TESTER)}"})
+    assert "ReadTimeout" not in api.text and "last_error" not in api.text and "message" not in api.json()["chains"][0]
+
+
+def test_waiting_for_the_allowance(browser, db_url):
+    lid = _tron_lookup(browser)
+    _job(db_url, lid, "UPDATE job SET status = 'queued', attempts = 0, failure_kind = 'allowance',"
+                      " run_after = date_trunc('day', now()) + interval '1 day 5 minutes'")
+    page = browser.get(f"/lookups/{lid}").text
+    assert "today's data allowance for this network is used up. It resets at 00:00 UTC" in page
+    assert "will start at about 00:05 UTC" in page
+
+
+def test_failed_for_good_offers_try_again_within_the_limits(browser, db_url, monkeypatch):
+    lid = _tron_lookup(browser)
+    _job(db_url, lid, "UPDATE job SET status = 'failed', attempts = 3, failure_kind = 'provider_slow',"
+                      " finished_at = now(), last_error = 'Failed after 3 attempts. Last error: ReadTimeout'")
+    page = browser.get(f"/lookups/{lid}")
+    assert "We could not read Tron: the data provider took too long to answer. We tried 3 times and stopped." in page.text
+    assert "ReadTimeout" not in page.text and 'action="/lookups/' in page.text and "Try again" in page.text
+    again = browser.post(f"/lookups/{lid}/retry", data={"csrf": csrf_of(page.text)})
+    assert again.status_code == 303 and again.headers["location"] != f"/lookups/{lid}"
+    new = again.headers["location"].rsplit("/", 1)[1]
+    with psycopg.connect(db_url) as c:
+        assert c.execute("SELECT count(*) FROM lookup WHERE clerk_user_id = 'user_tester'").fetchone()[0] == 2
+        assert c.execute("SELECT submitted_address FROM lookup WHERE id = %s", (new,)).fetchone()[0] == \
+            rf.CASES[KNWAN][1]
+    monkeypatch.setitem(guard.LIMITS, "account_hour", 2)
+    limited = browser.post(f"/lookups/{lid}/retry", data={"csrf": csrf_of(page.text)})
+    assert limited.status_code == 429 and "2 lookups in the past hour" in limited.text
+    assert browser.post(f"/lookups/{lid}/retry", data={"csrf": "0" * 64}).status_code == 400
+
+
+def test_nothing_to_retry_and_no_button_for_addresses_that_cannot_be_looked_up(browser, db_url):
+    lid = _tron_lookup(browser)
+    r = browser.post(f"/lookups/{lid}/retry", data={"csrf": csrf_of(browser.get("/account").text)})
+    assert r.status_code == 409 and "Nothing in this lookup needs trying again" in r.text
+    _job(db_url, lid, "UPDATE job SET status = 'failed', attempts = 1, failure_kind = 'cannot_look_up', finished_at = now()")
+    page = browser.get(f"/lookups/{lid}").text
+    assert "this address cannot be looked up on this network" in page and "Try again" not in page
+
+
+def test_a_direct_visit_still_gets_a_working_form_token(browser):
+    lid = _tron_lookup(browser)
+    browser.cookies.delete("taw_sid")
+    page = browser.get(f"/lookups/{lid}")
+    assert "taw_sid=" in page.headers.get("set-cookie", "")
+    account = browser.get("/account").text
+    assert re.search(r'name="csrf" value="[0-9a-f]{64}"', account)

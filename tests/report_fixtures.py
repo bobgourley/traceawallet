@@ -34,6 +34,9 @@ CASES = {
     "edny-1-25-cv-05745-btc": ("btc", "39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq"),
     "wdpa-2-26-cv-00087-usdt": ("eth", "0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9"),
     "ddc-1-25-cv-01907-usdt-gb": ("eth", "0xc76afbf0f69ae9be5d855239c50673252cf3f26b"),
+    # Not a court case: a very busy Bitcoin address from live testing (2026-11-20), 86,570
+    # transactions, which gets a summary-only report.
+    "busy-btc-summary-only": ("btc", "bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz"),
 }
 
 # Transactions read directly by hash, for the matching tests. W.D. Pa. paragraph 16:

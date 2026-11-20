@@ -91,16 +91,19 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         else:
             outcome = lookup.run_lookup(job.payload, data_conn=data_conn, raw_store=raw_store_factory(),
                                         actor=actor, adapter_for=adapter_for, store_module=store_module,
-                                        enrich=enrich, prepare=getattr(enrich, "prepare", None))
+                                        enrich=enrich, prepare=getattr(enrich, "prepare", None),
+                                        progress=lambda step: jobs.set_step(data_conn, job.id, step))
     except Exception as exc:
         resets_at = lookup.allowance_reset(exc)
         if resets_at is not None:
             message = (f"{getattr(exc, 'provider', 'The provider')}'s daily allowance used up, resets at 00:00 UTC. "
                        f"The lookup will run again after {resets_at:%Y-%m-%d %H:%M} UTC; this attempt is not counted.")
             jobs.defer_until(data_conn, job, resets_at, message)
+            jobs.set_failure_kind(data_conn, job.id, "allowance")
             log(f"job {job.id}: deferred to {resets_at:%Y-%m-%d %H:%M} UTC: {message}")
             return "queued"
         permanent, message = lookup.describe_failure(exc)
+        jobs.set_failure_kind(data_conn, job.id, lookup.failure_kind(exc))
         if permanent or job.attempts >= job.max_attempts:
             final = message if permanent else f"Failed after {job.attempts} attempts. Last error: {message}"
             jobs.mark_failed(data_conn, job.id, final)
@@ -111,6 +114,7 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         return "queued"
     message = outcome.message
     if after is not None and job.kind == jobs.LOOKUP and outcome.snapshot_id is not None:
+        jobs.set_step(data_conn, job.id, "building_report")
         message += "; " + after(data_conn, actor, outcome)
     jobs.mark_done(data_conn, job.id)
     log(f"job {job.id}: done: {message}")

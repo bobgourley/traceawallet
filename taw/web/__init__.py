@@ -123,11 +123,15 @@ def safe_next(value: str | None) -> str:
 
 
 def page(request: Request, name: str, status: int = 200, **ctx) -> HTMLResponse:
-    sid = getattr(request.state, "sid", None) or request.cookies.get(SESSION_COOKIE)
+    """Render a page. Every page makes sure the browser has our session cookie, because
+    every form's CSRF token is derived from it."""
+    new = ensure_session(request) if not getattr(request.state, "sid", None) else False
+    sid = request.state.sid
     base = {"request": request, "csrf": csrf_for(sid), "clerk_host": frontend_api_host(),
             "clerk_key": setting("CLERK_PUBLISHABLE_KEY"), "turnstile_key": setting("TURNSTILE_SITE_KEY"),
             "me": getattr(request.state, "me", {"signed_in": False, "invited": False, "email": None})}
-    return templates.TemplateResponse(request, name, {**base, **ctx}, status_code=status)
+    resp = templates.TemplateResponse(request, name, {**base, **ctx}, status_code=status)
+    return set_session(resp, request) if new else resp
 
 
 def who(request: Request, api: Api) -> dict:
@@ -169,9 +173,7 @@ def home(request: Request, address: str = "", api: Api = Depends(get_api)):
             return page(request, "welcome.html")
         if not me.get("invited"):
             return page(request, "invite_only.html", status=403)
-    new = ensure_session(request)
-    resp = page(request, "index.html", form={"address": address[:100]}, error=None)
-    return set_session(resp, request) if new else resp
+    return page(request, "index.html", form={"address": address[:100]}, error=None)
 
 
 @router.post("/lookups", response_class=HTMLResponse)
@@ -225,6 +227,68 @@ def sign_in(request: Request, next: str = "/", api: Api = Depends(get_api)):
     return page(request, "sign_in.html", next=target)
 
 
+STEP_WORDS = {
+    "reading_balances": "Reading balances",
+    "reading_transfers": "Reading transfers",
+    "checking": "Checking that the figures add up",
+    "checking_lists": "Checking lists and labels",
+    "building_report": "Building the report",
+}
+REASON_WORDS = {
+    "provider_slow": "the data provider took too long to answer",
+    "provider_busy": "the data provider asked us to slow down",
+    "provider_error": "the data provider returned an error",
+    "provider_unreachable": "we could not reach the data provider",
+    "provider_indexing": "the data provider has not finished processing this address yet",
+    "allowance": "today's data allowance was used up",
+    "cannot_look_up": "this address cannot be looked up on this network",
+    "service_problem": "something went wrong on our side",
+}
+
+
+def _when(value):
+    import datetime as dt
+    return dt.datetime.fromisoformat(value) if value else None
+
+
+def span(seconds: float) -> str:
+    s = max(0, int(seconds))
+    if s < 60:
+        return f"{s} s"
+    m, s = divmod(s, 60)
+    if m < 60:
+        return f"{m} min {s} s" if s else f"{m} min"
+    h, m = divmod(m, 60)
+    return f"{h} h {m} min"
+
+
+def chain_state(c: dict, now) -> dict:
+    """What the waiting page says about one chain's job, from the API's progress fields."""
+    status, kind = c["job_status"], c.get("failure_kind")
+    out = {"state": status, "reason": REASON_WORDS.get(kind, "something went wrong") if kind else None,
+           "can_retry": kind != "cannot_look_up"}
+    if status == "running":
+        started, since = _when(c.get("started_at")), _when(c.get("step_since"))
+        out.update(state="running", step=STEP_WORDS.get(c.get("step") or "", "Starting"),
+                   steps=[(k, w, "done" if c.get("step") in STEP_WORDS and list(STEP_WORDS).index(c["step"]) > i
+                           else "now" if c.get("step") == k else "next")
+                          for i, (k, w) in enumerate(STEP_WORDS.items())],
+                   elapsed=span((now - started).total_seconds()) if started else None,
+                   step_elapsed=span((now - since).total_seconds()) if since else None,
+                   attempt=c.get("attempts"), max_attempts=c.get("max_attempts"))
+    elif status == "queued":
+        nxt = _when(c.get("next_attempt_at"))
+        wait = (nxt - now).total_seconds() if nxt else 0
+        if kind == "allowance":
+            out.update(state="allowance", next_at=nxt)
+        elif (c.get("attempts") or 0) > 0 and kind:
+            out.update(state="retrying", next_at=nxt, next_in=span(wait) if wait > 0 else None,
+                       attempt=(c.get("attempts") or 0) + 1, max_attempts=c.get("max_attempts"))
+        else:
+            out.update(state="waiting")
+    return out
+
+
 def _chain_name(code: str) -> str:
     from taw.report.build import CHAIN_NAMES
     return CHAIN_NAMES.get(code, code)
@@ -241,12 +305,17 @@ def lookup_page(request: Request, lookup_id: str, api: Api = Depends(get_api)):
     if got.status != 200:
         return page(request, "not_found.html", status=404)
     lk = got.body
+    import datetime as dt
+    now = dt.datetime.now(dt.timezone.utc)
+    for c in lk["chains"]:
+        c["name"] = _chain_name(c["chain"])
+        c["view"] = chain_state(c, now)
     pending = [c for c in lk["chains"] if c["job_status"] in ("queued", "running")]
     sections, not_covered = [], []
     if not pending:
         for c in lk["chains"]:
             sec = {"chain": c["chain"], "name": _chain_name(c["chain"]), "status": c["job_status"],
-                   "message": c.get("message"), "html": None, "quiet": False}
+                   "view": c["view"], "html": None, "quiet": False}
             if c["report"]:
                 rep = api.call("GET", f"/lookups/{quote(lookup_id, safe='')}/report", request,
                                params={"chain": c["chain"]})
@@ -261,8 +330,27 @@ def lookup_page(request: Request, lookup_id: str, api: Api = Depends(get_api)):
                     if cov and not not_covered:
                         not_covered = [x["name"] for x in cov["not_checked"]]
             sections.append(sec)
+    stop = request.query_params.get("stop") == "1"
     return page(request, "lookup.html", lookup=lk, pending=pending, sections=sections, not_covered=not_covered,
-                refresh=REFRESH_SECONDS if pending else None)
+                refresh=REFRESH_SECONDS if pending and not stop else None, stopped=stop and bool(pending),
+                lookup_id=lookup_id, error=request.query_params.get("error"))
+
+
+@router.post("/lookups/{lookup_id}/retry")
+def retry(request: Request, lookup_id: str, csrf: str = Form(""), api: Api = Depends(get_api)):
+    if (r := not_ready(request)) is not None:
+        return r
+    if not csrf_ok(request, csrf):
+        return page(request, "error.html", status=400, message="This form has expired. Please reload the page.")
+    if (r := gate(request, api)) is not None:
+        return r
+    got = api.call("POST", f"/lookups/{quote(lookup_id, safe='')}/retry", request)
+    if got.status == 202:
+        return RedirectResponse(f"/lookups/{got.body['id']}", status_code=303)
+    if got.status == 404:
+        return page(request, "not_found.html", status=404)
+    return page(request, "error.html", status=got.status, message=got.detail,
+                back=f"/lookups/{quote(lookup_id, safe='')}")
 
 
 @router.get("/reports/{public_id}", response_class=HTMLResponse)

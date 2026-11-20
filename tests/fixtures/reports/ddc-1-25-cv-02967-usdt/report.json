@@ -182,6 +182,7 @@
      "symbol": "USDT"
     }
    ],
+   "summary_only": false,
    "tokens_truncated": false,
    "transfers": {
     "oldest_read": "2024-10-29T03:06:33Z",
@@ -982,7 +983,8 @@
     "total": "20000"
    },
    "list_matches": 1
-  }
+  },
+  "summary_only": null
  },
- "sha256": "7ed16658f11c4d3bc17f8d490075f7991b568339b148924448c926b01b1723c8"
+ "sha256": "01ab1e22dc738542a3fdf861d97e285765822a0227f273fecfaf5b728709d768"
 }

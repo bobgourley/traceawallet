@@ -635,7 +635,9 @@ def _summary(holdings: dict, activity: dict, hops: dict, lists: dict, completene
             if out_total else None
         largest = {"address": top["address"], "asset": line["asset"] or line["symbol"], "total": line["total"],
                    "share_percent": str(share) if share is not None else None, "listed": bool(top["labels"])}
-    if not completeness["checked"]:
+    if completeness.get("summary_only"):
+        verdict = "summary_only"
+    elif not completeness["checked"]:
         verdict = "not_checked"
     elif completeness["history_incomplete"]:
         verdict = "incomplete"
@@ -652,6 +654,19 @@ def _summary(holdings: dict, activity: dict, hops: dict, lists: dict, completene
     return {"held": held, "assets": flows, "frozen": frozen, "destroyed": destroyed, "largest_destination": largest,
             "list_matches": len(lists["matched"]),
             "checked": lists["destinations_checked"] + lists["funders_checked"], "history": verdict}
+
+
+def _summary_only(inp: ReportInput) -> dict | None:
+    """An address too busy to read in detail (the adapter's history_not_read check): the
+    provider's totals and transaction count, and nothing from transfers."""
+    for ch in inp.snapshot.get("checks") or []:
+        if ch["name"] == "history_not_read":
+            d = ch.get("details") or {}
+            dec = inp.snapshot["native_decimals"]
+            return {"tx_count": d.get("provider_tx_count"), "provider": d.get("provider"),
+                    "received": amount_str(int(d.get("received_sat") or 0), dec),
+                    "sent": amount_str(int(d.get("sent_sat") or 0), dec)}
+    return None
 
 
 def build(inp: ReportInput) -> dict:
@@ -673,10 +688,16 @@ def build(inp: ReportInput) -> dict:
     if inp.chain == "btc":
         used.discard("goplus")
     completeness = _completeness(inp, c, inbound, outbound)
+    summary_only = _summary_only(inp)
+    completeness["summary_only"] = summary_only is not None
     lists = _lists(inp, c)
     groups = _mark_lookalikes(hops, set_apart, inp.chain, inp.address)
     summary = _summary(holdings, activity, hops, lists, completeness, c)
     summary["imitating_this_address"] = sorted({x for g in groups for x in g["imitating_this_address"]})
+    if summary_only:
+        n = holdings["native"]
+        summary["assets"] = [{"name": n["symbol"], "received": summary_only["received"], "sent": summary_only["sent"],
+                              "received_count": None, "sent_count": None, "remains": n["amount"]}]
     return {
         "summary": summary,
         "header": _header(inp, c, used),
@@ -690,4 +711,5 @@ def build(inp: ReportInput) -> dict:
         "completeness": completeness,
         "links": _links(inp),
         "prices_available": any(r.get("status") == "ok" for r in inp.prices.values()),
+        "summary_only": summary_only,
     }

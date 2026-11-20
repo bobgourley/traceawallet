@@ -25,8 +25,11 @@ All times in this report are UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
 
 == Summary ==
+{% if d.summary_only %}
+This is a summary only. This address is too busy to read in detail: it has {{ d.summary_only.tx_count|num }} transactions, and no transfers were read.
+{% endif %}
 {% for x in sm.assets %}
-{{ x.name }}: {{ "received" if not btc else "received" }} {{ x.received|num }}, {{ "sent" if not btc else "spent" }} {{ x.sent|num }}. {% if x.remains == "0" %}No {{ x.name }} remains at this address.{% else %}{{ x.remains|num }} {{ x.name }} remains.{% endif %}
+{{ x.name }}: {{ "received" if not btc else "received" }} {{ x.received|num }}, {{ "sent" if not btc else "spent" }} {{ x.sent|num }}{% if d.summary_only %}, according to {{ d.summary_only.provider }}'s summary of the address{% endif %}. {% if x.remains == "0" %}No {{ x.name }} remains at this address.{% else %}{{ x.remains|num }} {{ x.name }} remains.{% endif %}
 
 {% else %}
 No transfers of an asset we recognise were read.
@@ -37,14 +40,17 @@ Frozen: {{ x.issuer }} has frozen this address's {{ x.token }}{% if x.since %} s
 {% for x in sm.destroyed %}
 Destroyed: {{ x.issuer }} destroyed {{ x.amount|num }} {{ x.token }} held at this address on {{ x.time|day }}.
 {% endfor %}
-{% if sm.largest_destination %}
+{% if d.summary_only %}
+{% elif sm.largest_destination %}
 {% set ld = sm.largest_destination %}
 Largest {{ "destination" if not btc else "output to another address" }}: {{ ld.address|addr }}, {{ ld.total|num }} {{ ld.asset }}{% if ld.share_percent %}, {{ ld.share_percent }}% of the {{ ld.asset }} that left this address{% endif %}.
 {% else %}
 Largest destination: nothing left this address{{ " to another address" if btc }}.
 {% endif %}
+{% if not d.summary_only %}
 Lists: {% if sm.list_matches %}{{ plural(sm.list_matches, "first-hop address", "first-hop addresses") }} matched OFAC's list or an exchange wallet list (of {{ sm.checked|num }} checked). See "List matches".{% else %}none of the {{ sm.checked|num }} first-hop addresses checked matched OFAC's list or the exchange wallet lists we hold.{% endif %}
 
+{% endif %}
 {% if sm.imitating_this_address %}
 Lookalikes of this address: {{ plural(sm.imitating_this_address|length, "address", "addresses") }} in this report {{ "begins" if sm.imitating_this_address|length == 1 else "begin" }} and {{ "ends" if sm.imitating_this_address|length == 1 else "end" }} with the same characters as this address. See "Lookalike addresses".
 {% endif %}
@@ -156,6 +162,7 @@ Freeze status:
 OFAC sanctions list: {% if hd.ofac.listed %}this address is on it.{% for l in hd.ofac.labels %} {{ l.label }} (list dated {{ l.source_date or "unknown" }}).{% endfor %}{% else %}this address is not on OFAC's SDN list{% if hd.ofac.list_date %} as published on {{ hd.ofac.list_date }}{% endif %}.{% endif %}
 
 
+{% if not d.summary_only %}
 == Activity ==
 {% if a.first_activity %}
 First activity read: {{ a.first_activity|when }}. Last activity read: {{ a.last_activity|when }}.
@@ -294,6 +301,12 @@ The {{ "token" if a.unrecognised_tokens|length == 1 else (a.unrecognised_tokens|
 {% endif %}
 {% endif %}
 
+{% else %}
+
+== Transfers ==
+Not read. This address has {{ d.summary_only.tx_count|num }} transactions, too many to read in detail, so this report has no activity, no destinations or funders, and no list matches. Nothing in it comes from transfers.
+{% endif %}
+
 == Claims about this address ==
 {% set lb = d.labels %}
 {% for l in lb.address %}
@@ -311,6 +324,8 @@ GoPlus: {% if lb.goplus.status == "no_flags" %}GoPlus has no flags for this addr
 Complete as far as we can check: the balances we could check match the transfers read, and the source listed the whole history ({{ plural(c.transfers.read, "transfer") }}{% if c.transfers.oldest_read %}, from {{ c.transfers.oldest_read|day }}{% endif %}).
 {% elif sm.history == "truncated" %}
 Partial: only the newest {{ c.transfers.read|num }} transfers were read{% if c.transfers.oldest_read %}, back to {{ c.transfers.oldest_read|day }}{% endif %}. Older history was not read, and totals cover only what was read.
+{% elif sm.history == "summary_only" %}
+Summary only: no transfers were read. The balance, the totals received and spent, and the transaction count all come from {{ d.summary_only.provider }}'s summary of the address when it was read.
 {% elif sm.history == "incomplete" %}
 The history may be incomplete. What was read does not add up:
 {% for r in c.incomplete_reasons %}
@@ -322,9 +337,13 @@ Not checked: the completeness checks were not run on this snapshot, so it is not
 {% endif %}
 
 What we checked:
-{% for ch in c.checks if (h.chain, ch.name) not in SKIP_CHECKS and ch.status != "not_run" and ch.name != "other_token_reconciliation" %}
+{% for ch in c.checks if (h.chain, ch.name) not in SKIP_CHECKS and ch.status != "not_run" and ch.name not in ("other_token_reconciliation", "history_not_read") %}
   - {{ CHECK_TITLES.get(ch.name, ch.name) }}: {{ "yes" if ch.status == "passed" else "no" }}{% if ch.status == "failed" and ch.reason %}. {{ ch.reason }}{% endif %}
 
+{% else %}
+{% if d.summary_only %}
+  - Nothing could be checked against transfers, because none were read.
+{% endif %}
 {% endfor %}
 {% if c.internal and c.internal.full %}
   - Internal transfers (value moved by contract code) were read for every block up to the snapshot.

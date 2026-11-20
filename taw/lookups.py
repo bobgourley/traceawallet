@@ -114,6 +114,25 @@ def _jobs(conn, lookup_id: str) -> list[tuple]:
         " JOIN job j ON j.id = lj.job_id WHERE lj.lookup_id = %s ORDER BY lj.chain", (lookup_id,)).fetchall()
 
 
+def _iso(t):
+    return t.astimezone(dt.timezone.utc).isoformat() if t else None
+
+
+def _progress(conn, lookup_id: str) -> dict[str, dict]:
+    """Per chain: what its job is doing, for the waiting page. No error text: a code."""
+    rows = conn.execute(
+        "SELECT lj.chain, j.status::text, j.step, j.step_at, j.locked_at, j.attempts, j.max_attempts, j.run_after,"
+        " j.failure_kind, j.created_at, j.finished_at FROM lookup_job lj JOIN job j ON j.id = lj.job_id"
+        " WHERE lj.lookup_id = %s", (lookup_id,)).fetchall()
+    return {chain: {"step": step if status == "running" else None, "step_since": _iso(step_at) if status == "running" else None,
+                    "started_at": _iso(locked) if status == "running" else None, "attempts": attempts,
+                    "max_attempts": max_attempts,
+                    "next_attempt_at": _iso(run_after) if status == "queued" else None,
+                    "failure_kind": kind if status in ("queued", "failed") else None,
+                    "queued_at": _iso(created), "finished_at": _iso(finished)}
+            for chain, status, step, step_at, locked, attempts, max_attempts, run_after, kind, created, finished in rows}
+
+
 def report_for(conn, actor: str, lookup_id: str, chain: str, address: str, finished_at) -> dict | None:
     """The report this lookup was shown for a chain: the one linked in lookup_report, or
     else the newest report for the address made by the time its job finished (linked
@@ -146,14 +165,37 @@ def get(conn, actor: str, lookup_id: str, user_id: str) -> dict | None:
         return None
     lid, family, address, created, match, checked = row
     chains = []
+    progress = _progress(conn, lid)
     for chain, job_id, status, error, finished in _jobs(conn, lid):
         rep = report_for(conn, actor, lid, chain, address, finished) if status == "done" else None
-        chains.append({"chain": chain, "job_status": status, "message": error if status != "done" else None,
+        chains.append({"chain": chain, "job_status": status, **progress.get(chain, {}),
                        "report": None if rep is None else {
                            "public_id": rep["public_id"], "sha256": rep["sha256"], "as_of_block": rep["as_of_block"],
                            "as_of_time": rep["as_of_time"].astimezone(dt.timezone.utc).isoformat()}})
     return {"id": lid, "family": family, "address": address, "created_at": created.isoformat(), "chains": chains,
             "match": match, "match_checked_at": checked.isoformat() if checked else None}
+
+
+class NothingToRetry(ValueError):
+    pass
+
+
+def retry(conn, actor: str, lookup_id: str, user_id: str) -> str:
+    """Start the lookup again, as a new lookup with the same inputs, for its owner. Only
+    when one of its jobs failed for good. Limits are checked by the caller."""
+    row = conn.execute(
+        "SELECT submitted_address, chain_hint, asset, amount, sent_on, sending_address, tx_hash, platform_name,"
+        " platform_url FROM lookup WHERE id = %s AND clerk_user_id = %s AND redacted_at IS NULL",
+        (lookup_id, user_id)).fetchone()
+    if row is None:
+        raise LookupError(lookup_id)
+    if not any(status == "failed" for _, _, status, _, _ in _jobs(conn, lookup_id)):
+        raise NothingToRetry("nothing failed in this lookup")
+    address, chain, asset, amount, sent_on, sender, tx, pname, purl = row
+    new_id, _ = create(conn, actor, LookupRequest(
+        address=address, chain=chain, asset=asset, amount=None if amount is None else str(amount), sent_on=sent_on,
+        sending_address=sender, tx_hash=tx, platform_name=pname, platform_url=purl), user_id=user_id)
+    return new_id
 
 
 CLAIM_WINDOW = dt.timedelta(days=1)

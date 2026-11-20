@@ -166,6 +166,21 @@ def read_lookup(lookup_id: str, who: Identity = Depends(member), db=Depends(conn
     return found
 
 
+@router.post("/lookups/{lookup_id}/retry", status_code=202, dependencies=[Depends(ready)])
+def retry_lookup(lookup_id: str, request: Request, who: Identity = Depends(member), db=Depends(conn)) -> dict:
+    """Try a failed lookup again: a new lookup with the same inputs, under the same limits."""
+    hit = guard.check_limits(db, user_id=who.user_id, ip_hash=guard.salted("ip", guard.connection_key(client_ip(request))))
+    if hit:
+        raise HTTPException(status_code=429, detail=guard.limit_message(hit))
+    try:
+        new_id = lookups.retry(db, ACTOR, _uuid(lookup_id), who.user_id)
+    except LookupError:
+        raise HTTPException(status_code=404) from None
+    except lookups.NothingToRetry:
+        raise HTTPException(status_code=409, detail="Nothing in this lookup needs trying again.") from None
+    return {"id": new_id}
+
+
 @router.delete("/lookups/{lookup_id}", dependencies=[Depends(ready)])
 def delete_lookup(lookup_id: str, who: Identity = Depends(member), db=Depends(conn)) -> dict:
     if not lookups.redact(db, ACTOR, _uuid(lookup_id), who.user_id):

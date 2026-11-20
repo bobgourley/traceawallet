@@ -323,6 +323,7 @@
      "symbol": "USDT"
     }
    ],
+   "summary_only": false,
    "tokens_truncated": false,
    "transfers": {
     "oldest_read": "2023-08-02T05:35:59Z",
@@ -1334,7 +1335,8 @@
     "total": "66898093.72"
    },
    "list_matches": 0
-  }
+  },
+  "summary_only": null
  },
- "sha256": "c7e3a6cd44e717bc42fa77a9cc907706897de1183404abab8732c55e6377c2f9"
+ "sha256": "cb25b010f15b9489cf298e59e88f5da1b782188019d489eea5546618449d95d9"
 }

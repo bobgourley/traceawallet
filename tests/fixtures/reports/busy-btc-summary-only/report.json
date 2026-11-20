@@ -1,0 +1,213 @@
+{
+ "data": {
+  "activity": {
+   "assets": [],
+   "first_activity": null,
+   "last_activity": null,
+   "transfers_in": 0,
+   "transfers_out": 0,
+   "unpriced_assets": [
+    "BTC"
+   ],
+   "unrecognised_imitating": 0,
+   "unrecognised_more": 0,
+   "unrecognised_more_transfers": 0,
+   "unrecognised_tokens": [],
+   "unrecognised_transfers": 0
+  },
+  "completeness": {
+   "before_history": null,
+   "checked": true,
+   "checks": [
+    {
+     "details": {
+      "provider": "mempool.space",
+      "provider_tx_count": 86570,
+      "received_sat": "38981158299377",
+      "sent_sat": "38981155161877",
+      "summary_only_above": 10000
+     },
+     "marks_incomplete": true,
+     "name": "history_not_read",
+     "reason": "the address has 86,570 transactions, more than the 10,000 that can be read in detail, so no transfers were read",
+     "status": "failed"
+    },
+    {
+     "details": {},
+     "marks_incomplete": true,
+     "name": "native_reconciliation",
+     "reason": "No transfers were read.",
+     "status": "not_run"
+    },
+    {
+     "details": {},
+     "marks_incomplete": true,
+     "name": "tx_count",
+     "reason": "No transfers were read.",
+     "status": "not_run"
+    }
+   ],
+   "history_incomplete": true,
+   "incomplete_reasons": [
+    "the address has 86,570 transactions, more than the 10,000 that can be read in detail, so no transfers were read"
+   ],
+   "internal": null,
+   "not_read": [
+    "btc_unconfirmed"
+   ],
+   "stablecoins": [],
+   "summary_only": true,
+   "tokens_truncated": false,
+   "transfers": {
+    "oldest_read": null,
+    "read": 0,
+    "truncated": true
+   }
+  },
+  "first_hop": {
+   "btc_returned": {
+    "count": 0,
+    "total": "0",
+    "total_raw": "0",
+    "transactions": 0
+   },
+   "btc_spending_transactions": 0,
+   "destinations": [],
+   "destinations_more": 0,
+   "distinct_senders": 0,
+   "first_funder": null,
+   "funders": [],
+   "funders_more": 0
+  },
+  "header": {
+   "address": "bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz",
+   "as_of_block": 976794,
+   "as_of_time": "2026-11-20T23:10:52Z",
+   "chain": "btc",
+   "chain_name": "Bitcoin",
+   "chain_source": {
+    "attribution": "mempool.space",
+    "name": "mempool.space",
+    "slug": "mempool-space"
+   },
+   "evm_coverage": null,
+   "fetched_at": "2026-11-20T23:11:22Z",
+   "is_contract": false,
+   "labels_as_of": "2026-11-20T23:11:32Z",
+   "sources": [
+    {
+     "name": "mempool.space",
+     "slug": "mempool-space",
+     "url": "https://mempool.space",
+     "used_for": "chain_data"
+    }
+   ]
+  },
+  "holdings": {
+   "freezable": {
+    "held": [],
+    "share_percent": null,
+    "share_status": "missing_prices",
+    "unpriced": [
+     "BTC"
+    ]
+   },
+   "freeze": [],
+   "native": {
+    "amount": "0.031375",
+    "amount_raw": "3137500",
+    "decimals": 8,
+    "price_status": "not_read",
+    "symbol": "BTC",
+    "usd": null
+   },
+   "ofac": {
+    "labels": [],
+    "list_date": "2026-11-19",
+    "listed": false
+   },
+   "tokens": [],
+   "tokens_truncated": false,
+   "unrecognised_count": 0
+  },
+  "labels": {
+   "address": [],
+   "counterparties_checked_against": [
+    "ofac-sdn",
+    "exchange-por",
+    "okx-por"
+   ],
+   "goplus": {
+    "status": "never_asked_btc"
+   },
+   "list_dates": {
+    "exchange-por": "2026-11-10",
+    "ofac-sdn": "2026-11-19",
+    "okx-por": "2026-11-01"
+   }
+  },
+  "links": {
+   "arkham": "https://intel.arkm.com/explorer/address/bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz",
+   "chainabuse": "https://www.chainabuse.com/address/bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz",
+   "explorer": {
+    "name": "mempool.space",
+    "url": "https://mempool.space/address/bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz"
+   }
+  },
+  "lists": {
+   "destinations_checked": 0,
+   "funders_checked": 0,
+   "list_dates": {
+    "exchange-por": "2026-11-10",
+    "ofac-sdn": "2026-11-19",
+    "okx-por": "2026-11-01"
+   },
+   "matched": []
+  },
+  "lookalikes": [],
+  "prices_available": false,
+  "set_apart": {
+   "tiny": {
+    "count": 0,
+    "rows": []
+   },
+   "zero": {
+    "count": 0,
+    "rows": []
+   }
+  },
+  "summary": {
+   "assets": [
+    {
+     "name": "BTC",
+     "received": "389811.58299377",
+     "received_count": null,
+     "remains": "0.031375",
+     "sent": "389811.55161877",
+     "sent_count": null
+    }
+   ],
+   "checked": 0,
+   "destroyed": [],
+   "frozen": [],
+   "held": [
+    {
+     "amount": "0.031375",
+     "freezable": false,
+     "name": "BTC"
+    }
+   ],
+   "history": "summary_only",
+   "imitating_this_address": [],
+   "largest_destination": null,
+   "list_matches": 0
+  },
+  "summary_only": {
+   "provider": "mempool.space",
+   "received": "389811.58299377",
+   "sent": "389811.55161877",
+   "tx_count": 86570
+  }
+ },
+ "sha256": "ffce49f974c3bd95c6be1cf0fe5a15d9a39851257ec58d0449e58b3e1c1e2ebe"
+}
