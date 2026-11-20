@@ -82,6 +82,7 @@ def test_next_outgoing_transfers_of_the_same_asset():
     nxt = r["next_outgoing"]
     assert nxt[0]["to"] == "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1" and nxt[0]["amount"] == "230000"
     assert all(x["asset"] == "USDC" and x["amount"] != "0" for x in nxt)   # zero-value rows are left out
+    assert all(x["to"] != ME for x in nxt)                                 # and transfers back to itself
     assert r["next_outgoing_note"] == NOT_PROOF and "does not show that they were your funds" in NOT_PROOF
 
 

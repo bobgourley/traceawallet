@@ -101,7 +101,8 @@ def inbound(chain: str, address: str, transfers) -> list[TransferRecord]:
 
 def next_outgoing(chain: str, address: str, transfers, after: TransferRecord, limit: int = NEXT_ROWS) -> list[dict]:
     """The address's outgoing transfers of the same asset after `after`, oldest first.
-    Zero-value transfers are left out: they move nothing (and are often made by others)."""
+    Zero-value transfers are left out (they move nothing, and are often made by others),
+    and so are transfers back to the address itself."""
     me = _norm(chain, address)
     key = _norm(chain, after.token_contract)
     if chain == "btc":
@@ -109,7 +110,8 @@ def next_outgoing(chain: str, address: str, transfers, after: TransferRecord, li
     else:
         rows = [t for t in transfers if _norm(chain, t.from_address) == me and _norm(chain, t.token_contract) == key
                 and t.kind not in ("utxo_in", "utxo_out")]
-    later = [t for t in rows if t.amount_raw > 0 and (t.block_number, t.tx_hash) > (after.block_number, after.tx_hash)]
+    later = [t for t in rows if t.amount_raw > 0 and _norm(chain, t.to_address) != me
+             and (t.block_number, t.tx_hash) > (after.block_number, after.tx_hash)]
     later.sort(key=lambda t: (t.block_number, t.tx_hash, t.event_index))
     return [_row(t, chain) for t in later[:limit]]
 
