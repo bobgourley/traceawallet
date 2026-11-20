@@ -43,6 +43,32 @@ at 00:05 UTC. Its `last_error` reads "Blockscout's daily allowance used up,
 resets at 00:00 UTC", and the attempt is not counted, so the job keeps all its
 retries.
 
+## 2026-11-20 (late): prices, Chainlink terms, TronGrid limit
+
+**Prices come from Chainlink feeds read on-chain.** Research is in
+`docs/research/price-sources.md`.
+
+- ETH, BTC, USDT, USDC and DAI are read from the Ethereum mainnet feeds.
+- TRX is read from the OP Mainnet TRX/USD feed (from 2023-05-18).
+- Each price is `latestRoundData()` read with `eth_call` at the block before
+  the transfer. The value is kept with its feed, round, `updatedAt` and block,
+  and shown with its age.
+- Any other asset shows its amount with "no price available". So does any
+  transfer earlier than a feed's first readable block.
+- **DefiLlama is not used in Phase 1.** This supersedes the earlier plan to
+  ask it for permission.
+
+**Chainlink's redistribution clause needs a written answer before any Phase 2
+paid API.** Its Terms of Service (Version 6.0, effective 2026-08-18) say "you
+may not resell, lease, lend, share, distribute or otherwise permit any third
+party to use the Website or the Services". Showing a derived USD value in a
+free report reads as outside that clause. Serving feed values through a paid
+API comes close. Ask Chainlink in writing before building one.
+
+**TronGrid limit confirmed: 100,000 requests a day.** The owner confirmed our
+account's limit. New free accounts since 2026-10-22 get 10,000 a day
+(data-sources.md), so this needs checking again if the key is ever replaced.
+
 ## 2026-11-20 (night): Bitcoin through Esplora
 
 **mempool.space is primary and Blockstream is the cross-check, behind one
