@@ -786,3 +786,37 @@ def test_daily_job_is_queued_once_a_day(conns):
     assert jobs.ensure_daily(data, jobs.OFAC_REFRESH, now=tomorrow)
     assert count(data, "SELECT max(run_after) FROM job WHERE kind = %s", jobs.OFAC_REFRESH) == \
         dt.datetime(2026, 11, 21, 23, tzinfo=dt.timezone.utc)
+
+
+# -- labels: stablecoin freeze status (0013) -------------------------------------------------------
+
+def test_freeze_status_labels_and_checks(conns):
+    from taw.adapters.labels import freeze
+    from taw.worker.enrich import save_freeze_checks
+    data, raw = conns
+    raw_store = store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test")
+    addr = "0xc1b68434d0ef9a78e7f62e3b9850b70b3d0174bf"
+    usdt, usdc = (next(c for c in freeze.CONTRACTS if c.chain == "eth" and c.token == t) for t in ("USDT", "USDC"))
+
+    def checks(usdt_status, usdc_status, n):
+        sha = [raw_store.save("blockscout", "https://api.blockscout.com/1/json-rpc", {"call": f"{n}-{i}"}, 200,
+                              f'{{"n": "{n}-{i}"}}'.encode()) for i in range(2)]
+        return [freeze.FreezeCheck(usdt, addr, usdt_status, 900 + n, sha[0]),
+                freeze.FreezeCheck(usdc, addr, usdc_status, 900 + n, sha[1])]
+
+    save_freeze_checks(data, ACTOR, "eth", addr, checks(True, False, 1))
+    rows = data.execute("SELECT s.slug, l.category, l.status::text FROM label l JOIN source s ON s.id = l.source_id"
+                        " ORDER BY l.id").fetchall()
+    assert rows == [("usdt-contract", "frozen", "asserted")]
+    assert count(data, "SELECT count(*) FROM label_check") == 2
+    assert count(data, "SELECT result FROM label_check WHERE subject = %s", usdc.contract) == "not_frozen"
+
+    save_freeze_checks(data, ACTOR, "eth", addr, checks(None, False, 2))        # no answer: nothing withdrawn
+    assert count(data, "SELECT count(*) FROM label") == 1
+    save_freeze_checks(data, ACTOR, "eth", addr, checks(False, False, 3))       # released
+    assert data.execute("SELECT status::text, supersedes_id IS NOT NULL FROM label ORDER BY id DESC LIMIT 1"
+                        ).fetchone() == ("withdrawn", True)
+    assert count(data, "SELECT count(*) FROM label_current") == 0
+    assert count(data, "SELECT count(*) FROM label_check") == 6
+    with pytest.raises(psycopg.errors.RaiseException, match="append-only"):
+        data.execute("UPDATE label_check SET result = 'x'")

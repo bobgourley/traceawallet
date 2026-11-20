@@ -67,14 +67,16 @@ def _address_ids(conn, claims: list[LabelClaim], extra: dict[str, set[str]] | No
 
 def sync(conn, actor: str, source_slug: str, claims: list[LabelClaim], *, raw_sha256: str | None,
          source_date: dt.date | None, observed_at: dt.datetime | None = None,
-         only_address: tuple[str, str] | None = None) -> SyncResult:
+         only_address: tuple[str, str] | None = None, raw_source: str | None = None) -> SyncResult:
     """Make the label table agree with `claims`. only_address=(chain, address) limits
-    withdrawals to that address (address sources); None covers the whole source."""
+    withdrawals to that address (address sources); None covers the whole source.
+    raw_source: the source the raw response was saved under, when it isn't the
+    label's (a contract read served by Blockscout or TronGrid)."""
     observed_at = observed_at or dt.datetime.now(dt.timezone.utc)
     source = store.source_id(conn, source_slug)
     raw_id = None
     if raw_sha256:
-        raw_id = store.raw_response_ids(conn, source_slug, [raw_sha256])[raw_sha256]
+        raw_id = store.raw_response_ids(conn, raw_source or source_slug, [raw_sha256])[raw_sha256]
     rows: list[tuple] = []
     with store.actor_transaction(conn, actor):
         extra = {only_address[0]: {only_address[1]}} if only_address else None
@@ -141,3 +143,16 @@ def current(conn, chain: str, addresses: list[str], *, sources: list[str] | None
         out[norm[addr]].append({"source": slug, "category": cat, "label": lab, "claim_url": url,
                                 "source_date": sdate, "observed_at": obs})
     return out
+
+
+def record_check(conn, actor: str, source_slug: str, chain: str, address: str, *, subject: str,
+                 block: int | None, result: str, detail: dict, raw_sha256: str, raw_source: str) -> None:
+    """Record that a source was asked about an address, and its answer (label_check)."""
+    raw_id = store.raw_response_ids(conn, raw_source, [raw_sha256])[raw_sha256]
+    with store.actor_transaction(conn, actor):
+        address_id = store.upsert_addresses(conn, chain, [address])[address]
+        conn.execute(
+            "INSERT INTO label_check (source_id, address_id, subject, block_number, result, detail, raw_response_id)"
+            " VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s)",
+            (store.source_id(conn, source_slug), address_id, subject, block, result, json.dumps(detail, default=str),
+             raw_id))

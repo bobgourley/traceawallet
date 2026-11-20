@@ -179,10 +179,11 @@ class TronGridAdapter:
         raw = r.data["block_header"]["raw_data"]
         return int(raw["number"]), _ms_to_dt(int(raw["timestamp"])), r.sha
 
-    def _constant_call(self, contract: str, selector: str) -> tuple[str | None, str]:
+    def _constant_call(self, contract: str, selector: str, parameter: str = "") -> tuple[str | None, str]:
+        """A read-only call at the current head. parameter: ABI-encoded arguments, hex without 0x."""
         r = self._request("POST", "/wallet/triggerconstantcontract", body={
             "owner_address": contract, "contract_address": contract,
-            "function_selector": selector, "parameter": "", "visible": True,
+            "function_selector": selector, "parameter": parameter, "visible": True,
         })
         ok = (r.data.get("result") or {}).get("result")
         results = r.data.get("constant_result") or []
