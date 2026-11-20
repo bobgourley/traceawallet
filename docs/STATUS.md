@@ -241,7 +241,8 @@ Postgres, its volume and the bucket are in US East too. Check with
 1. Prices (branch `prices`): built. After each lookup the worker reads Chainlink feeds for the
    transfers' (asset, bucket) pairs into the `price` table, at most 40 new buckets a lookup. Live
    check pending Blockscout's credit reset.
-2. Label loaders: OFAC SDN list, GoPlus (never for Bitcoin; logo and "Powered by GoPlus"),
+2. OFAC (branch `ofac`): built. Daily load of the SDN list into `label`; case 4 checked (none listed).
+3. Label loaders: OFAC SDN list, GoPlus (never for Bitcoin; logo and "Powered by GoPlus"),
    stablecoin freeze checks, the exchange wallet file.
 3. Transaction matching: find the victim's own transfer from what they entered.
 4. The report.

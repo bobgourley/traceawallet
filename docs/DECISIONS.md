@@ -3,6 +3,60 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (small hours): Labels: OFAC SDN list
+
+**One interface for every label source** (`taw/adapters/labels/base.py`, rule
+7). There are two shapes:
+
+- A bulk source loads a whole published list: OFAC, the exchange file. Its
+  labels live in our tables, so applying them costs no API calls. These are
+  the local sources.
+- An address source is asked about one address at a time: GoPlus, the
+  stablecoin contracts.
+
+Every claim carries its source, date, wording and raw response.
+
+**Append-only labels with a key** (0012, `taw/labels.py`). Each claim has a
+`claim_key`, e.g. `sdn:<entry uid>:<tag>:<address>`. A reload compares each
+key with the newest row for it:
+
+- unchanged: nothing is written
+- new: a row is added
+- changed: a new row supersedes the old one
+- gone: a `withdrawn` row supersedes the old one (a delisting)
+- back: a new row supersedes the withdrawal (a relisting)
+
+`label_load` records every load, including ones that changed nothing. A
+label's `source_date` is the publication that made that row.
+
+**The file.** `SDN.XML` comes from OFAC's Sanctions List Service (about 30 MB).
+The service redirects to a signed link that expires within the hour, so the
+file is stored under the stable OFAC URL; the signed one is never kept. A file
+with a DTD is refused, so no entity is ever expanded.
+
+**Chains come from the address format**, not the currency tag:
+
+- 0x and 40 hex characters go to every EVM chain, matched without regard to
+  case.
+- A valid T... address goes to Tron.
+- A valid Bitcoin address goes to Bitcoin.
+- Anything else isn't mapped, and is counted by tag in `label_load.detail`.
+
+On the 2026-11-19 list (1,082 digital currency IDs) this matters: one "XBT"
+entry is a Tron address, seven "USDT" entries are Bitcoin addresses (Omni),
+and 50 are formats we don't cover (Litecoin, Monero, Bitcoin Cash's own
+format, Dash, Zcash, Solana, XRP and others). A Bitcoin Cash or Bitcoin SV
+address in legacy format is a valid Bitcoin address too, so it is mapped to
+Bitcoin; the tag in the label says what OFAC listed it as.
+
+**Wording** (rule 9): "listed by OFAC on the SDN list: <name> (SDN entry <uid>;
+programs ...); listed as Digital Currency Address - XBT". The link is OFAC's
+search page for that entry.
+
+**Daily.** The worker queues an `ofac_refresh` job once a day for 23:00 UTC.
+The first one runs at once if no refresh has ever finished. `scripts/load_ofac.py`
+runs the same load by hand.
+
 ## 2026-11-20 (small hours): Prices: Chainlink at bucket starts
 
 This supersedes "read at the block before the transfer, cached per hour" in the
