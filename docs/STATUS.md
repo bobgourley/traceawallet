@@ -1,16 +1,22 @@
 # Status
 
-Last updated 2026-11-19. Design choices and their reasons are in
+Last updated 2026-11-20. Design choices and their reasons are in
 [DECISIONS.md](DECISIONS.md).
 
 ## Live
 
 - `traceawallet-web` and `traceawallet-worker` run on Railway (project "adaptable-connection").
 - `/healthz` reports 8 chains (six EVM chains, Tron, Bitcoin).
-- Migrations 0001 to 0004 are applied. 0005 (Etherscan terms) is on branch `etherscan-terms`.
-- The worker handles `address_lookup` jobs for Tron. Nothing queues them automatically yet.
-- The worker handles EVM lookups through Etherscan (deployed 2026-11-19). Phase 1 checks eth, polygon
-  and arbitrum; bsc, optimism and base fail at once because our plan does not cover them.
+- Migrations 0001 to 0009 are applied.
+- The worker handles `address_lookup` jobs for every Phase 1 chain. Nothing queues them automatically
+  yet.
+  - Tron, through TronGrid.
+  - eth, arbitrum and optimism, through Blockscout's free tier. Etherscan is used only in tests and
+    cross-checks.
+  - btc, through mempool.space, cross-checked against Blockstream.
+- polygon and base (they need a paid Blockscout plan) and bsc (no source with suitable terms) fail
+  at once with a plain reason.
+- Every lookup runs the completeness checks and stores each result on its snapshot.
 
 ## Live check, Ethereum (2026-11-19, production database and bucket)
 
@@ -54,12 +60,13 @@ Three lookups of `TL7me8SQkNmieVngj9sPQGG2PSMENASHug`, queued with `scripts/enqu
 
 Every job finished on attempt 1 with no `last_error`. The payload held only chain and address.
 
-## Worker: `address_lookup` jobs (Tron and EVM chains)
+## Worker: `address_lookup` jobs
 
 Queue one with:
 
     railway ssh --service traceawallet-worker -- python scripts/enqueue.py tron T... --wait 300
     railway ssh --service traceawallet-worker -- python scripts/enqueue.py eth 0x... --wait 300
+    railway ssh --service traceawallet-worker -- python scripts/enqueue.py btc bc1q... --wait 300
 
 One job covers one chain. To look up an EVM address on three chains, queue three jobs.
 
@@ -71,15 +78,24 @@ What a job does:
 
 1. Reads the payload, which is exactly `{chain, address}` and holds nothing about a user.
 2. If the address was fetched less than 10 minutes ago, reuses that and finishes.
-3. Otherwise takes a snapshot (balances, contract status, block height) and up to 2,000 transfers.
-   Events for confirmed transactions that were saved before are reused rather than fetched again.
+3. Otherwise takes a snapshot (balances, contract status, block height) and up to 2,000 transfers
+   (1,000 transactions on Bitcoin), always adding the earliest. Then it runs the completeness checks:
+   - balance reconciliations
+   - nonce or transaction count
+   - the provider's two lists agree
+
+   Each check's result is stored on the snapshot. A failed check marks the history as possibly
+   incomplete.
 4. Saves through `taw/store.py`: every raw response goes to the bucket with a `raw_response` row,
    committed as it arrives. Addresses, transfers and the snapshot are written together in one
    transaction. Re-running adds nothing and raises nothing.
 5. On failure it retries after 30 s, 2 min, 8 min, up to `max_attempts`, then marks the job failed
-   with a plain-language `last_error`. A TronGrid 403, a bad address or a missing key fails the job
-   at once. So does an EVM chain that Etherscan's free plan does not cover (BNB Smart Chain, OP
-   Mainnet, Base), a rejected Etherscan key, or a used-up daily allowance.
+   with a plain-language `last_error`. Some failures end the job at once:
+   - a TronGrid 403, a bad address, or a missing or rejected key
+   - a chain outside Phase 1
+   - a used-up daily allowance
+
+   Blockscout's "not yet processed" answer is retried, never stored.
 
 ## Code
 
@@ -87,14 +103,19 @@ What a job does:
 |---|---|
 | `taw/adapters/base.py` | Result dataclasses, `ChainAdapter`, `RawStore` (local folder, bucket) |
 | `taw/adapters/chains/tron_trongrid.py` | Tron via TronGrid |
-| `taw/adapters/chains/evm_etherscan.py` | EVM chains via Etherscan API V2, one instance per chain |
+| `taw/adapters/chains/evm_etherscan.py` | EVM chains via Etherscan API V2 (tests and cross-checks only) |
+| `taw/adapters/chains/evm_blockscout.py` | eth, arbitrum, optimism via the Blockscout PRO API (what the worker uses) |
+| `taw/adapters/chains/btc_esplora.py`, `btc_address.py` | Bitcoin via mempool.space and Blockstream; address checksums |
+| `taw/reconcile.py` | The completeness checks, the same names on every chain |
+| `taw/adapters/chains/evm_crosscheck.py` | Compare two providers' results at one block |
 | `taw/adapters/chains/evm_address.py` | EVM address checks, EIP-55 checksum, Keccak-256 |
 | `taw/adapters/chains/common.py` | Request pacer and ABI decoding shared by adapters |
 | `taw/adapters/registry.py` | Which adapter serves which chain |
 | `taw/store.py` | Database writes for every chain |
 | `taw/jobs.py` | Queue: enqueue, claim, retry, finish |
 | `taw/worker/lookup.py` | The `address_lookup` handler and failure wording |
-| `scripts/try_tron.py`, `scripts/try_evm.py` | Try an adapter without a database |
+| `scripts/try_tron.py`, `scripts/try_evm.py`, `scripts/try_btc.py` | Try an adapter without a database |
+| `scripts/cross_check_evm.py`, `scripts/cross_check_btc.py` | Run two providers at one height and list every difference |
 | `scripts/enqueue.py`, `scripts/check_lookup.py` | Queue a lookup; inspect results |
 | `scripts/purge_source_bodies.py` | Delete one source's bodies from the bucket, keep the rows (dry run by default; never run for real) |
 
@@ -102,7 +123,7 @@ What a job does:
 
     .venv/bin/python -m pytest
 
-116 tests run anywhere, without network access. 26 more (`tests/test_store_pg.py`) need a real
+234 tests run anywhere, without network access. 32 more (`tests/test_store_pg.py`) need a real
 Postgres through `TEST_DATABASE_URL`. They are skipped locally and run in GitHub Actions
 (`.github/workflows/tests.yml`) against a throwaway Postgres 16, where a skipped test fails the run.
 
@@ -120,6 +141,10 @@ The tests cover:
 - the handler's happy paths, payload rules, retries and failure wording
 - purging one source's bodies: rows and other sources untouched, shared bodies kept, the purge logged
 - the Phase 1 chain coverage lists
+- Blockscout replays (Ethereum, Arbitrum, Optimism) and both live cross-checks, replayed
+- Bitcoin replays from mempool.space and Blockstream, plus a fake Esplora server for coinbase inputs,
+  unconfirmed and above-height transactions, a count mismatch, truncation and 429s
+- every completeness check, including the Blockscout response that returned 6 of 41 token transfers
 
 ## Checked against Tronscan (2026-11-17)
 
@@ -165,18 +190,27 @@ Postgres, its volume and the bucket are in US East too. Check with
 
 ## Known gaps
 
-- TRC-10 tokens, TRX moved by contracts (internal transactions) and fees are not read.
-- Bitcoin has no adapter; its jobs fail with "not built yet".
-- EVM: BNB Smart Chain, OP Mainnet and Base need a paid Etherscan plan. NFTs (ERC-721, ERC-1155),
-  fees, and tokens whose Transfer event does not index from and to are not read. Token balances
-  cover the freezable stablecoins and the 20 most-used tokens only.
-- Etherscan is a display source only and may not feed a public API. Its terms may require the
-  Advanced plan for a public site; see DECISIONS.md (Open).
+- Tron: TRC-10 tokens and TRX moved by contracts (internal transactions) are not read. Native
+  reconciliation is not run: staking and resource delegation are not parsed.
+- EVM:
+  - polygon, base and bsc are not checked in Phase 1.
+  - Blockscout reads internal transfers only where it has finished indexing. On Arbitrum that is
+    almost nowhere (one block on 2026-11-20).
+  - Optimism's L1 data fee is not read, so its native reconciliation is not run.
+  - NFTs are not read.
+  - Token balances cover the freezable stablecoins and the 20 most-used tokens.
+- Bitcoin:
+  - For a wallet with more than 10,000 transactions the earliest transaction is not reached.
+  - For a wallet with very many unspent outputs the provider may refuse to list them.
+- No prices yet. Prices will come from Chainlink feeds (DECISIONS.md, 2026-11-20).
 - Nothing creates `lookup` rows or updates `lookup_count` yet. The website does not queue jobs yet.
 - Services connect as the database owner; the restricted `taw_app` role is unused.
 
 ## Next
 
-1. Website: lookup form, Turnstile, Clerk, queue the job, record `lookup`.
-2. Report builder over `address_snapshot` and `transfer`.
-3. TRC-10, then Bitcoin (Esplora).
+1. Price adapter: Chainlink feeds read on-chain (ETH, BTC, USDT, USDC, DAI from Ethereum; TRX from
+   OP Mainnet); every other asset shows "no price available".
+2. Label loaders: OFAC SDN list, GoPlus (never for Bitcoin; logo and "Powered by GoPlus"),
+   stablecoin freeze checks, the exchange wallet file.
+3. Transaction matching: find the victim's own transfer from what they entered.
+4. The report.
