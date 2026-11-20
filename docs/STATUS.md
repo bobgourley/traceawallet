@@ -18,7 +18,35 @@ Last updated 2026-11-20. Design choices and their reasons are in
   at once with a plain reason.
 - Every lookup runs the completeness checks and stores each result on its snapshot.
 
-## Live check, Ethereum (2026-11-19, production database and bucket)
+## Live check, Bitcoin (2026-11-20, production database and bucket)
+
+Three lookups of `bc1q4t93pz7k8xaqsckmh30we380xw8ggtq4xanvmp` on `btc` through mempool.space, run by the
+deployed worker.
+
+| | Job 11 (03:01) | Job 12 (03:01, 8 s later) | Job 13 (03:12, after 10 min) |
+|---|---|---|---|
+| Outcome | full fetch, 4 s | reused snapshot 8, 1 s | full fetch, 4 s |
+| Snapshot | 8, height 976,672 | 8 | 9, height 976,673 |
+| Rows | 154 saved | 154 reused | 32 new, 154 reused (2 more transactions) |
+| `native_reconciliation` | passed: 1,733,405 sat by our rows, provider totals and unspent outputs | | passed: 2,051,171 sat, all three |
+| `tx_count` | passed: 14 = 14; 2 unconfirmed ignored | | passed: 16 = 16 (the 2 had confirmed) |
+| `history_incomplete` | false | false | false |
+| duplicate transfer keys | 0 | 0 | 0 |
+| `event_log_verify()` | NULL (intact) | NULL | NULL |
+
+`lookup_completed` events:
+
+    31 03:01:46 snapshot 8 height 976672 transfers_saved 154 transfers_reused 0   snapshot_reused false history_incomplete false
+    32 03:01:54 snapshot 8 height 976672 transfers_saved 0   transfers_reused 154 snapshot_reused true  history_incomplete false
+    33 03:12:16 snapshot 9 height 976673 transfers_saved 32  transfers_reused 154 snapshot_reused false history_incomplete false
+
+## Live check, Ethereum through Blockscout (2026-11-20)
+
+Jobs 8 to 10 on `0xaab6417993d04a861f1f02c5c4bd2e9145d8f637`: a full fetch, a reuse, then a full fetch
+with 0 new transfers. All checks that can run passed. Native reconciliation was not run, because
+Blockscout's internal range starts at block 23,398,420. Details in DECISIONS.md.
+
+## Live check, Ethereum through Etherscan (2026-11-19, production database and bucket)
 
 Three lookups of `0xaab6417993d04a861f1f02c5c4bd2e9145d8f637` on `eth`, queued with
 `scripts/enqueue.py` through `railway ssh` and run by the deployed worker.
