@@ -820,3 +820,38 @@ def test_freeze_status_labels_and_checks(conns):
     assert count(data, "SELECT count(*) FROM label_check") == 6
     with pytest.raises(psycopg.errors.RaiseException, match="append-only"):
         data.execute("UPDATE label_check SET result = 'x'")
+
+
+# -- labels: GoPlus --------------------------------------------------------------------------------
+
+def test_goplus_step_labels_checks_and_ledger(conns, monkeypatch):
+    import httpx
+    from types import SimpleNamespace
+    from taw.adapters import registry
+    from taw.adapters.labels import goplus
+    from taw.budget import PostgresBudget
+    from taw.worker.enrich import goplus_step
+    from tests.test_goplus import CLEAN
+    data, raw = conns
+    replies = [{**CLEAN, "phishing_activities": "1", "data_source": "SlowMist"}, CLEAN]
+
+    def handler(request):
+        return httpx.Response(200, json={"code": 1, "message": "ok", "result": replies[0]})
+
+    def goplus_for(raw_store, *, state_conn=None):
+        return goplus.GoPlus(raw_store, None, None, budget=PostgresBudget(state_conn, "worker", provider="goplus"),
+                             http=httpx.Client(transport=httpx.MockTransport(handler)))
+    monkeypatch.setattr(registry, "goplus_for", goplus_for)
+    raw_store = store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test")
+    step = goplus_step(data, raw, ACTOR)
+    snap = SimpleNamespace(chain="eth", address=EVM_ADDR)
+    assert step(snap, None, raw_store) == "GoPlus: 1 flag(s) (phishing_activities)"
+    assert count(data, "SELECT label FROM label_current") == 'flagged by GoPlus: phishing_activities = "1" (data source: SlowMist)'
+    replies.pop(0)
+    assert step(snap, None, raw_store) == "GoPlus: 0 flag(s)"
+    assert count(data, "SELECT count(*) FROM label_current") == 0                     # withdrawn, not deleted
+    assert count(data, "SELECT count(*) FROM label") == 2
+    assert [r for (r,) in data.execute("SELECT result FROM label_check ORDER BY id")] == ["flags", "no_flags"]
+    assert count(data, "SELECT calls FROM provider_budget WHERE provider = 'goplus' AND consumer = 'worker'") == 2
+    assert step(SimpleNamespace(chain="btc", address="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"), None, raw_store) \
+        .startswith("GoPlus: not asked")

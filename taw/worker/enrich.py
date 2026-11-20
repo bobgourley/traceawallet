@@ -45,6 +45,21 @@ def freeze_step(data_conn, state_conn, actor: str) -> Callable:
     return step
 
 
+def goplus_step(data_conn, state_conn, actor: str) -> Callable:
+    def step(snap, batch, raw_store) -> str:
+        if not registry.goplus_allowed(snap.chain):
+            return f"GoPlus: not asked ({snap.chain} is never sent to GoPlus)"
+        source = registry.goplus_for(raw_store, state_conn=state_conn)
+        claims, check, sha = source.claims_for(snap.chain, snap.address)
+        labels.record_check(data_conn, actor, "goplus", snap.chain, snap.address, subject="address_security",
+                            block=None, result="flags" if claims else "no_flags", detail=check, raw_sha256=sha,
+                            raw_source="goplus")
+        labels.sync(data_conn, actor, "goplus", claims, raw_sha256=sha, source_date=None,
+                    only_address=(snap.chain, snap.address))
+        return f"GoPlus: {len(claims)} flag(s)" + (f" ({', '.join(check['flags'])})" if claims else "")
+    return step
+
+
 def price_step(data_conn, state_conn, actor: str) -> Callable:
     def step(snap, batch, raw_store) -> str:
         reader = ChainlinkReader(lambda chain: registry.adapter_for(chain, raw_store, state_conn=state_conn))
@@ -64,5 +79,6 @@ def run_steps(steps: list[tuple[str, Callable]], snap, batch, raw_store) -> list
 
 def for_worker(*, data_conn, state_conn, actor: str) -> Callable:
     steps = [("freeze status", freeze_step(data_conn, state_conn, actor)),
+             ("GoPlus", goplus_step(data_conn, state_conn, actor)),
              ("prices", price_step(data_conn, state_conn, actor))]
     return lambda snap, batch, raw_store: run_steps(steps, snap, batch, raw_store)
