@@ -1,9 +1,10 @@
 """Etherscan adapter tests.
 
-Replayed from responses saved during a live run on 2026-11-19 for
-0xaab6417993d04a861f1f02c5c4bd2e9145d8f637 on Ethereum (49 transfers: 7 native,
-1 internal, 41 USDC/USDT), plus a small fake Etherscan for paging, errors and
-edge cases. The live figures were checked against etherscan.io (docs/STATUS.md).
+Replayed from responses saved during the live cross-check on 2026-11-20 for
+0xaab6417993d04a861f1f02c5c4bd2e9145d8f637 on Ethereum at block 26,452,607
+(49 transfers: 7 native, 1 internal, 41 USDC/USDT), plus a small fake Etherscan
+for paging, errors and edge cases. The live figures were checked against
+etherscan.io (docs/STATUS.md) and against Blockscout (tests/test_evm_crosscheck.py).
 """
 import datetime as dt
 import json
@@ -45,14 +46,15 @@ def test_snapshot(tmp_path, replay):
     snap = make_adapter(tmp_path, replay.client()).fetch_snapshot(ADDR)
     assert isinstance(snap, AddressSnapshot)
     assert snap.chain == "eth" and snap.address == ADDR
-    assert snap.as_of_block == 26_451_986
-    assert snap.as_of_time == dt.datetime(2026, 11, 19, 22, 0, 47, tzinfo=dt.timezone.utc)
+    assert snap.as_of_block == 26_452_607
+    assert snap.as_of_time == dt.datetime(2026, 11, 20, 0, 5, 59, tzinfo=dt.timezone.utc)
     assert snap.native_symbol == "ETH" and snap.native_decimals == 18
     assert snap.native_balance() == Decimal("0.000428974286563892")    # what etherscan.io shows
     assert snap.token_balances == ()                                    # USDC and USDT spent to zero
     assert snap.is_contract is False and snap.truncated is False
-    # balance (Multicall3), block number, block, code, token page, 9 stablecoin balanceOf calls
-    assert len(snap.raw_sha256) == 14
+    assert snap.nonce == 22 and snap.eip7702_delegate is None
+    # balance (Multicall3), block number, block, code, nonce, token page, 9 stablecoin balanceOf calls
+    assert len(snap.raw_sha256) == 15
 
 
 def test_snapshot_accepts_checksummed_input(tmp_path, replay):
@@ -121,7 +123,7 @@ def test_key_is_never_stored(tmp_path, replay, monkeypatch):
     adapter.fetch_transfers(ADDR)
     assert all(q.get("apikey") == KEY for q in replay.calls)           # it was sent ...
     index = (tmp_path / "raw" / "index.jsonl").read_text()
-    assert len(index.splitlines()) == adapter.request_count == 18
+    assert len(index.splitlines()) == adapter.request_count == 20
     assert KEY not in index and "apikey" not in index                  # ... and never stored
     for body in (tmp_path / "raw" / "raw").rglob("*"):
         if body.is_file():
@@ -133,8 +135,8 @@ def test_rate_stays_under_three_per_second(tmp_path, replay):
     adapter = make_adapter(tmp_path, replay.client(), clock=clock)
     adapter.fetch_snapshot(ADDR)
     adapter.fetch_transfers(ADDR)
-    assert adapter.request_count == 18
-    assert clock.now >= 17 / 2.5 - 1e-9          # 2.5 a second; Etherscan's free plan allows 3
+    assert adapter.request_count == 20
+    assert clock.now >= 19 / 2.5 - 1e-9          # 2.5 a second; Etherscan's free plan allows 3
 
 
 # -- a fake Etherscan -------------------------------------------------------------
@@ -193,7 +195,9 @@ class FakeEtherscan:
 
     def __init__(self, latest=1012, window=10_000):
         self.latest, self.window = latest, window
-        self.lists = {"txlist": [], "txlistinternal": [], "tokentx": []}
+        self.lists = {"txlist": [], "txlistinternal": [], "tokentx": [], "txsBeaconWithdrawal": []}
+        self.nonce = 0
+        self.unfinished: list[tuple[int, int]] = []    # block ranges whose internal txs are "not yet processed"
         self.logs: list[dict] = []
         self.eth_calls: dict[tuple[str, str], object] = {
             (es.MULTICALL3, es.SEL_GET_ETH_BALANCE): "0x" + "0" * 64,     # no ETH
@@ -226,6 +230,8 @@ class FakeEtherscan:
             return self.rpc({"number": q["tag"], "timestamp": hex(T0 + int(q["tag"], 16))})
         if action == "eth_getCode":
             return self.rpc(self.code)
+        if action == "eth_getTransactionCount":
+            return self.rpc(hex(self.nonce))
         if action == "eth_call":
             got = self.eth_calls.get((q["to"], q["data"][:10]), "0x")
             if isinstance(got, dict):
@@ -235,6 +241,9 @@ class FakeEtherscan:
             lo, hi = int(q["startblock"]), int(q["endblock"])
             rows = [r for r in self.lists[action] if lo <= int(r["blockNumber"]) <= hi]
             rows.sort(key=lambda r: int(r["blockNumber"]), reverse=q.get("sort") == "desc")
+            if action == "txlistinternal" and any(a <= hi and lo <= b for a, b in self.unfinished):
+                return body(status="2", message="Some internal transactions within this block range have not yet "
+                                                "been processed", result=rows[:int(q["offset"])])
             return self.page(rows, q)
         if action == "getLogs":
             lo, hi = int(q["fromBlock"]), int(q["toBlock"])
@@ -473,3 +482,8 @@ def test_snapshot_and_transfers_share_one_block(tmp_path):
     ends = {c.get("endblock") for c in fake.calls if c.get("action") in ("txlist", "txlistinternal", "tokentx")}
     assert ends == {str(snap.as_of_block)}
     assert sum(1 for c in fake.calls if c["action"] == "eth_blockNumber") == 1
+
+
+def test_bare_0x_is_zero():
+    """Etherscan writes log index 0 as "0x" (seen on Arbitrum, 2026-11-19)."""
+    assert es._int("0x") == 0 and es._int("0x1f") == 31 and es._int("17") == 17 and es._int("") == 0

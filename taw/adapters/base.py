@@ -38,6 +38,24 @@ class TokenBalance:
         return Decimal(self.amount_raw).scaleb(-self.decimals)
 
 
+PASSED, FAILED, NOT_RUN = "passed", "failed", "not_run"
+
+
+@dataclass(frozen=True)
+class CheckResult:
+    """One completeness check on a lookup. Stored on the snapshot, one per check, so a
+    report can say which passed, which failed and which could not be run."""
+    name: str                     # e.g. "token_lists_agree", "tx_count", "native_reconciliation"
+    status: str                   # passed | failed | not_run
+    reason: str | None = None     # why it failed or could not run, in plain words
+    details: Mapping[str, Any] | None = None   # the numbers compared; large ints as strings
+    marks_incomplete: bool = True # a failure means the history may be incomplete
+
+    def as_json(self) -> dict:
+        return {"name": self.name, "status": self.status, "reason": self.reason,
+                "details": dict(self.details or {}), "marks_incomplete": self.marks_incomplete}
+
+
 @dataclass(frozen=True)
 class AddressSnapshot:
     """Balances and account type at one block height."""
@@ -57,6 +75,8 @@ class AddressSnapshot:
     # missing from token_balances holds 0. None means token_balances is the
     # address's full holdings (as TronGrid gives it), so every unlisted token holds 0.
     balances_read: tuple[str, ...] | None = None
+    nonce: int | None = None                  # EVM: transactions sent, at as_of_block; None if not read
+    eip7702_delegate: str | None = None       # EVM: the code an EIP-7702 account delegates to
 
     def native_balance(self) -> Decimal:
         return Decimal(self.native_balance_raw).scaleb(-self.native_decimals)
@@ -104,9 +124,14 @@ class TransferBatch:
     transfers: tuple[TransferRecord, ...]
     truncated: bool
     limit: int
-    # Problems the adapter saw that mean the list may miss transfers even though it
-    # is not truncated, in plain words (e.g. token-list rows with no Transfer log).
-    incomplete_reasons: tuple[str, ...] = ()
+    # Checks the adapter ran on its own lists (e.g. two token lists agree).
+    checks: tuple[CheckResult, ...] = ()
+    # For the transaction-count and native-coin checks. None: not read (or truncated).
+    sent_tx_count: int | None = None          # transactions sent by the address, failed ones included
+    fees_paid_raw: int | None = None          # native fees on those transactions
+    withdrawals_raw: int | None = None        # validator withdrawals received (Ethereum); 0 where none exist
+    internal_range: tuple[int, int] | None = None   # blocks whose internal transfers were read in full;
+                                                    # None where internal transfers are not read at all
 
 
 @runtime_checkable

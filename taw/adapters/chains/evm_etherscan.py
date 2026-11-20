@@ -99,7 +99,8 @@ from typing import Any, Callable, Iterable
 
 import httpx
 
-from taw.adapters.base import AddressSnapshot, RawStore, TokenBalance, TransferBatch, TransferRecord
+from taw.adapters.base import (FAILED, PASSED, AddressSnapshot, CheckResult, RawStore, TokenBalance,
+                               TransferBatch, TransferRecord)
 from taw.adapters.chains.common import Pacer, decode_string, decode_uint
 from taw.adapters.chains.evm_address import normalize
 
@@ -111,6 +112,7 @@ SEL_GET_ETH_BALANCE = "0x4d2301cc"                         # getEthBalance(addre
 SEL_BALANCE_OF = "0x70a08231"                              # balanceOf(address)
 SEL_DECIMALS = "0x313ce567"
 SEL_SYMBOL = "0x95d89b41"
+EIP7702_PREFIX = "0xef0100"     # code of an account delegating under EIP-7702: 0xef0100 + 20-byte address
 PAGE_SIZE = 1000
 WINDOW = 10_000            # Etherscan's cap on page x offset
 MAX_LIST_PAGES = 40        # per list, before calling it truncated
@@ -264,7 +266,9 @@ def _int(v: Any) -> int:
     if isinstance(v, int):
         return v
     s = str(v).strip()
-    return int(s, 16) if s.lower().startswith("0x") else int(s or "0")
+    if s.lower().startswith("0x"):
+        return int(s[2:] or "0", 16)        # Etherscan writes zero as a bare "0x"
+    return int(s or "0")
 
 
 def _ts(v: Any) -> dt.datetime:
@@ -369,7 +373,7 @@ class EtherscanAdapter:
 
     def _send(self, what: str, method: str, url: str, *, stored: dict, query: dict | None = None,
               body: dict | None = None, headers: dict | None = None, rpc_error_ok: bool = False,
-              memo: bool = True) -> _Response:
+              memo: bool = True, accept: Callable[[Any], bool] | None = None) -> _Response:
         """Send with pacing and retries, store every response, check the body.
 
         `stored` is what the RawStore records for the request: never the key, which
@@ -380,19 +384,20 @@ class EtherscanAdapter:
             return self._memo[memo_key]
         try:
             return self._send_loop(what, method, url, stored=stored, query=query, body=body, headers=headers,
-                                   rpc_error_ok=rpc_error_ok, memo=memo, memo_key=memo_key)
+                                   rpc_error_ok=rpc_error_ok, memo=memo, memo_key=memo_key, accept=accept)
         except EtherscanError as exc:
             exc.provider, exc.key_env = self.provider_name, self.key_env
             raise
 
-    def _send_loop(self, what, method, url, *, stored, query, body, headers, rpc_error_ok, memo, memo_key):
+    def _send_loop(self, what, method, url, *, stored, query, body, headers, rpc_error_ok, memo, memo_key,
+                   accept=None):
         for attempt in range(1, self.max_attempts + 1):
             self._pacer.wait()
             self.request_count += 1
             resp = self.http.request(method, url, params=query, json=body, headers=headers)
             sha = self.raw_store.save(self.source, url, stored, resp.status_code, resp.content)
 
-            if resp.status_code in (429, 502, 503, 504):
+            if resp.status_code in (429, 500, 502, 503, 504):
                 if attempt == self.max_attempts:
                     raise EtherscanRateLimited(f"{what}: still HTTP {resp.status_code} after {attempt} tries",
                                                resp.status_code)
@@ -412,7 +417,8 @@ class EtherscanAdapter:
             except ValueError as exc:
                 raise EtherscanError(f"{what}: response is not JSON") from exc
             error = self._body_error(data)
-            if error is None or (rpc_error_ok and isinstance(data, dict) and "jsonrpc" in data):
+            if (error is None or (rpc_error_ok and isinstance(data, dict) and "jsonrpc" in data)
+                    or (accept is not None and accept(data))):
                 result = _Response(data, sha)
                 if memo:
                     self._memo[memo_key] = result
@@ -519,7 +525,8 @@ class EtherscanAdapter:
               keep: Callable[[dict], bool], key: Callable[[dict], Any],
               block_of: Callable[[dict], int], max_pages: int,
               lo_name: str = "startblock", hi_name: str = "endblock",
-              sort: bool = True, window: int | None = None) -> tuple[list[tuple[dict, str]], bool]:
+              sort: bool = True, window: int | None = None,
+              observe: Callable[[dict], None] | None = None) -> tuple[list[tuple[dict, str]], bool]:
         """Page through a list between blocks lo and hi.
 
         Returns ([(row, sha)], more). `more` is True when it stopped with rows
@@ -545,6 +552,8 @@ class EtherscanAdapter:
                     if k in seen:
                         continue
                     seen.add(k)
+                    if observe is not None:
+                        observe(row)
                     if keep(row):
                         out.append((row, r.sha))
                 if len(rows) < page_size:
@@ -564,10 +573,11 @@ class EtherscanAdapter:
                 lo = edge
 
     def _account(self, action: str, addr: str, head: int, want: int | None,
-                 keep: Callable[[dict], bool], key: Callable[[dict], Any]):
+                 keep: Callable[[dict], bool], key: Callable[[dict], Any], *, lo: int = 0, hi: int | None = None,
+                 observe: Callable[[dict], None] | None = None):
         return self._scan({"module": "account", "action": action, "address": addr},
-                          lo=0, hi=head, descending=True, want=want, keep=keep, key=key,
-                          block_of=lambda row: _int(row["blockNumber"]), max_pages=MAX_LIST_PAGES)
+                          lo=lo, hi=head if hi is None else hi, descending=True, want=want, keep=keep, key=key,
+                          block_of=lambda row: _int(row["blockNumber"]), max_pages=MAX_LIST_PAGES, observe=observe)
 
     def _logs(self, addr: str, lo: int, hi: int) -> list[tuple[dict, str]]:
         """ERC-20 Transfer logs with addr as sender or recipient, oldest first, no duplicates."""
@@ -590,6 +600,53 @@ class EtherscanAdapter:
                     out.append((log, sha))
         return out
 
+    # -- facts for the completeness checks (a dialect may override) ------------------
+
+    def _nonce(self, address: str, tag: str) -> tuple[int | None, str | None]:
+        """Transactions sent by the address up to the block, or None if the provider cannot
+        say (Etherscan's free plan keeps no state older than about 128 blocks)."""
+        r = self._request({"module": "proxy", "action": "eth_getTransactionCount", "address": address, "tag": tag},
+                          rpc_error_ok=True)
+        out = r.data.get("result")
+        return (_int(out) if isinstance(out, str) and out.startswith("0x") else None), r.sha
+
+    def _withdrawals(self, address: str, head: int) -> tuple[int | None, list[str]]:
+        """Validator withdrawals received up to the block, in wei. 0 on chains without them."""
+        if self.chain != "eth":
+            return 0, []
+        rows, more = self._scan({"module": "account", "action": "txsBeaconWithdrawal", "address": address},
+                                lo=0, hi=head, descending=True, want=None, keep=lambda row: True,
+                                key=lambda row: row.get("withdrawalIndex"),
+                                block_of=lambda row: _int(row["blockNumber"]), max_pages=MAX_LIST_PAGES)
+        if more:
+            return None, [sha for _, sha in rows]
+        return sum(_int(row["amount"]) for row, _ in rows) * 10 ** 9, [sha for _, sha in rows]  # Gwei to wei
+
+    def _internal_range(self, address: str, head: int) -> tuple[int, int]:
+        """Blocks whose internal transfers the provider has finished indexing."""
+        return 0, head
+
+    def _token_transfers(self, address: str, head: int, limit: int) -> tuple[list[TransferRecord], bool, list[CheckResult]]:
+        """ERC-20 transfers with their log index: (records, more history exists, checks).
+        Etherscan: the Transfer logs, checked against the token list."""
+        token_rows, token_more = self._account(
+            "tokentx", address, head, limit, keep=lambda row: True,
+            key=lambda row: (row["hash"].lower(), row.get("contractAddress", "").lower(), row.get("from"),
+                             row.get("to"), row.get("value"), row.get("blockNumber")))
+        self._remember_meta(row for row, _ in token_rows)
+        self._token_more = token_more
+        lo = min((_int(row["blockNumber"]) for row, _ in token_rows), default=0) if token_more else 0
+        logs = self._logs(address, lo, head)
+        listed = [row for row, _ in token_rows if _int(row["blockNumber"]) >= lo]
+        unmatched_before = self.unmatched_token_rows
+        self._count_unmatched(listed, logs)
+        unmatched = self.unmatched_token_rows - unmatched_before
+        details = {"token_list_rows": len(listed), "transfer_logs": len(logs), "rows_without_log": unmatched}
+        check = (CheckResult("token_list_matches_logs", FAILED,
+                             f"{unmatched} of {len(listed)} token-list rows have no matching Transfer log", details)
+                 if unmatched else CheckResult("token_list_matches_logs", PASSED, None, details))
+        return [self._log_record(log, sha) for log, sha in logs], token_more, [check]
+
     # -- ChainAdapter --------------------------------------------------------------
 
     def fetch_snapshot(self, address: str) -> AddressSnapshot:
@@ -604,7 +661,15 @@ class EtherscanAdapter:
 
         code_hex, code_sha = self._get_code(addr, tag)
         shas.append(code_sha)
-        is_contract = isinstance(code_hex, str) and code_hex not in ("0x", "0x0")
+        code_hex = (code_hex or "0x").lower() if isinstance(code_hex, str) else "0x"
+        delegate = None
+        if code_hex.startswith(EIP7702_PREFIX) and len(code_hex) == len(EIP7702_PREFIX) + 40:
+            delegate = "0x" + code_hex[len(EIP7702_PREFIX):]          # an EOA with delegated code, not a contract
+        is_contract = code_hex not in ("0x", "0x0") and delegate is None
+
+        nonce, nonce_sha = self._nonce(addr, tag)
+        if nonce_sha:
+            shas.append(nonce_sha)
 
         page = self._request({"module": "account", "action": "tokentx", "address": addr, "startblock": 0,
                               "endblock": head.number, "page": 1, "offset": TOKEN_PAGE, "sort": "desc"})
@@ -634,38 +699,37 @@ class EtherscanAdapter:
             native_symbol=self.info.native_symbol, native_decimals=self.info.native_decimals,
             native_balance_raw=decode_uint(native_hex), token_balances=tuple(balances),
             is_contract=is_contract, truncated=truncated, source_slug=self.source, raw_sha256=tuple(shas),
-            balances_read=tuple(checked),
+            balances_read=tuple(checked), nonce=nonce, eip7702_delegate=delegate,
         )
 
     def fetch_transfers(self, address: str, limit: int = 2000) -> TransferBatch:
         addr = normalize(address)
         head = self.head().number
 
+        # Every transaction the address sent counts for the nonce and pays a fee,
+        # failed and zero-value ones included, so they are tallied as they are read.
+        sent = {"count": 0, "fees": 0}
+
+        def tally(row: dict) -> None:
+            if (row.get("from") or "").lower() == addr:
+                sent["count"] += 1
+                sent["fees"] += _int(row.get("gasUsed") or 0) * _int(row.get("gasPrice") or 0)
+
         native_rows, native_more = self._account(
             "txlist", addr, head, limit,
             keep=lambda row: not _failed(row) and _int(row.get("value") or 0) > 0,
-            key=lambda row: row["hash"].lower())
+            key=lambda row: row["hash"].lower(), observe=tally)
         native = [self._native_record(row, sha) for row, sha in native_rows]
 
+        internal_lo, internal_hi = self._internal_range(addr, head)
         internal_rows, internal_more = self._account(
-            "txlistinternal", addr, head, limit,
+            "txlistinternal", addr, head, limit, lo=internal_lo, hi=internal_hi,
             keep=lambda row: not _failed(row) and _int(row.get("value") or 0) > 0,
-            key=lambda row: (row["hash"].lower(), row.get("traceId") or "", row.get("from"), _row_to(row),
-                             row.get("value"), row.get("type")))
+            key=lambda row: (row["hash"].lower(), row.get("traceId") or row.get("index") or "", row.get("from"),
+                             _row_to(row), row.get("value"), row.get("type")))
         internal = self._internal_records(internal_rows)
 
-        token_rows, token_more = self._account(
-            "tokentx", addr, head, limit, keep=lambda row: True,
-            key=lambda row: (row["hash"].lower(), row.get("contractAddress", "").lower(), row.get("from"),
-                             row.get("to"), row.get("value"), row.get("blockNumber")))
-        self._remember_meta(row for row, _ in token_rows)
-        lo = min((_int(row["blockNumber"]) for row, _ in token_rows), default=0) if token_more else 0
-        logs = self._logs(addr, lo, head)
-        unmatched_before = self.unmatched_token_rows
-        self._count_unmatched([row for row, _ in token_rows if _int(row["blockNumber"]) >= lo], logs)
-        unmatched = self.unmatched_token_rows - unmatched_before
-        reasons = (f"{unmatched} of {len(token_rows)} token-list rows have no matching Transfer log",) if unmatched else ()
-        token = [self._log_record(log, sha) for log, sha in logs]
+        token, token_more, checks = self._token_transfers(addr, head, limit)
 
         merged = sorted(native + internal + token, key=_sort_key, reverse=True)
         truncated = len(merged) > limit or native_more or internal_more or token_more
@@ -675,7 +739,7 @@ class EtherscanAdapter:
             have = {_record_key(r) for r in kept}
             firsts = []
             firsts += self._firsts_native(addr, head, native, native_more)
-            firsts += self._firsts_internal(addr, head, internal, internal_more)
+            firsts += self._firsts_internal(addr, (internal_lo, internal_hi), internal, internal_more)
             firsts += self._firsts_token(addr, head, token, token_more)
             extra = {}
             for r in firsts:
@@ -683,8 +747,16 @@ class EtherscanAdapter:
                     extra[_record_key(r)] = r
             kept = kept + sorted(extra.values(), key=_sort_key, reverse=True)
 
-        return TransferBatch(self.chain, addr, tuple(self._with_decimals(kept)), truncated, limit,
-                             incomplete_reasons=reasons)
+        withdrawals = None
+        if not truncated:                               # only the native check uses it
+            withdrawals, _ = self._withdrawals(addr, head)
+
+        return TransferBatch(
+            self.chain, addr, tuple(self._with_decimals(kept)), truncated, limit, checks=tuple(checks),
+            sent_tx_count=None if native_more else sent["count"],
+            fees_paid_raw=None if native_more else sent["fees"],
+            withdrawals_raw=withdrawals, internal_range=(internal_lo, internal_hi),
+        )
 
     # -- first transfers ---------------------------------------------------------
 
@@ -696,30 +768,31 @@ class EtherscanAdapter:
         first_in = next((r for r in oldest if r.to_address == addr), None)
         return [oldest[0]] + ([first_in] if first_in else [])
 
-    def _oldest_rows(self, action: str, addr: str, head: int, keep: Callable[[dict], bool]):
-        r = self._request({"module": "account", "action": action, "address": addr, "startblock": 0,
-                           "endblock": head, "page": 1, "offset": FIRST_ROWS, "sort": "asc"})
+    def _oldest_rows(self, action: str, addr: str, lo: int, hi: int, keep: Callable[[dict], bool]):
+        r = self._request({"module": "account", "action": action, "address": addr, "startblock": lo,
+                           "endblock": hi, "page": 1, "offset": FIRST_ROWS, "sort": "asc"})
         rows = [self._normalize_row(action, row) for row in (r.data.get("result") or [])]
         return [(row, r.sha) for row in rows if keep(row)]
 
     def _firsts_native(self, addr, head, have, more):
         if not more:
             return self._first_and_first_in(have, addr)
-        rows = self._oldest_rows("txlist", addr, head,
+        rows = self._oldest_rows("txlist", addr, 0, head,
                                  lambda row: not _failed(row) and _int(row.get("value") or 0) > 0)
         return self._first_and_first_in([self._native_record(row, sha) for row, sha in rows], addr)
 
-    def _firsts_internal(self, addr, head, have, more):
+    def _firsts_internal(self, addr, block_range, have, more):
         if not more:
             return self._first_and_first_in(have, addr)
-        rows = self._oldest_rows("txlistinternal", addr, head,
+        lo, hi = block_range                      # never outside the range read in full
+        rows = self._oldest_rows("txlistinternal", addr, lo, hi,
                                  lambda row: not _failed(row) and _int(row.get("value") or 0) > 0)
         return self._first_and_first_in(self._internal_records(rows), addr)
 
     def _firsts_token(self, addr, head, have, more):
         if not more:
             return self._first_and_first_in(have, addr)
-        rows = self._oldest_rows("tokentx", addr, head, lambda row: True)
+        rows = self._oldest_rows("tokentx", addr, 0, head, lambda row: True)
         self._remember_meta(row for row, _ in rows)
         if not rows:
             return []
