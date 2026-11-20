@@ -17,7 +17,7 @@ from taw.adapters.chains import evm_blockscout as bs
 from taw.adapters.chains import evm_etherscan as es
 from taw.adapters.chains.evm_blockscout import BlockscoutAdapter, BlockscoutIncomplete
 from tests.evm_replay import FIXTURES, FakeClock, Replay
-from tests.test_evm_etherscan import A, B, C, TOKEN, FakeEtherscan, body, h, itx, ttx, tx
+from tests.test_evm_etherscan import A, B, C, TOKEN, FakeEtherscan, body, h, itx, log, ttx, tx
 
 KEY = "proapi_test_key_not_real"
 ADDR = "0xaab6417993d04a861f1f02c5c4bd2e9145d8f637"
@@ -44,6 +44,7 @@ class FakeBlockscout(FakeEtherscan):
         super().__init__(**kw)
         self.rest: list[dict] = []                  # token-transfer items for the REST lists
         self.withdrawal_flag = False
+        self.receipts: dict[str, list[dict]] = {}   # tx hash -> logs in its receipt
         self.requests: list[httpx.Request] = []
 
     def handler(self, request):
@@ -62,6 +63,10 @@ class FakeBlockscout(FakeEtherscan):
                 return self.rpc(self.code)
             if m == "eth_getTransactionCount":
                 return self.rpc(hex(self.nonce))
+            if m == "eth_getTransactionReceipt":
+                logs = self.receipts.get(p[0], [])
+                return self.rpc({"status": "0x1", "blockNumber": logs[0]["blockNumber"] if logs else "0x0",
+                                 "logs": logs})
             if m == "eth_call":
                 got = self.eth_calls.get((p[0]["to"], p[0]["data"][:10]), "0x")
                 if isinstance(got, dict):
@@ -208,14 +213,37 @@ def test_tokens_come_from_the_rest_list_with_their_log_index(tmp_path):
     assert not any(c.get("action") == "getLogs" for c in fake.calls)
 
 
-def test_the_two_token_lists_must_agree(tmp_path):
+def test_a_transfer_only_in_the_token_list_is_filled_from_the_receipt(tmp_path):
+    """Blockscout's REST list leaves out tokens it judges to be spam. The token list has
+    them; the receipt gives the real log index; the row is stored, no filtering."""
     fake = FakeBlockscout()
     with_token(fake, 5, 950, 17, B, A, 9)
-    fake.lists["tokentx"].append(ttx(6, 960, B, A, 4))   # the token list has one the REST list lacks
+    fake.lists["tokentx"].append(ttx(6, 960, B, A, 4))   # spam airdrop: not in the REST list
+    fake.receipts[h(6)] = [log(6, 960, 67, B, A, 4)]
+    batch = make(tmp_path, fake).fetch_transfers(A)
+    (check,) = batch.checks
+    assert (check.name, check.status) == ("token_lists_agree", PASSED)
+    assert check.details == {"rest_transfers": 1, "token_list_rows": 2, "only_in_rest": 0, "only_in_token_list": 1,
+                             "filled_from_receipts": 1, "unfilled": 0, "compared_above_block": None}
+    spam = next(t for t in batch.transfers if t.tx_hash == h(6))
+    assert (spam.event_index, spam.amount_raw, spam.token_decimals, spam.block_number) == (67, 4, 6, 960)
+
+
+def test_a_gap_the_receipt_cannot_fill_marks_incomplete(tmp_path):
+    fake = FakeBlockscout()
+    with_token(fake, 5, 950, 17, B, A, 9)
+    fake.lists["tokentx"].append(ttx(6, 960, B, A, 4))   # and the receipt has no such log
     (check,) = make(tmp_path, fake).fetch_transfers(A).checks
     assert (check.name, check.status) == ("token_lists_agree", FAILED)
-    assert check.details == {"rest_transfers": 1, "token_list_rows": 2, "only_in_rest": 0, "only_in_token_list": 1,
-                             "compared_above_block": None}
+    assert (check.details["filled_from_receipts"], check.details["unfilled"]) == (0, 1)
+
+
+def test_a_transfer_only_in_the_rest_list_is_confirmed_from_the_receipt(tmp_path):
+    fake = FakeBlockscout()
+    fake.rest.append(rest_item(7, 970, 3, B, A, 5))        # the token list lacks it
+    fake.receipts[h(7)] = [log(7, 970, 3, B, A, 5)]
+    (check,) = make(tmp_path, fake).fetch_transfers(A).checks
+    assert check.status == PASSED and check.details["filled_from_receipts"] == 1
 
 
 def test_rest_list_pages_and_truncates_newest_first(tmp_path):
@@ -341,3 +369,35 @@ def test_pinned_block_skips_the_tip(tmp_path):
     adapter = make(tmp_path, fake, at_block=777)
     assert adapter.head().number == 777
     assert not any(c.get("rpc") == "eth_blockNumber" for c in fake.calls)
+
+
+
+def test_optimism_reads_the_nonce_at_the_regenesis(tmp_path):
+    fake = FakeBlockscout()
+    fake.nonce = 12
+    snap = make(tmp_path, fake, chain="optimism").fetch_snapshot(A)
+    reads = [c["params"][1] for c in fake.calls if c.get("rpc") == "eth_getTransactionCount"]
+    assert reads == [hex(1002), "0x0"]           # the snapshot block (10 confirmations), then block 0
+    assert (snap.nonce, snap.nonce_before_history, snap.history_start_block) == (12, 12, 0)
+
+
+def test_replay_optimism_regenesis_and_spam_gap(tmp_path):
+    """Live lookup of 2026-11-20 on an Optimism wallet active before the 2021 regenesis
+    that received a spam token Blockscout's REST list leaves out."""
+    from taw.adapters.registry import stablecoins_for
+    from taw.reconcile import run_checks
+    addr = "0x5cb8fc049a053df6a05fc40b00ac3e99568fa33e"
+    clock = FakeClock()
+    adapter = BlockscoutAdapter("optimism", LocalRawStore(tmp_path / "raw"), KEY,
+                                http=Replay(FIXTURES / "blockscout-rest-optimism" / addr).client(),
+                                clock=clock.clock, sleep=clock.sleep)
+    snap = adapter.fetch_snapshot(addr)
+    batch = adapter.fetch_transfers(addr)
+    spam = next(t for t in batch.transfers if t.tx_hash.startswith("0x2daa322da6"))
+    assert (spam.event_index, spam.token_contract) == (67, "0xeedc20720b5f91aeadac720e4793041366c70f40")
+    result = run_checks(snap, batch, stablecoins_for("optimism"))
+    by_name = {c.name: c for c in result.checks}
+    assert by_name["tx_count"].status == PASSED
+    assert by_name["tx_count"].details["transactions_before_history"] == 7
+    assert by_name["token_lists_agree"].details["filled_from_receipts"] == 1
+    assert result.history_incomplete is False

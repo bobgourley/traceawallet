@@ -34,8 +34,12 @@ and observed responses (to be confirmed with a key: see docs/STATUS.md):
                 GET /{chain_id}/api/v2/addresses/{a}/token-transfers?type=ERC-20,
                 newest first, 50 a page, each with its log_index. Blockscout's
                 Etherscan-style token list (tokentx) is still read, for decimals and
-                as a second list: the two must agree over the blocks both cover, or
-                the check token_lists_agree fails. The first token transfers, when
+                as a second list: the two must agree over the blocks both cover. The
+                REST list leaves out tokens Blockscout judges to be spam. A transfer in
+                only one list is settled from its transaction receipt
+                (eth_getTransactionReceipt): stored with the receipt's log index, or
+                confirmed. token_lists_agree fails only if a gap cannot be settled.
+                There is no reputation filtering. The first token transfers, when
                 history is truncated, come from tokentx (oldest first) and then
                 /api/v2/transactions/{hash}/token-transfers, filtered to this address,
                 for their log index.
@@ -247,18 +251,74 @@ class BlockscoutAdapter(EtherscanAdapter):
         b = Counter((row["hash"].lower(), (row.get("contractAddress") or "").lower(), (row.get("from") or "").lower(),
                      (row.get("to") or "").lower(), _int(row.get("value") or 0))
                     for row, _ in rows if _int(row["blockNumber"]) > cutoff)
-        only_rest, only_list = sum((a - b).values()), sum((b - a).values())
+        only_rest, only_list = a - b, b - a
+        filled, unfilled = self._fill_gaps(address, rest, only_rest, only_list)
         details = {"rest_transfers": sum(a.values()), "token_list_rows": sum(b.values()),
-                   "only_in_rest": only_rest, "only_in_token_list": only_list,
+                   "only_in_rest": sum(only_rest.values()), "only_in_token_list": sum(only_list.values()),
+                   "filled_from_receipts": filled, "unfilled": unfilled,
                    "compared_above_block": cutoff if cutoff >= 0 else None}
-        if only_rest or only_list:
+        if unfilled:
             check = CheckResult("token_lists_agree", FAILED,
-                                f"Blockscout's two token lists disagree: {sum(a.values())} transfers in the REST list, "
-                                f"{sum(b.values())} rows in the token list", details)
+                                f"Blockscout's two token lists disagree on {filled + unfilled} transfer(s) and "
+                                f"{unfilled} could not be confirmed from the transaction receipt", details)
+        elif filled:
+            check = CheckResult("token_lists_agree", PASSED,
+                                f"{filled} transfer(s) were in only one of Blockscout's lists; each was confirmed "
+                                f"from its transaction receipt and stored with its log index", details)
         else:
             check = CheckResult("token_lists_agree", PASSED, None, details)
         self._rest_more = rest_more
         return rest, (rest_more or list_more), [check]
+
+    def _fill_gaps(self, address: str, rest: list[TransferRecord], only_rest: Counter,
+                   only_list: Counter) -> tuple[int, int]:
+        """Settle every transfer that only one list has, from the transaction's receipt.
+
+        Only in the token list: store it, with the receipt's log index. (Blockscout's REST
+        list leaves out tokens it judges to be spam; investigators need them anyway, and
+        there is no reputation filtering here.) Only in the REST list: keep it if the
+        receipt has that log. Returns (filled, unfilled); records are added to `rest`.
+        """
+        if not only_rest and not only_list:
+            return 0, 0
+        filled = unfilled = 0
+        have = {(t.tx_hash, t.event_index) for t in rest}
+        for tx in sorted({k[0] for k in only_rest} | {k[0] for k in only_list}):
+            receipt = self._rpc("eth_getTransactionReceipt", [tx])
+            result = receipt.data.get("result") or {}
+            logs = []
+            if str(result.get("status", "0x1")) in ("0x1", "1"):
+                for lg in result.get("logs") or []:
+                    topics = [t for t in lg.get("topics") or [] if t]
+                    if len(topics) == 3 and topics[0] == es.TRANSFER_TOPIC:
+                        logs.append((_int(lg["logIndex"]), (lg["address"].lower(), es._topic_address(topics[1]),
+                                     es._topic_address(topics[2]), es.decode_uint((lg.get("data") or "0x")[2:] or "0")),
+                                     _int(lg.get("blockNumber") or result.get("blockNumber"))))
+            for key, n in only_rest.items():
+                if key[0] != tx:
+                    continue
+                listed = {t.event_index for t in rest if t.tx_hash == tx and
+                          (t.token_contract, t.from_address, t.to_address, t.amount_raw) == key[1:]}
+                confirmed = sum(1 for idx, k, _ in logs if k == key[1:] and idx in listed)
+                filled += min(n, confirmed)
+                unfilled += max(0, n - confirmed)
+            for key, n in only_list.items():
+                if key[0] != tx:
+                    continue
+                free = [(idx, blk) for idx, k, blk in logs if k == key[1:] and (tx, idx) not in have]
+                for idx, blk in free[:n]:
+                    block, _ = self._block(blk)
+                    contract = key[1]
+                    rest.append(TransferRecord(
+                        chain=self.chain, tx_hash=tx, kind="token", event_index=idx, from_address=key[2],
+                        to_address=key[3], token_contract=contract, token_symbol=None, token_decimals=0,
+                        amount_raw=key[4], block_number=blk,
+                        block_time=dt.datetime.fromtimestamp(_int(block["timestamp"]), tz=dt.timezone.utc),
+                        source_slug=self.source, raw_sha256=receipt.sha))
+                    have.add((tx, idx))
+                    filled += 1
+                unfilled += max(0, n - len(free))
+        return filled, unfilled
 
     def _firsts_token(self, addr, head, have, more):
         if not more:
