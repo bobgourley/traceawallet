@@ -474,7 +474,8 @@ def test_reconciliation_is_stored_on_the_snapshot(conns):
         (saved.snapshot_id,)).fetchone()
     assert incomplete is False and reasons == []
     assert checks == [{"contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t", "symbol": "USDT", "stablecoin": True,
-                       "status": "reconciled", "balance_raw": "0", "net_flow_raw": "0", "reason": None}]
+                       "status": "reconciled", "balance_raw": "0", "net_flow_raw": "0", "reason": None,
+                       "destroyed_raw": "0", "destructions": [], "frozen": None, "index_to_block": None}]
     (event,) = data.execute("SELECT payload FROM event_log WHERE action = 'lookup_completed'").fetchone()
     assert event["history_incomplete"] is False
     fresh = store.fresh_snapshot(data, "tron", ADDR)
