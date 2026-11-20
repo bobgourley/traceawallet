@@ -366,3 +366,11 @@ def test_goplus_logo_beside_its_result():
     html = str(render_html(built("wdpa-2-26-cv-00087-usdt")[1]))
     assert '<img src="/static/goplus-logo.svg" alt="GoPlus logo"' in html and "Powered by GoPlus" in html
     assert "goplus-logo" not in str(render_html(built("edny-1-25-cv-05745-btc")[1]))     # not asked for Bitcoin
+
+
+def test_www_goes_to_the_one_address(site):
+    from taw.main import app
+    c = TestClient(app, base_url="https://www.testserver", follow_redirects=False)
+    r = c.get("/reports/x?format=text")
+    assert r.status_code == 301 and r.headers["location"] == "https://testserver/reports/x?format=text"
+    assert TestClient(app, base_url=BASE, follow_redirects=False).get("/about").status_code == 200

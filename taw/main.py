@@ -1,4 +1,7 @@
+from urllib.parse import urlsplit
+
 from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from taw import db
@@ -13,9 +16,23 @@ app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="stati
 
 @app.middleware("http")
 async def headers(request: Request, call_next):
-    response = await call_next(request)
+    response = canonical_host(request) or await call_next(request)
     security_headers(request.url.path, response.headers)
     return response
+
+
+def canonical_host(request: Request):
+    """www.traceawallet.com goes permanently to traceawallet.com (APP_BASE_URL). Sign-in
+    tokens and the Turnstile widget are tied to the one address, so the site has only one."""
+    from taw.auth import setting
+    base = urlsplit(setting("APP_BASE_URL"))
+    host = (request.headers.get("host") or "").split(":")[0].lower()
+    if base.hostname and host == f"www.{base.hostname}":
+        target = f"{base.scheme}://{base.netloc}{request.url.path}"
+        if request.url.query:
+            target += "?" + request.url.query
+        return RedirectResponse(target, status_code=301)
+    return None
 
 
 @app.get("/healthz")
