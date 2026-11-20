@@ -1,11 +1,12 @@
 TraceAWallet report
 Bitcoin address 39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq
 
-As of block 976,769 (2026-11-20 18:27 UTC). Lists and labels as they stood at 2026-11-20 18:28 UTC.
+As of block 976,769 (2026-11-20 18:27). Lists and labels as they stood at 2026-11-20 18:28.
+All times in this report are UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
 
 == Summary ==
-Held: nothing we recognise.
+BTC: received 625.1975312, spent 625.1975312. No BTC remains at this address.
 Largest output to another address: bc1q343gc0p9kjyltfa30ze5nce4tdrtshwl9yd6lg, 212.5015216 BTC, 34.0% of the BTC that left this address.
 Lists: none of the 17 first-hop addresses checked matched OFAC's list or the exchange wallet lists we hold.
 History read: complete as far as we can check. See "Is the history complete?"
@@ -23,7 +24,7 @@ Freeze status:
 OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026-11-19.
 
 == Activity ==
-First activity read: 2019-09-08 07:34 UTC. Last activity read: 2024-07-25 21:05 UTC.
+First activity read: 2019-09-08 07:34. Last activity read: 2024-07-25 21:05.
 Received counts outputs paying this address. Spent counts inputs it spent; one output of a spending transaction is usually change returning to the spender.
 BTC:
   received: 12 outputs, 625.1975312
@@ -71,7 +72,7 @@ Other inputs of transactions that paid this address, largest first.
   11. 3LrBL5gvxZtAcTDHAhHkwVFFJShxrqsTaQ
      0.005 BTC in 5 outputs on 2019-09-08
 
-First funder read: 32cizna4vaCgvr4cEmjco54mfmE7Dzp5yj, 357R3FeNmySYeHuRfyhFd6nMwzoLDdjfwV, 0.1 BTC on 2019-09-08 07:34 UTC.
+First funder read: 32cizna4vaCgvr4cEmjco54mfmE7Dzp5yj, 357R3FeNmySYeHuRfyhFd6nMwzoLDdjfwV, 0.1 BTC on 2019-09-08 07:34.
   transaction 53ca91a5b6c84f1b9bc032f07cf2acfb7efb4b8f11716563708e14e46f2d924d
 Distinct other addresses among the inputs of transactions that paid this one: 11.
 
@@ -132,7 +133,7 @@ If someone offers recovery, report that contact at ic3.gov as well.
 == Reporting what happened (DRAFT, not yet approved) ==
 Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
 
-  [ ] First, tell the exchange or wallet provider you sent from. Ask them to flag the transfer and record your report.
+  [ ] First, tell the exchange or wallet provider you sent from, and your bank, if the money started in a bank account. Ask them to flag the transfer and record your report.
   [ ] File with the FBI's Internet Crime Complaint Center (IC3) at ic3.gov.
   [ ] In the US, also report to the Federal Trade Commission at reportfraud.ftc.gov.
   [ ] Outside the US, report to your national police or fraud reporting centre, and at econsumer.gov, which consumer protection agencies in many countries use for cross-border scams.
@@ -150,5 +151,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): f7b5486631356b966ef9c0a0e73637cc77e6975c454f9c989e1a802be82b35db
+Fingerprint (SHA-256): 840a12ef59709ae5ae66798ed9aa8b203aa038d91ac2e4c5bacdbc4d9f592e76
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

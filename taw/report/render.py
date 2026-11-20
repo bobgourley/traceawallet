@@ -109,7 +109,7 @@ def when(value) -> str:
     if value is None:
         return "unknown"
     t = value if isinstance(value, dt.datetime) else dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    return t.astimezone(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    return t.astimezone(dt.timezone.utc).strftime("%Y-%m-%d %H:%M")      # the report says once that times are UTC
 
 
 def day(value) -> str:

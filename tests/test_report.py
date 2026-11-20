@@ -55,7 +55,9 @@ def test_golden_case3_with_the_victims_match():
     from taw.matching import match_fetched
     inp, data = built("wdpa-2-26-cv-00087-usdt")
     snap, batch, chain = rf.chain_parts("wdpa-2-26-cv-00087-usdt")
-    match = match_fetched("eth", snap.address, rf.fetch_from(chain["transactions"][0]), batch.transfers)
+    from taw.lookups import balances_trusted
+    match = match_fetched("eth", snap.address, rf.fetch_from(chain["transactions"][0]), batch.transfers,
+                          balances_trusted(inp.snapshot, "eth"))
     text = render_text(data, sha256=digest(inp, data), match={**match, "chains": ["eth"]})
     golden(rf.FIXTURES / "wdpa-2-26-cv-00087-usdt" / "report_with_match.txt", text)
     assert "== Your transaction (private) ==" in text and "242,209.413589 USDC" in text
@@ -128,12 +130,12 @@ def test_goplus_silence_is_not_called_clean():
 
 def test_freeze_date_transaction_and_destruction():
     text = render_text(built("ddc-1-25-cv-02967-usdt")[1])
-    assert ("USDT: frozen by Tether since 2024-11-04 18:55 UTC. This address can no longer send USDT. A freeze does "
+    assert ("USDT: frozen by Tether since 2024-11-04 18:55. This address can no longer send USDT. A freeze does "
             "not return money to anyone; that takes legal process. Tether can later release the frozen USDT or "
             "destroy it.") in text
     assert ("frozen in block 66,699,054, transaction "
             "a3e73759098f09f7547b30286fd6f87570a1f9288487702375b65a41420f6642") in text
-    assert "Tether destroyed 465,514.638375 USDT held at this address on 2025-04-01 01:34 UTC." in text
+    assert "Tether destroyed 465,514.638375 USDT held at this address on 2025-04-01 01:34." in text
     assert ("Detail: block 70,939,306, transaction "
             "d5cbc559c41e460159b793649b8c5f40eba583f4c50d62252b2ba11399060145") in text
     assert "Destroyed: Tether destroyed 465,514.638375 USDT held at this address on 2025-04-01." in text
@@ -151,9 +153,12 @@ def test_a_frozen_address_with_no_destruction_found_says_the_history_may_be_inco
 def test_a_0x_report_names_the_chains_checked_and_not():
     text = render_text(built("wdpa-2-26-cv-00087-usdt")[1])
     assert "Checked: Ethereum, Arbitrum One, OP Mainnet." in text
-    assert "  - BNB Smart Chain: no data source we may use for a public site covers this chain yet." in text
-    assert "  - Polygon: it needs a paid Blockscout plan." in text
-    assert "  - Base: it needs a paid Blockscout plan." in text
+    assert ("This site does not cover BNB Smart Chain, Polygon or Base yet. If you sent on one of these, this report "
+            "cannot see it.") in text
+    assert "paid Blockscout plan" not in text                    # the reason stays in the data
+    _, data = built("wdpa-2-26-cv-00087-usdt")
+    assert {x["reason"] for x in data["header"]["evm_coverage"]["not_checked"]} == {
+        "no_source_with_suitable_terms", "needs_paid_blockscout_plan"}
 
 
 def test_bitcoin_wording():
@@ -328,3 +333,59 @@ def test_fixed_sections_say_what_was_asked():
     checklist = text.split("<<< fixed section: IC3 checklist >>>")[1]
     assert checklist.index("tell the exchange or wallet provider you sent from") < checklist.index("ic3.gov")
     assert "reportfraud.ftc.gov" in checklist and "Outside the US" in checklist and "Report promptly" in checklist
+
+
+
+# -- third wording pass ------------------------------------------------------------------------
+
+def test_summary_gives_received_sent_and_what_remains_per_asset():
+    text = render_text(built("wdpa-2-26-cv-00087-usdt")[1])
+    summary = text.split("== Summary ==")[1].split("==")[0]
+    assert "USDC: received 387,152.909159, sent 387,152.909159. No USDC remains at this address." in summary
+    sdny = render_text(built("sdny-1-26-cv-08010-usdt")[1])
+    assert "USDT: received 602,509,669.627689, sent 589,752,845.406849. 12,756,824.22084 USDT remains." in sdny
+
+
+def test_an_address_imitating_this_one_is_named():
+    _, data = built("wdpa-2-26-cv-00087-usdt")
+    assert data["summary"]["imitating_this_address"] == ["0xfa0ac3c12f1d55706fe78b8c1407edee2f5e33a9"]
+    text = render_text(data)
+    assert "Lookalikes of this address: 1 address in this report begins and ends with the same characters" in text
+    assert "0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9  (this report's address)" in text
+    assert "This address imitates the beginning and end of this report's address." in text
+
+
+def test_imitation_tokens_name_the_real_one():
+    from taw.report.build import imitates, skeleton
+    assert skeleton("\u2063U\u2063S\u206fD\u200eС\u206a") == "USDC" and imitates("eth", "ՍSDС") == "USDC"
+    assert imitates("eth", "Swap your Voucher on bio.link") is None and imitates("tron", "TG: jieuu") is None
+    _, data = built("wdpa-2-26-cv-00087-usdt")
+    assert data["activity"]["unrecognised_imitating"] == 13
+    text = render_text(data)
+    section = text.split("== Tokens we don't recognise ==")[1].split("\n== ")[0]
+    assert section.count("This is not Circle's USDC. The real USDC on Ethereum is contract "
+                         "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.") == 5
+    assert section.count("      contract ") == 5 and "...and 9 more tokens with" in section
+
+
+def test_the_token_warning_is_only_in_the_tokens_section():
+    text = render_text(built("wdpa-2-26-cv-00087-usdt")[1])
+    small = text.split("== Zero and very small transfers ==")[1].split("\n== ")[0]
+    assert "Token names are chosen" not in small
+    assert text.count("Token names are chosen by their creators") == 1
+
+
+def test_times_are_utc_once_and_no_one_else_has_looked():
+    text = render_text(built("sdny-1-26-cv-08010-usdt")[1], prior_lookups="none")
+    assert text.count("UTC") == 1 and "All times in this report are UTC." in text
+    assert "No one else has looked up this address here yet." in text
+
+
+def test_the_checklist_mentions_the_bank():
+    text = render_text(built("sdny-1-26-cv-08010-usdt")[1])
+    assert "and your bank, if the money started in a bank account" in text
+
+
+def test_the_victims_balance_before_and_after():
+    text = (rf.FIXTURES / "wdpa-2-26-cv-00087-usdt" / "report_with_match.txt").read_text()
+    assert "USDC at this address just before your transfer arrived: 0.041921. Just after: 242,209.45551." in text

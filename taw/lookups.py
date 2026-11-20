@@ -194,6 +194,23 @@ def _transfer_id(conn, row: dict, source: str) -> int | None:
     return r[0] if r else None
 
 
+def balances_trusted(snapshot: dict, chain: str):
+    """contract -> whether a running balance of that asset can be stated: the whole
+    history was read and the asset's balance reconciled (Bitcoin: the native check passed)."""
+    if snapshot.get("transfers_truncated") or snapshot.get("history_incomplete") is not False:
+        return lambda contract: False
+    ok = {t["contract"] if chain == "tron" else t["contract"].lower()
+          for t in snapshot.get("token_reconciliation") or [] if t["status"] == "reconciled"}
+    native = any(ch["name"] == "native_reconciliation" and ch["status"] == "passed"
+                 for ch in snapshot.get("checks") or [])
+
+    def trusted(contract):
+        if contract is None:
+            return chain == "btc" and native
+        return (contract if chain == "tron" else contract.lower()) in ok
+    return trusted
+
+
 def run_match(conn, actor: str, lookup_id: str, *, adapter_for, raw_store) -> str:
     """Match the lookup's inputs and store the result on the lookup row. Returns the
     result's status, or 'wait' while an address job is still queued or running."""
@@ -224,15 +241,16 @@ def run_match(conn, actor: str, lookup_id: str, *, adapter_for, raw_store) -> st
             continue
         data = report_inputs.load(conn, rep["snapshot_id"], now)
         oldest = min((t.block_time for t in data.transfers), default=None)
+        trusted = balances_trusted(data.snapshot, chain)
         if tx:
             fetch = adapter_for(chain, raw_store).fetch_transaction(tx)
             _save_fetched(conn, actor, fetch)
-            per_chain[chain] = matching.match_fetched(chain, address, fetch, data.transfers)
+            per_chain[chain] = matching.match_fetched(chain, address, fetch, data.transfers, trusted)
             sources[chain] = fetch.source_slug
         else:
             per_chain[chain] = matching.match_transfers(chain, address, data.transfers, inp,
                                                         truncated=data.snapshot["transfers_truncated"],
-                                                        oldest_read=oldest)
+                                                        oldest_read=oldest, trusted=trusted)
             sources[chain] = data.source
     result = matching.combine(per_chain) if per_chain else {"status": "not_found", "reason": "no_chain"}
     matched_id = method = None

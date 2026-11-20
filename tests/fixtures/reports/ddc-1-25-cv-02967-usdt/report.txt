@@ -1,11 +1,13 @@
 TraceAWallet report
 Tron address TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN
 
-As of block 88,175,350 (2026-11-20 18:42 UTC). Lists and labels as they stood at 2026-11-20 18:43 UTC.
+As of block 88,175,350 (2026-11-20 18:42). Lists and labels as they stood at 2026-11-20 18:43.
+All times in this report are UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
 
 == Summary ==
-Held: 0.278724 TRX.
+USDT: received 485,514.638375, sent 20,000. No USDT remains at this address.
+TRX: received 149.200444, sent 146.356. 0.278724 TRX remains.
 Frozen: Tether has frozen this address's USDT since 2024-11-04. The address can no longer send USDT.
 Destroyed: Tether destroyed 465,514.638375 USDT held at this address on 2025-04-01.
 Largest destination: TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp, 20,000 USDT, 100.0% of the USDT that left this address.
@@ -22,9 +24,9 @@ TRX: 0.278724
 Also held: 1 token we don't recognise (see "Tokens we don't recognise").
 
 Freeze status:
-  USDT: frozen by Tether since 2024-11-04 18:55 UTC. This address can no longer send USDT. A freeze does not return money to anyone; that takes legal process. Tether can later release the frozen USDT or destroy it.
+  USDT: frozen by Tether since 2024-11-04 18:55. This address can no longer send USDT. A freeze does not return money to anyone; that takes legal process. Tether can later release the frozen USDT or destroy it.
     Detail: the USDT contract TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t reports isBlackListed = true at the chain's latest block when checked; frozen in block 66,699,054, transaction a3e73759098f09f7547b30286fd6f87570a1f9288487702375b65a41420f6642.
-  Tether destroyed 465,514.638375 USDT held at this address on 2025-04-01 01:34 UTC.
+  Tether destroyed 465,514.638375 USDT held at this address on 2025-04-01 01:34.
     Detail: block 70,939,306, transaction d5cbc559c41e460159b793649b8c5f40eba583f4c50d62252b2ba11399060145.
   USDC: not frozen.
     Detail: the USDC contract TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8 reports isBlacklisted = false at the chain's latest block when checked.
@@ -32,7 +34,7 @@ Freeze status:
 OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026-11-19.
 
 == Activity ==
-First activity read: 2024-10-29 03:06 UTC. Last activity read: 2026-07-16 09:17 UTC.
+First activity read: 2024-10-29 03:06. Last activity read: 2026-07-16 09:17.
 USDT (contract TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t):
   in:  15 transfers, 485,514.638375
   out: 2 transfers, 20,000
@@ -73,7 +75,7 @@ Addresses that sent to this address, largest first. Zero, very small and unrecog
      149.2 TRX in 1 transfer on 2024-10-29
      List match: listed by OKX as its wallet on 2026-11-01 (type in OKX's file: Non Staking) (source: OKX proof-of-reserves address file, dated 2026-11-01)
 
-First funder read: TM1zzNDZD2DPASbKcgdVoTYhfmYgtfwx9R, 149.2 TRX on 2024-10-29 03:06 UTC.
+First funder read: TM1zzNDZD2DPASbKcgdVoTYhfmYgtfwx9R, 149.2 TRX on 2024-10-29 03:06.
   transaction 2a000ecda50d5e072d5a6e4cddc057860ab13a51207d636d1e80fe1815322c1a
 Distinct addresses that sent to this one: 24.
 
@@ -97,22 +99,22 @@ The exchange lists cover only the exchanges named. An address that matches nothi
 == Zero and very small transfers ==
 Zero-value transfers: 1. Very small transfers (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 21.
 The newest 5:
-  2026-07-16 09:17 UTC  in from TUZPztRsZQMUJVXQYKwEuwdGhzgTGjieuu  0 TG: jieuu
+  2026-07-16 09:17  in from TUZPztRsZQMUJVXQYKwEuwdGhzgTGjieuu  0 TG: jieuu
       transaction 4c962e1b83dc07322f97cb5cd3964123b6bad191d88ef46f310ff40e07c601d2
-  2025-05-23 00:37 UTC  in from TU9cfjxLbNuxEkejexoPsqyXE4hzukwG6H  0.000001 TRX
+  2025-05-23 00:37  in from TU9cfjxLbNuxEkejexoPsqyXE4hzukwG6H  0.000001 TRX
       transaction 8b23994625b42f52597213e7298b6597191ba773f4c67fe9e394f2b9e5791ff8
-  2025-05-23 00:37 UTC  in from TSCHXZuZGLsF8jLbCjrawwyFpQgBCVXrjU  0.000001 TRX
+  2025-05-23 00:37  in from TSCHXZuZGLsF8jLbCjrawwyFpQgBCVXrjU  0.000001 TRX
       transaction 845a3051106beede1a418fb4e4bda2452b5372c9a537acd6bcc9076fc632340c
-  2024-12-06 09:24 UTC  in from TEvcxhFWriZPMbBTizyrS8BmUDUHi25Vbp  0.0001 TRX
+  2024-12-06 09:24  in from TEvcxhFWriZPMbBTizyrS8BmUDUHi25Vbp  0.0001 TRX
       transaction fd96fb69d4d3c4ad230ff3368b82d58850e398345738498e99efaea84ffb4816
-  2024-12-06 08:58 UTC  in from TUojwvRf8zABbMVdj3r3J5wJ3YCeUHkgSR  0.000006 TRX
+  2024-12-06 08:58  in from TUojwvRf8zABbMVdj3r3J5wJ3YCeUHkgSR  0.000006 TRX
       transaction b909a8bff20b4e38fc6f23efc4eafaf652c155df489ca61678cf4d32a006f745
-Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
 The full list of 22 is in the report's data.
 
 == Tokens we don't recognise ==
 3 transfers. A token is identified only by its contract, so a token named USDT here need not be Tether's.
 Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
+The 2 tokens with the most transfers:
   "ha138 com": 2 in, 0 out
       contract THxYWbzAgzQgQaYi9G4mjeL1tq1hdrZe55
   "TG: jieuu": 1 in, 0 out
@@ -172,7 +174,7 @@ If someone offers recovery, report that contact at ic3.gov as well.
 == Reporting what happened (DRAFT, not yet approved) ==
 Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
 
-  [ ] First, tell the exchange or wallet provider you sent from. Ask them to flag the transfer and record your report.
+  [ ] First, tell the exchange or wallet provider you sent from, and your bank, if the money started in a bank account. Ask them to flag the transfer and record your report.
   [ ] File with the FBI's Internet Crime Complaint Center (IC3) at ic3.gov.
   [ ] In the US, also report to the Federal Trade Commission at reportfraud.ftc.gov.
   [ ] Outside the US, report to your national police or fraud reporting centre, and at econsumer.gov, which consumer protection agencies in many countries use for cross-border scams.
@@ -190,5 +192,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): 3cf3b33e629ed5b8fe97c09451bced364e9fa797dda67a4bde3335f5ce14eda5
+Fingerprint (SHA-256): 5f8c6c4e86e0c466c8af2b211b43438dd2002676622cc9f41013340ad8f7bd78
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

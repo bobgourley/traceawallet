@@ -150,3 +150,14 @@ def test_combining_chains():
     assert two["status"] == "candidates"
     none = combine({"eth": miss, "arbitrum": miss})
     assert none["status"] == "not_found" and none["can_rule_out"] is False
+
+
+
+def test_balance_around_the_transfer_only_when_the_history_can_be_trusted():
+    from taw.matching import balance_around
+    t = next(x for x in BATCH.transfers if x.tx_hash == rf.CASE3_VICTIM_TX)
+    yes = balance_around("eth", ME, BATCH.transfers, t, True)
+    assert (yes["before"], yes["after"]) == ("0.041921", "242209.45551")
+    assert balance_around("eth", ME, BATCH.transfers, t, False)["reason"] == "history_not_complete"
+    eth = next(x for x in BATCH.transfers if x.token_contract is None)
+    assert balance_around("eth", ME, BATCH.transfers, eth, True)["reason"] == "native_fees"

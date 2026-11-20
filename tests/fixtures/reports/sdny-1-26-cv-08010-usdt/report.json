@@ -61,12 +61,15 @@
     "TRX",
     "USDT"
    ],
+   "unrecognised_imitating": 0,
    "unrecognised_more": 0,
+   "unrecognised_more_transfers": 0,
    "unrecognised_tokens": [
     {
      "asset": null,
      "contract": "THxYWbzAgzQgQaYi9G4mjeL1tq1hdrZe55",
      "decimals": 3,
+     "imitates": null,
      "in": {
       "count": 2,
       "total": "276.276",
@@ -92,6 +95,7 @@
      "asset": null,
      "contract": "TFc7J827FimhBLZ5VPBqxghP5DACnjesMe",
      "decimals": 18,
+     "imitates": null,
      "in": {
       "count": 1,
       "total": "888",
@@ -120,6 +124,7 @@
      "asset": null,
      "contract": "TGKBroumSbjwsPyyJ3J5X2H8dSKiajBCrd",
      "decimals": 18,
+     "imitates": null,
      "in": {
       "count": 1,
       "total": "292.292",
@@ -145,6 +150,7 @@
      "asset": null,
      "contract": "TJXUL2YGcoVaNpFpNrQ9FjeE5AVMMSk6UJ",
      "decimals": 6,
+     "imitates": null,
      "in": {
       "count": 1,
       "total": "12756824.22084",
@@ -170,6 +176,7 @@
      "asset": null,
      "contract": "TV714TT9aQftbkYBjWiVExCxNZm9nPJX6K",
      "decimals": 6,
+     "imitates": null,
      "in": {
       "count": 1,
       "total": "14.9757",
@@ -1135,14 +1142,18 @@
      "TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq",
      "TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq"
     ],
-    "group": "A"
+    "group": "A",
+    "imitating_this_address": [],
+    "includes_this_address": false
    },
    {
     "addresses": [
      "TL341aZzEu72Jxc8E1mWawust2bTinuQRu",
      "TL34x6JY55TTksamArx1mVrBWtrrvnuQRu"
     ],
-    "group": "B"
+    "group": "B",
+    "imitating_this_address": [],
+    "includes_this_address": false
    }
   ],
   "prices_available": false,
@@ -4316,6 +4327,24 @@
    }
   },
   "summary": {
+   "assets": [
+    {
+     "name": "USDT",
+     "received": "602509669.627689",
+     "received_count": 105,
+     "remains": "12756824.22084",
+     "sent": "589752845.406849",
+     "sent_count": 75
+    },
+    {
+     "name": "TRX",
+     "received": "3001.213134",
+     "received_count": 260,
+     "remains": "228.177395",
+     "sent": "2825.126209",
+     "sent_count": 11
+    }
+   ],
    "checked": 193,
    "destroyed": [],
    "frozen": [
@@ -4338,6 +4367,7 @@
     }
    ],
    "history": "complete",
+   "imitating_this_address": [],
    "largest_destination": {
     "address": "TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq",
     "asset": "USDT",
@@ -4348,5 +4378,5 @@
    "list_matches": 0
   }
  },
- "sha256": "1fdcb4d550e2528aaff028faf941ac7ebade420074ee08b9048c5c0df390b1dc"
+ "sha256": "2aa214e0db90102a5aab0a874b912a81d4a3daee4cde84eca9219db4974cd1b1"
 }

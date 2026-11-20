@@ -3,6 +3,35 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (night): Report wording, third pass
+
+- **Summary per asset.** One line per recognised asset that moved: received,
+  sent, and what remains ("No USDC remains at this address."). Received minus
+  sent need not equal what remains: fees, and destructions by an issuer, move
+  balances too.
+- **Lookalikes of the address itself.** The report's own address is now part
+  of the lookalike comparison. A group that holds it says that its other
+  addresses imitate this address's beginning and end, and the summary counts
+  them. Case 3: `0xfa0ac3c1…33a9` against `0xfa0a50dc…33a9`.
+- **Tokens named like ours.** An unrecognised token's name is reduced to what
+  a reader sees: NFKC folding, Cyrillic, Greek, Armenian and similar letters
+  mapped to their Latin lookalikes, invisible characters and punctuation
+  dropped. If what's left reads as a recognised asset on that chain, the report
+  says it is not that issuer's token and gives the real contract. The five
+  tokens with the most transfers are shown, and the rest are counted. In case
+  3, 13 of 14 such tokens read as USDC.
+- **Chains not covered.** One sentence names them. The reason codes stay in
+  the data.
+- **Balance around the victim's transfer.** It is the sum of every earlier
+  transfer of that asset, stated only when the whole history was read and
+  that asset's balance reconciles. It is never stated for ETH or TRX, whose
+  fees move the balance with no transfer record. Case 3: 0.041921 USDC before,
+  242,209.45551 after. The next two transfers out, 230,000 and 12,209.45551,
+  add up to exactly that.
+- **Times** carry no "UTC" each; the report says once that all times are UTC.
+  When the prior-lookup count is zero, the report says no one else has looked
+  the address up here yet.
+
 ## 2026-11-20 (late evening): Report wording, first revision
 
 The owner's review of the first S.D.N.Y. report changed the templates. Most

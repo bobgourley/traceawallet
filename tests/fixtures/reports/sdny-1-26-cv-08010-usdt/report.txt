@@ -1,11 +1,13 @@
 TraceAWallet report
 Tron address TGuqbYqJ4m1J8dKWB3NVnsuXtgXCQkgdyf
 
-As of block 88,175,337 (2026-11-20 18:41 UTC). Lists and labels as they stood at 2026-11-20 18:42 UTC.
+As of block 88,175,337 (2026-11-20 18:41). Lists and labels as they stood at 2026-11-20 18:42.
+All times in this report are UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
 
 == Summary ==
-Held: 228.177395 TRX, 12,756,824.22084 USDT.
+USDT: received 602,509,669.627689, sent 589,752,845.406849. 12,756,824.22084 USDT remains.
+TRX: received 3,001.213134, sent 2,825.126209. 228.177395 TRX remains.
 Frozen: Tether has frozen this address's USDT since 2025-07-26. The address can no longer send USDT.
 Largest destination: TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, 499,892,838.406849 USDT, 84.8% of the USDT that left this address.
 Lists: none of the 193 first-hop addresses checked matched OFAC's list or the exchange wallet lists we hold.
@@ -23,7 +25,7 @@ USDT: 12,756,824.22084. Issued by Tether, which can freeze it.
 Also held: 5 tokens we don't recognise (see "Tokens we don't recognise").
 
 Freeze status:
-  USDT: frozen by Tether since 2025-07-26 10:52 UTC. This address can no longer send USDT. A freeze does not return money to anyone; that takes legal process. Tether can later release the frozen USDT or destroy it.
+  USDT: frozen by Tether since 2025-07-26 10:52. This address can no longer send USDT. A freeze does not return money to anyone; that takes legal process. Tether can later release the frozen USDT or destroy it.
     Detail: the USDT contract TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t reports isBlackListed = true at the chain's latest block when checked; frozen in block 74,289,511, transaction 5ad88ed4d8d52bb95b3494cf7bdc1a80be6453e7207dd4b40fc01f5a86eb885e.
   USDC: not frozen.
     Detail: the USDC contract TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8 reports isBlacklisted = false at the chain's latest block when checked.
@@ -31,7 +33,7 @@ Freeze status:
 OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026-11-19.
 
 == Activity ==
-First activity read: 2025-03-26 04:23 UTC. Last activity read: 2026-10-06 19:04 UTC.
+First activity read: 2025-03-26 04:23. Last activity read: 2026-10-06 19:04.
 USDT (contract TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t):
   in:  105 transfers, 602,509,669.627689
   out: 75 transfers, 589,752,845.406849
@@ -112,7 +114,7 @@ Addresses that sent to this address, largest first. Zero, very small and unrecog
      1.01 USDT in 1 transfer on 2025-06-04
   ...and 7 more addresses not shown.
 
-First funder read: TW6g1dufLjZy5MrPJGhzZQKTf5JU1Lurfu, 3,100,000 USDT on 2025-03-26 04:23 UTC.
+First funder read: TW6g1dufLjZy5MrPJGhzZQKTf5JU1Lurfu, 3,100,000 USDT on 2025-03-26 04:23.
   transaction 5fec6d32287cec1574467a9dd885f32fe3bc23bb497d7bfce6265a15e69be3dc
 Distinct addresses that sent to this one: 174.
 
@@ -140,21 +142,22 @@ The exchange lists cover only the exchanges named. An address that matches nothi
 == Zero and very small transfers ==
 Zero-value transfers: 16. Very small transfers (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 271.
 The newest 5:
-  2026-10-06 19:04 UTC  in from TJbK6ToUNM9q4bGihotsYYrAzXR9wtN94T  0.000003 TRX
+  2026-10-06 19:04  in from TJbK6ToUNM9q4bGihotsYYrAzXR9wtN94T  0.000003 TRX
       transaction e8a2b371a234cee9c7b83afa647ab204ab7a4efdd9b92c06b0ee32cb6004f122
-  2026-10-06 15:30 UTC  in from TKjZxirv3bjTMthy6CwbwuRmfbYZX5ojpS  0.000001 TRX
+  2026-10-06 15:30  in from TKjZxirv3bjTMthy6CwbwuRmfbYZX5ojpS  0.000001 TRX
       transaction 726f99161dee9001175837e3ca835181f3912e22641b5501ef258a19b84aad3d
-  2026-10-06 15:16 UTC  in from TKr5feFZKadzJtKyGhtV2j8rzZ1RF8zPpS  0.000008 TRX
+  2026-10-06 15:16  in from TKr5feFZKadzJtKyGhtV2j8rzZ1RF8zPpS  0.000008 TRX
       transaction b3dbd8afd1307d1348acee78136abf5bbd52234369165cda0849115760cfb13c
-  2026-06-26 22:21 UTC  in from TMMBwahgzgtp7B4e8pwagi9eRyRdWmDYnQ  0.000002 TRX
+  2026-06-26 22:21  in from TMMBwahgzgtp7B4e8pwagi9eRyRdWmDYnQ  0.000002 TRX
       transaction f45f61b7c65826ad3fa1dfa18eae371fd3343cd666f06b10570e5c74ddc129e6
-  2026-06-26 22:20 UTC  in from TUHARvmt88v6TjExFdTb1zwJVrkf8Y1YnQ  0.000006 TRX
+  2026-06-26 22:20  in from TUHARvmt88v6TjExFdTb1zwJVrkf8Y1YnQ  0.000006 TRX
       transaction b42bac696a4c45be26b3d65be2b47e5551f37b29a8605fe0e2727f0394109938
 The full list of 287 is in the report's data.
 
 == Tokens we don't recognise ==
 6 transfers. A token is identified only by its contract, so a token named USDT here need not be Tether's.
 Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
+The 5 tokens with the most transfers:
   "ha138 com": 2 in, 0 out
       contract THxYWbzAgzQgQaYi9G4mjeL1tq1hdrZe55
   "解冻TG:USDT660088" (contains U+89E3, U+51BB): 1 in, 0 out
@@ -219,7 +222,7 @@ If someone offers recovery, report that contact at ic3.gov as well.
 == Reporting what happened (DRAFT, not yet approved) ==
 Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
 
-  [ ] First, tell the exchange or wallet provider you sent from. Ask them to flag the transfer and record your report.
+  [ ] First, tell the exchange or wallet provider you sent from, and your bank, if the money started in a bank account. Ask them to flag the transfer and record your report.
   [ ] File with the FBI's Internet Crime Complaint Center (IC3) at ic3.gov.
   [ ] In the US, also report to the Federal Trade Commission at reportfraud.ftc.gov.
   [ ] Outside the US, report to your national police or fraud reporting centre, and at econsumer.gov, which consumer protection agencies in many countries use for cross-border scams.
@@ -237,5 +240,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): 1fdcb4d550e2528aaff028faf941ac7ebade420074ee08b9048c5c0df390b1dc
+Fingerprint (SHA-256): 2aa214e0db90102a5aab0a874b912a81d4a3daee4cde84eca9219db4974cd1b1
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

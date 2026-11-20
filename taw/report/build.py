@@ -36,7 +36,36 @@ TINY = {"USDT": Decimal("1"), "USDC": Decimal("1"), "DAI": Decimal("1"), "TRX": 
 ASSET_ORDER = ("USDT", "USDC", "DAI", "BTC", "ETH", "TRX")
 FIRST_HOP_ROWS = 20
 SET_APART_ROWS = 25
-UNRECOGNISED_ROWS = 15
+UNRECOGNISED_ROWS = 5
+# Letters from other scripts that look like Latin ones, as used in token names that
+# imitate a real token ("USDС" with a Cyrillic Es). Compared after NFKC folding and
+# with invisible characters removed.
+CONFUSABLE = str.maketrans({
+    "А": "A", "В": "B", "С": "C", "Е": "E", "Н": "H", "К": "K", "М": "M", "О": "O", "Р": "P", "Т": "T", "Х": "X",
+    "Ѕ": "S", "І": "I", "Ј": "J", "а": "a", "с": "c", "е": "e", "о": "o", "р": "p", "х": "x", "ѕ": "s", "і": "i",
+    "Ս": "U", "ս": "u", "Տ": "S", "Օ": "O", "Α": "A", "Β": "B", "Ε": "E", "Η": "H", "Ι": "I", "Κ": "K", "Μ": "M",
+    "Ν": "N", "Ο": "O", "Ρ": "P", "Τ": "T", "Χ": "X", "Υ": "Y", "Ζ": "Z", "ꓴ": "U", "ꓢ": "S", "ꓓ": "D", "ꓔ": "T",
+    "ꓚ": "C", "Ꭰ": "D", "Ꮪ": "S", "Ꮯ": "C", "Ꭲ": "T", "Ꮃ": "W", "ᴜ": "U", "ꜱ": "S", "ᴅ": "D", "ᴛ": "T", "ᴄ": "C",
+})
+ISSUERS = {"USDT": "Tether", "USDC": "Circle"}
+
+
+def skeleton(name: str | None) -> str:
+    """A token name reduced to what a reader sees: NFKC, lookalike letters mapped to
+    Latin, invisible characters, spaces and punctuation dropped, upper case."""
+    if not name:
+        return ""
+    folded = unicodedata.normalize("NFKC", name).translate(CONFUSABLE)
+    return "".join(ch for ch in folded if ch.isalnum()).upper()
+
+
+def imitates(chain: str, symbol: str | None) -> str | None:
+    """The recognised asset an unrecognised token's name reads as, if any."""
+    s = skeleton(symbol)
+    for asset in sorted({a for (ch, _), a in TOKENS.items() if ch == chain} | {"ETH", "TRX", "BTC"}):
+        if s == asset:
+            return asset
+    return None
 NEXT_ROWS = 10
 
 # What each chain's adapter does not read at all (worded in the template).
@@ -294,6 +323,14 @@ def _sides(inp: ReportInput, c: Ctx):
     return inbound, outbound
 
 
+def _raw_symbol(row: dict, inp: ReportInput) -> str | None:
+    """The token's own symbol, before visible() wrote hidden characters as <U+XXXX>."""
+    for t in inp.transfers:
+        if t.token_contract and row["contract"] and t.token_contract.lower() == row["contract"].lower():
+            return t.token_symbol
+    return row["symbol"]
+
+
 def _activity(inp: ReportInput, c: Ctx, inbound, outbound) -> dict:
     groups: dict[str, dict] = {}
     for direction, rows in (("in", inbound), ("out", outbound)):
@@ -323,11 +360,20 @@ def _activity(inp: ReportInput, c: Ctx, inbound, outbound) -> dict:
     rows.sort(key=lambda r: (not r["recognised"], r["key"] != "native" and r["asset"] is None,
                              order.get(r["asset"], 99), -(r["in"]["count"] + r["out"]["count"]), r["key"]))
     recognised = [r for r in rows if r["recognised"]]
-    unrec = [r for r in rows if not r["recognised"]]
+    unrec = sorted((r for r in rows if not r["recognised"]),
+                   key=lambda r: (-(r["in"]["count"] + r["out"]["count"]), r["key"]))
+    real = {a: ct for (ch, ct), a in TOKENS.items() if ch == inp.chain}
+    for r in unrec:
+        asset = imitates(inp.chain, _raw_symbol(r, inp))
+        r["imitates"] = None if asset is None else {"asset": asset, "issuer": ISSUERS.get(asset),
+                                                    "contract": real.get(asset)}
     every = inbound + outbound
     times = [t.block_time for t in every]
-    return {"assets": recognised, "unrecognised_tokens": unrec[:UNRECOGNISED_ROWS],
+    shown = unrec[:UNRECOGNISED_ROWS]
+    return {"assets": recognised, "unrecognised_tokens": shown,
             "unrecognised_more": max(0, len(unrec) - UNRECOGNISED_ROWS),
+            "unrecognised_more_transfers": sum(r["in"]["count"] + r["out"]["count"] for r in unrec[UNRECOGNISED_ROWS:]),
+            "unrecognised_imitating": sum(1 for r in unrec if r["imitates"]),
             "unrecognised_transfers": sum(r["in"]["count"] + r["out"]["count"] for r in unrec),
             "first_activity": iso(min(times)) if times else None, "last_activity": iso(max(times)) if times else None,
             "transfers_in": len(inbound), "transfers_out": len(outbound),
@@ -389,15 +435,16 @@ def lookalike_groups(addresses, chain: str) -> dict[str, list[str]]:
     return {a: sorted(g - {a}) for g in groups.values() if len(g) > 1 for a in g}
 
 
-def _mark_lookalikes(hops: dict, set_apart: dict, chain: str) -> list[dict]:
+def _mark_lookalikes(hops: dict, set_apart: dict, chain: str, me: str) -> list[dict]:
     """Give each lookalike group a letter, mark its rows, and return the groups so the
-    report can describe each one once."""
+    report can describe each one once. The report's own address is compared too: a
+    group holding it lists addresses that begin and end like this one."""
     rows = hops["destinations"] + hops["funders"]
     others = [r["counterparty"] for k in ("zero", "tiny") for r in set_apart[k]["rows"]]
-    shown = {r["address"] for r in rows} | {o for o in others if o}
+    shown = {r["address"] for r in rows} | {o for o in others if o} | {me}
     look = lookalike_groups(shown, chain)
     groups: list[list[str]] = []
-    for addr in [r["address"] for r in rows] + others:
+    for addr in [me] + [r["address"] for r in rows] + others:
         if addr not in look:
             continue
         members = sorted({addr, *look[addr]})
@@ -412,7 +459,8 @@ def _mark_lookalikes(hops: dict, set_apart: dict, chain: str) -> list[dict]:
     for k in ("zero", "tiny"):
         for r in set_apart[k]["rows"]:
             r["lookalike_group"] = letter.get(r["counterparty"])
-    return [{"group": letter[m[0]], "addresses": m} for m in groups]
+    return [{"group": letter[m[0]], "addresses": m, "includes_this_address": me in m,
+             "imitating_this_address": sorted(x for x in m if x != me) if me in m else []} for m in groups]
 
 
 def _first_hop(inp: ReportInput, c: Ctx, inbound, outbound) -> dict:
@@ -595,7 +643,13 @@ def _summary(holdings: dict, activity: dict, hops: dict, lists: dict, completene
         verdict = "truncated"
     else:
         verdict = "complete"
-    return {"held": held, "frozen": frozen, "destroyed": destroyed, "largest_destination": largest,
+    remains = {"native": n["amount"]}
+    for t in holdings["tokens"]:
+        remains[c.key(t["contract"])] = t["amount"]
+    flows = [{"name": a["asset"] or a["symbol"], "received": a["in"]["total"], "sent": a["out"]["total"],
+              "received_count": a["in"]["count"], "sent_count": a["out"]["count"],
+              "remains": remains.get(a["key"], "0")} for a in activity["assets"]]
+    return {"held": held, "assets": flows, "frozen": frozen, "destroyed": destroyed, "largest_destination": largest,
             "list_matches": len(lists["matched"]),
             "checked": lists["destinations_checked"] + lists["funders_checked"], "history": verdict}
 
@@ -620,9 +674,11 @@ def build(inp: ReportInput) -> dict:
         used.discard("goplus")
     completeness = _completeness(inp, c, inbound, outbound)
     lists = _lists(inp, c)
-    groups = _mark_lookalikes(hops, set_apart, inp.chain)
+    groups = _mark_lookalikes(hops, set_apart, inp.chain, inp.address)
+    summary = _summary(holdings, activity, hops, lists, completeness, c)
+    summary["imitating_this_address"] = sorted({x for g in groups for x in g["imitating_this_address"]})
     return {
-        "summary": _summary(holdings, activity, hops, lists, completeness, c),
+        "summary": summary,
         "header": _header(inp, c, used),
         "holdings": holdings,
         "activity": activity,

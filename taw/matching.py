@@ -116,6 +116,37 @@ def next_outgoing(chain: str, address: str, transfers, after: TransferRecord, li
     return [_row(t, chain) for t in later[:limit]]
 
 
+def balance_around(chain: str, address: str, transfers, t: TransferRecord, trusted: bool) -> dict:
+    """The address's balance of t's asset just before and just after t arrived, by
+    adding up every transfer of that asset before it. Only stated when `trusted`: the
+    whole history was read and that asset's balance reconciles. Not for ETH or TRX,
+    whose balances also move by fees that no transfer records."""
+    if not trusted:
+        return {"status": "not_worked_out", "reason": "history_not_complete"}
+    if t.token_contract is None and chain != "btc":
+        return {"status": "not_worked_out", "reason": "native_fees"}
+    me = _norm(chain, address)
+    key = _norm(chain, t.token_contract)
+    pos = (t.block_number, t.event_index, t.tx_hash)
+    total = 0
+    for r in transfers:
+        if (r.block_number, r.event_index, r.tx_hash) >= pos or _norm(chain, r.token_contract) != key:
+            continue
+        if chain == "btc":
+            if r.kind == "utxo_out" and _norm(chain, r.to_address) == me:
+                total += r.amount_raw
+            elif r.kind == "utxo_in" and _norm(chain, r.from_address) == me:
+                total -= r.amount_raw
+            continue
+        if _norm(chain, r.to_address) == me:
+            total += r.amount_raw
+        if _norm(chain, r.from_address) == me:
+            total -= r.amount_raw
+    fmt = lambda raw: format(Decimal(raw).scaleb(-t.token_decimals).normalize(), "f")    # noqa: E731
+    return {"status": "worked_out", "before": fmt(total), "after": fmt(total + t.amount_raw),
+            "before_raw": str(total), "after_raw": str(total + t.amount_raw)}
+
+
 def _asset_filter(chain: str, asset: str | None):
     if not asset:
         return None, None
@@ -126,7 +157,7 @@ def _asset_filter(chain: str, asset: str | None):
 
 
 def match_transfers(chain: str, address: str, transfers, inp: MatchInputs, *, truncated: bool,
-                    oldest_read: dt.datetime | None) -> dict:
+                    oldest_read: dt.datetime | None, trusted=lambda contract: False) -> dict:
     """Without a hash: sender plus amount plus date, then amount plus date."""
     if inp.amount is None:
         return {"status": "not_attempted", "reason": "needs_amount_or_tx_hash"}
@@ -146,6 +177,7 @@ def match_transfers(chain: str, address: str, transfers, inp: MatchInputs, *, tr
         if len(found) == 1:
             t = found[0]
             return {**base, "status": "matched", "method": method, "transfer": _row(t, chain),
+                    "balance": balance_around(chain, address, transfers, t, trusted(t.token_contract)),
                     "next_outgoing": next_outgoing(chain, address, transfers, t), "next_outgoing_note": NOT_PROOF}
         if len(found) > 1:
             return {**base, "status": "candidates", "method": method, "candidates": [_row(t, chain) for t in found]}
@@ -155,7 +187,7 @@ def match_transfers(chain: str, address: str, transfers, inp: MatchInputs, *, tr
             "reason": "not_in_transfers_read" if ruled_out else "history_truncated"}
 
 
-def match_fetched(chain: str, address: str, fetch: TransactionFetch, transfers) -> dict:
+def match_fetched(chain: str, address: str, fetch: TransactionFetch, transfers, trusted=lambda contract: False) -> dict:
     """With a hash: the transaction as read directly, at any age."""
     if not fetch.found:
         return {"status": "not_found", "method": "tx_hash", "can_rule_out": False, "reason": "tx_not_found",
@@ -168,6 +200,7 @@ def match_fetched(chain: str, address: str, fetch: TransactionFetch, transfers) 
         t = max(paying, key=lambda r: (r.amount_raw, -r.event_index))
         return {"status": "matched", "method": "tx_hash", "transfer": _row(t, chain),
                 "also_in_transaction": [_row(x, chain) for x in paying if x is not t],
+                "balance": balance_around(chain, address, transfers, t, trusted(t.token_contract)),
                 "next_outgoing": next_outgoing(chain, address, transfers, t), "next_outgoing_note": NOT_PROOF,
                 "note": fetch.note}
     if chain == "btc":

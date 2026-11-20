@@ -1,11 +1,13 @@
 TraceAWallet report
 Ethereum address 0xc76afbf0f69ae9be5d855239c50673252cf3f26b
 
-As of block 26,458,162 (2026-11-20 18:41 UTC). Lists and labels as they stood at 2026-11-20 18:42 UTC.
+As of block 26,458,162 (2026-11-20 18:41). Lists and labels as they stood at 2026-11-20 18:42.
+All times in this report are UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
 
 == Summary ==
-Held: 0.049405781241343832 ETH.
+USDT: received 124,835,469.856, sent 122,698,193.72. No USDT remains at this address.
+ETH: received 0.06, sent 0. 0.049405781241343832 ETH remains.
 Frozen: Tether has frozen this address's USDT. The address can no longer send USDT.
 Largest destination: 0x87827295ae2bc684e2debd5de693fba7678310e1, 66,898,093.72 USDT, 54.5% of the USDT that left this address.
 Lists: none of the 43 first-hop addresses checked matched OFAC's list or the exchange wallet lists we hold.
@@ -15,10 +17,7 @@ Prices: no price data was available for this report, so no US dollar values are 
 == Chains ==
 This report covers Ethereum only. An address starting with 0x can exist on many chains, and each chain checked gets its own report.
 Checked: Ethereum, Arbitrum One, OP Mainnet.
-Not checked:
-  - BNB Smart Chain: no data source we may use for a public site covers this chain yet.
-  - Polygon: it needs a paid Blockscout plan.
-  - Base: it needs a paid Blockscout plan.
+This site does not cover BNB Smart Chain, Polygon or Base yet. If you sent on one of these, this report cannot see it.
 The address is not a contract (an ordinary account).
 
 == Holdings at block 26,458,162 ==
@@ -34,7 +33,7 @@ Freeze status:
 OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026-11-19.
 
 == Activity ==
-First activity read: 2023-08-02 05:35 UTC. Last activity read: 2026-11-10 04:22 UTC.
+First activity read: 2023-08-02 05:35. Last activity read: 2026-11-10 04:22.
 USDT (contract 0xdac17f958d2ee523a2206206994597c13d831ec7):
   in:  35 transfers, 124,835,469.856
   out: 33 transfers, 122,698,193.72
@@ -75,7 +74,7 @@ Addresses that sent to this address, largest first. Zero, very small and unrecog
   7. 0xd7c0757765c092c91b4498f59a5b511f91f15a07
      0.05 ETH in 1 transfer on 2023-09-19
 
-First funder read: 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac, 0.01 ETH on 2023-08-02 05:35 UTC.
+First funder read: 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac, 0.01 ETH on 2023-08-02 05:35.
   transaction 0xec7c963b581fa80d47218e63fa73ad077934b406dcabc36e12ae9a13e25edba0
 Distinct addresses that sent to this one: 18.
 
@@ -116,52 +115,38 @@ The exchange lists cover only the exchanges named. An address that matches nothi
 == Zero and very small transfers ==
 Zero-value transfers: 20. Very small transfers (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 0.
 The newest 5:
-  2023-09-19 07:18 UTC  out to 0x587c77253f1c61843edbf16d056680bb939c711f  0 USDT  [lookalike group E]
+  2023-09-19 07:18  out to 0x587c77253f1c61843edbf16d056680bb939c711f  0 USDT  [lookalike group E]
       transaction 0x320154994e0ed0378d9cdec2a343ef433949e07c4ca8b9f44314138ea6d0a06b
-  2023-09-19 07:17 UTC  out to 0x58769e553a79ad44f16e569397e028f5a2dc711f  0 USDT  [lookalike group E]
+  2023-09-19 07:17  out to 0x58769e553a79ad44f16e569397e028f5a2dc711f  0 USDT  [lookalike group E]
       transaction 0x6a945089692f5edaf09a97f400359c533848db7f7c233d8a0c5324fb28193ead
-  2023-09-17 07:38 UTC  out to 0x877e4201f98b783e1592553a8747d3a7871880ec  0 USDT  [lookalike group B]
+  2023-09-17 07:38  out to 0x877e4201f98b783e1592553a8747d3a7871880ec  0 USDT  [lookalike group B]
       transaction 0x45bbcb34154a20823a18563633b8813532adfacffb1fa60514279680158b04f5
-  2023-09-17 07:37 UTC  out to 0x8776cadf253e9b139145628682e3893ae45c80ec  0 USDT  [lookalike group B]
+  2023-09-17 07:37  out to 0x8776cadf253e9b139145628682e3893ae45c80ec  0 USDT  [lookalike group B]
       transaction 0x0c1a06d2e426fd140e75612578cfb6a0e0ef30e5e94ab6482f096cd99d29e821
-  2023-09-15 07:29 UTC  out to 0x877e4201f98b783e1592553a8747d3a7871880ec  0 USDT  [lookalike group B]
+  2023-09-15 07:29  out to 0x877e4201f98b783e1592553a8747d3a7871880ec  0 USDT  [lookalike group B]
       transaction 0x6024c129b64c3234d54be931d485fa52e428d5ac6af4ae7d62f666bc3ef3d09f
 The full list of 20 is in the report's data.
 
 == Tokens we don't recognise ==
 33 transfers. A token is identified only by its contract, so a token named USDT here need not be Tether's.
 Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
+10 of these tokens have a name that reads like a token we recognise. Each says below which real token it is not.
+The 5 tokens with the most transfers:
   "USDT": 0 in, 5 out
       contract 0x7dd5f67a25afb9e73d4966b1ac578dabd9ccc986
+      This is not Tether's USDT. The real USDT on Ethereum is contract 0xdac17f958d2ee523a2206206994597c13d831ec7.
   "UЅDТ" (contains U+0405, U+0422): 0 in, 4 out
       contract 0x4f417aef88badd2cf04601683a0e205dd8f7d3b2
+      This is not Tether's USDT. The real USDT on Ethereum is contract 0xdac17f958d2ee523a2206206994597c13d831ec7.
   "ꓴSᎠ ꓔ܂" (contains U+A4F4, U+13A0, U+202F, U+A4D4, U+0702): 0 in, 3 out
       contract 0x5e57bdcfcb48b45a5c5e5d42c7d006fc7ccb53fe
+      This is not Tether's USDT. The real USDT on Ethereum is contract 0xdac17f958d2ee523a2206206994597c13d831ec7.
   "DIXT": 2 in, 0 out
       contract 0x43e6228b5bf22eab754486082ca91fdd8585521a
   "UЅDТ" (contains U+0405, U+0422): 0 in, 2 out
       contract 0x7db657deef2af2ea24bbe4c4be2a571955dfb88c
-  "USDT": 0 in, 2 out
-      contract 0xbac0b60eb1cf16dd9602d33f17a2ad5a4974412c
-  "USDT": 0 in, 2 out
-      contract 0xe0c19090e28e6ba7c07dbc8d3def0e0cc59bfb56
-  "TUSD": 1 in, 0 out
-      contract 0x0000000000085d4780b73119b644ae5ecd22b376
-  "HEX": 1 in, 0 out
-      contract 0x2b591e99afe9f32eaa6214f7b7629768c40eeb39
-  "USDT": 0 in, 1 out
-      contract 0x576806b46f1cf493fc83e064933a70375498c914
-  "HQG": 1 in, 0 out
-      contract 0x57b9d10157f66d8c00a815b5e289a152dedbe7ed
-  "yRise": 1 in, 0 out
-      contract 0x6051c1354ccc51b4d561e43b02735deae64768b8
-  "USDT解冻TG : usdtbtcb" (contains U+89E3, U+51BB): 1 in, 0 out
-      contract 0x6af9b9f049062df14e3df99e042653b656666666
-  "Visit https[://]get-usdc[.]net to claim rewards": 1 in, 0 out
-      contract 0x7fba205673fa64ea3d2b0ad3b4daf1f7ce94ac6f
-  "YFTE": 1 in, 0 out
-      contract 0x94f31ac896c9823d81cf9c2c93feceed4923218f
-  ...and 5 more tokens not shown.
+      This is not Tether's USDT. The real USDT on Ethereum is contract 0xdac17f958d2ee523a2206206994597c13d831ec7.
+  ...and 15 more tokens with 17 transfers, in the report's data.
 
 == Claims about this address ==
   - frozen by Tether: the USDT contract on Ethereum (0xdac17f958d2ee523a2206206994597c13d831ec7) reports isBlackListed = true for this address
@@ -221,7 +206,7 @@ If someone offers recovery, report that contact at ic3.gov as well.
 == Reporting what happened (DRAFT, not yet approved) ==
 Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
 
-  [ ] First, tell the exchange or wallet provider you sent from. Ask them to flag the transfer and record your report.
+  [ ] First, tell the exchange or wallet provider you sent from, and your bank, if the money started in a bank account. Ask them to flag the transfer and record your report.
   [ ] File with the FBI's Internet Crime Complaint Center (IC3) at ic3.gov.
   [ ] In the US, also report to the Federal Trade Commission at reportfraud.ftc.gov.
   [ ] Outside the US, report to your national police or fraud reporting centre, and at econsumer.gov, which consumer protection agencies in many countries use for cross-border scams.
@@ -239,5 +224,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): 8244ed976dfd4f90a6941446c7b0891db86c40f3fbb8367851a7e5f728697380
+Fingerprint (SHA-256): e806a66a56a4c50ab3e6458fde085671871db9dbf81d40acdf66e7596535bcf2
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

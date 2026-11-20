@@ -21,14 +21,16 @@ TraceAWallet report
 {{ h.chain_name }} address {{ h.address }}
 
 As of block {{ h.as_of_block|num }} ({{ h.as_of_time|when }}). Lists and labels as they stood at {{ h.labels_as_of|when }}.
+All times in this report are UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
 
 == Summary ==
-{% if sm.held %}
-Held: {% for x in sm.held %}{{ x.amount|num }} {{ x.name }}{{ ", " if not loop.last }}{% endfor %}.
+{% for x in sm.assets %}
+{{ x.name }}: {{ "received" if not btc else "received" }} {{ x.received|num }}, {{ "sent" if not btc else "spent" }} {{ x.sent|num }}. {% if x.remains == "0" %}No {{ x.name }} remains at this address.{% else %}{{ x.remains|num }} {{ x.name }} remains.{% endif %}
+
 {% else %}
-Held: nothing we recognise.
-{% endif %}
+No transfers of an asset we recognise were read.
+{% endfor %}
 {% for x in sm.frozen %}
 Frozen: {{ x.issuer }} has frozen this address's {{ x.token }}{% if x.since %} since {{ x.since|day }}{% endif %}. The address can no longer send {{ x.token }}.
 {% endfor %}
@@ -43,6 +45,9 @@ Largest destination: nothing left this address{{ " to another address" if btc }}
 {% endif %}
 Lists: {% if sm.list_matches %}{{ plural(sm.list_matches, "first-hop address", "first-hop addresses") }} matched OFAC's list or an exchange wallet list (of {{ sm.checked|num }} checked). See "List matches".{% else %}none of the {{ sm.checked|num }} first-hop addresses checked matched OFAC's list or the exchange wallet lists we hold.{% endif %}
 
+{% if sm.imitating_this_address %}
+Lookalikes of this address: {{ plural(sm.imitating_this_address|length, "address", "addresses") }} in this report {{ "begins" if sm.imitating_this_address|length == 1 else "begin" }} and {{ "ends" if sm.imitating_this_address|length == 1 else "end" }} with the same characters as this address. See "Lookalike addresses".
+{% endif %}
 History read: {{ HISTORY_WORDS[sm.history] }}. See "Is the history complete?"
 {% if not priced %}
 Prices: no price data was available for this report, so no US dollar values are shown.
@@ -56,6 +61,13 @@ Only you see this section. It is not part of the report or its fingerprint.
 {% set t = m.transfer %}
 Found{% if m.method == "tx_hash" %} by its transaction hash{% elif m.method.startswith("sender_amount") %} by sender, amount and date{% else %} by amount and date{% endif %}: {{ t.amount|num }} {{ t.asset or t.symbol }} from {{ t["from"] or "the inputs of the transaction" }} to this address on {{ t.time|when }}.
   transaction {{ t.tx_hash }}, block {{ t.block|num }}
+{% if m.balance and m.balance.status == "worked_out" %}
+{{ t.asset or t.symbol }} at this address just before your transfer arrived: {{ m.balance.before|num }}. Just after: {{ m.balance.after|num }}.
+{% elif m.balance and m.balance.reason == "native_fees" %}
+The {{ t.asset or t.symbol }} balance just before and after your transfer is not worked out: fees move it without a transfer record.
+{% elif m.balance %}
+The balance just before and after your transfer is not worked out, because the history read is not complete.
+{% endif %}
 {% if m.next_outgoing %}
 Next transfers of {{ t.asset or t.symbol }} out of this address after yours:
 {% for x in m.next_outgoing %}
@@ -92,10 +104,8 @@ Nothing to match on: enter a transaction hash, or an amount and a date.
 {% if h.evm_coverage %}
 This report covers {{ h.chain_name }} only. An address starting with 0x can exist on many chains, and each chain checked gets its own report.
 Checked: {% for x in h.evm_coverage.checked %}{{ x.name }}{{ ", " if not loop.last }}{% endfor %}.
-Not checked:
-{% for x in h.evm_coverage.not_checked %}
-  - {{ x.name }}: {{ NOT_CHECKED_WORDS[x.reason] }}.
-{% endfor %}
+{% set nc = h.evm_coverage.not_checked|map(attribute="name")|list %}
+This site does not cover {{ nc[:-1]|join(", ") }}{{ " or " if nc|length > 1 }}{{ nc[-1] }} yet. If you sent on one of these, this report cannot see it.
 {% else %}
 This report covers {{ h.chain_name }}.
 {% endif %}
@@ -223,8 +233,12 @@ Some addresses in this report begin and end with the same characters. Wallets of
 {% for g in d.lookalikes %}
   Group {{ g.group }}:
 {% for x in g.addresses %}
-    {{ x }}
+    {{ x }}{% if x == h.address %}  (this report's address){% endif %}
+
 {% endfor %}
+{% if g.includes_this_address %}
+  {{ "This address imitates" if g.imitating_this_address|length == 1 else "These addresses imitate" }} the beginning and end of this report's address. Anyone copying this address from a shortened display could pick the wrong one.
+{% endif %}
 {% endfor %}
 {% endif %}
 
@@ -254,9 +268,6 @@ The newest {{ [small|length, 5]|min }}:
 
       transaction {{ r.tx_hash }}
 {% endfor %}
-{% if small|selectattr("recognised", "false")|list %}
-Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
-{% endif %}
 {% if small|length > 5 %}
 The full list of {{ small|length|num }} is in the report's data.
 {% endif %}
@@ -266,12 +277,20 @@ The full list of {{ small|length|num }} is in the report's data.
 == Tokens we don't recognise ==
 {{ plural(a.unrecognised_transfers, "transfer") }}. A token is identified only by its contract, so a token named USDT here need not be Tether's.
 Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
+{% if a.unrecognised_imitating %}
+{{ plural(a.unrecognised_imitating, "of these tokens has", "of these tokens have") }} a name that reads like a token we recognise. Each says below which real token it is not.
+{% endif %}
+The {{ "token" if a.unrecognised_tokens|length == 1 else (a.unrecognised_tokens|length|string + " tokens") }} with the most transfers:
 {% for r in a.unrecognised_tokens %}
   "{{ r.symbol|defang }}"{% if r.odd_characters %} (contains {{ r.odd_characters|join(", ") }}){% endif %}: {{ r["in"].count }} in, {{ r.out.count }} out
       contract {{ r.contract }}
+{% if r.imitates %}
+      This is not {% if r.imitates.issuer %}{{ r.imitates.issuer }}'s {% endif %}{{ r.imitates.asset }}.{% if r.imitates.contract %} The real {{ r.imitates.asset }} on {{ h.chain_name }} is contract {{ r.imitates.contract }}.{% endif %}
+
+{% endif %}
 {% endfor %}
 {% if a.unrecognised_more %}
-  ...and {{ plural(a.unrecognised_more, "more token") }} not shown.
+  ...and {{ plural(a.unrecognised_more, "more token") }} with {{ plural(a.unrecognised_more_transfers, "transfer") }}, in the report's data.
 {% endif %}
 {% endif %}
 
@@ -336,6 +355,8 @@ Detail: for {{ plural(ch.details.not_reconciled, "token") }} we don't recognise,
 == Prior lookups ==
 {% if prior_lookups is none %}
 Not counted yet for this address.
+{% elif prior_lookups == "none" %}
+No one else has looked up this address here yet.
 {% else %}
 Accounts on TraceAWallet that have looked up this address: {{ prior_lookups }}.
 {% endif %}

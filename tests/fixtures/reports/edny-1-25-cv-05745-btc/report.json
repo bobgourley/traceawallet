@@ -35,7 +35,9 @@
    "unpriced_assets": [
     "BTC"
    ],
+   "unrecognised_imitating": 0,
    "unrecognised_more": 0,
+   "unrecognised_more_transfers": 0,
    "unrecognised_tokens": [],
    "unrecognised_transfers": 0
   },
@@ -526,11 +528,22 @@
    }
   },
   "summary": {
+   "assets": [
+    {
+     "name": "BTC",
+     "received": "625.1975312",
+     "received_count": 12,
+     "remains": "0",
+     "sent": "625.1975312",
+     "sent_count": 12
+    }
+   ],
    "checked": 17,
    "destroyed": [],
    "frozen": [],
    "held": [],
    "history": "complete",
+   "imitating_this_address": [],
    "largest_destination": {
     "address": "bc1q343gc0p9kjyltfa30ze5nce4tdrtshwl9yd6lg",
     "asset": "BTC",
@@ -541,5 +554,5 @@
    "list_matches": 0
   }
  },
- "sha256": "f7b5486631356b966ef9c0a0e73637cc77e6975c454f9c989e1a802be82b35db"
+ "sha256": "840a12ef59709ae5ae66798ed9aa8b203aa038d91ac2e4c5bacdbc4d9f592e76"
 }

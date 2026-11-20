@@ -1,23 +1,23 @@
 TraceAWallet report
 Ethereum address 0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9
 
-As of block 26,458,160 (2026-11-20 18:40 UTC). Lists and labels as they stood at 2026-11-20 18:41 UTC.
+As of block 26,458,160 (2026-11-20 18:40). Lists and labels as they stood at 2026-11-20 18:41.
+All times in this report are UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
 
 == Summary ==
-Held: 0.000012672133499994 ETH.
+USDC: received 387,152.909159, sent 387,152.909159. No USDC remains at this address.
+ETH: received 0.001025815245451354, sent 0.000548913764598892. 0.000012672133499994 ETH remains.
 Largest destination: 0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1, 327,189.01993 USDC, 84.5% of the USDC that left this address.
 Lists: none of the 26 first-hop addresses checked matched OFAC's list or the exchange wallet lists we hold.
+Lookalikes of this address: 1 address in this report begins and ends with the same characters as this address. See "Lookalike addresses".
 History read: complete as far as we can check. See "Is the history complete?"
 Prices: no price data was available for this report, so no US dollar values are shown.
 
 == Chains ==
 This report covers Ethereum only. An address starting with 0x can exist on many chains, and each chain checked gets its own report.
 Checked: Ethereum, Arbitrum One, OP Mainnet.
-Not checked:
-  - BNB Smart Chain: no data source we may use for a public site covers this chain yet.
-  - Polygon: it needs a paid Blockscout plan.
-  - Base: it needs a paid Blockscout plan.
+This site does not cover BNB Smart Chain, Polygon or Base yet. If you sent on one of these, this report cannot see it.
 The address is not a contract (an ordinary account).
 
 == Holdings at block 26,458,160 ==
@@ -33,7 +33,7 @@ Freeze status:
 OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026-11-19.
 
 == Activity ==
-First activity read: 2025-04-10 02:55 UTC. Last activity read: 2025-08-20 04:58 UTC.
+First activity read: 2025-04-10 02:55. Last activity read: 2025-08-20 04:58.
 USDC (contract 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48):
   in:  11 transfers, 387,152.909159
   out: 16 transfers, 387,152.909159
@@ -43,9 +43,9 @@ ETH:
 
 == Where funds went next ==
 Addresses this address sent to, largest first. Zero, very small and unrecognised-token transfers are left out.
-  1. 0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1  [lookalike group A]
+  1. 0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1  [lookalike group B]
      327,189.01993 USDC in 5 transfers from 2025-05-10 to 2025-07-28
-  2. 0xb9518cd0a2259459e3c95d93a82d72778a05ffa9  [lookalike group B]
+  2. 0xb9518cd0a2259459e3c95d93a82d72778a05ffa9  [lookalike group C]
      24,963.889229 USDC in 2 transfers from 2025-04-12 to 2025-04-20
   3. 0x741093cba553d88f60c708f102eaa1fc1f06e217
      0.000548913764598892 ETH in 1 transfer on 2025-07-25
@@ -57,19 +57,23 @@ Addresses that sent to this address, largest first. Zero, very small and unrecog
   2. 0xa4d4c94f77ec6a516eee65249f99523098e9548e
      0.001 ETH in 1 transfer on 2025-04-12
 
-First funder read: 0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43, 24,963.889229 USDC on 2025-04-10 02:55 UTC.
+First funder read: 0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43, 24,963.889229 USDC on 2025-04-10 02:55.
   transaction 0xfdbf75a1030c3231039a9184e06c4b6acde6ee23493035f575ad46c3669f6d97
 Distinct addresses that sent to this one: 9.
 
 == Lookalike addresses ==
 Some addresses in this report begin and end with the same characters. Wallets often show addresses shortened, so these are easy to mix up. Check every character before copying one.
   Group A:
+    0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9  (this report's address)
+    0xfa0ac3c12f1d55706fe78b8c1407edee2f5e33a9
+  This address imitates the beginning and end of this report's address. Anyone copying this address from a shortened display could pick the wrong one.
+  Group B:
     0x584271dd01f59acf382c3a50cef580c679de99a1
     0x58427f346bf4a2bea1adb3231a478c92aa4699a1
     0x5842af293bb5e1e7c32df4320b45581b00ad99a1
     0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1
     0x5842eaa23779d00bb3c68119ba2123d5096599a1
-  Group B:
+  Group C:
     0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9
     0xb9518cd0a2259459e3c95d93a82d72778a05ffa9
     0xb951fd8437f2b079fe0a8f946515b5928222ffa9
@@ -85,50 +89,39 @@ The exchange lists cover only the exchanges named. An address that matches nothi
 == Zero and very small transfers ==
 Zero-value transfers: 9. Very small transfers (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 7.
 The newest 5:
-  2025-07-28 01:33 UTC  out to 0x58427f346bf4a2bea1adb3231a478c92aa4699a1  0 USDC  [lookalike group A]
+  2025-07-28 01:33  out to 0x58427f346bf4a2bea1adb3231a478c92aa4699a1  0 USDC  [lookalike group B]
       transaction 0x4ed19f051bafa0eccfe945175872edac3025b12ff75ed33d53e60d1332d25ef7
-  2025-07-28 01:30 UTC  in from 0xb9518cd0a2259459e3c95d93a82d72778a05ffa9  0.000025815245451354 ETH  [lookalike group B]
+  2025-07-28 01:30  in from 0xb9518cd0a2259459e3c95d93a82d72778a05ffa9  0.000025815245451354 ETH  [lookalike group C]
       transaction 0x7c2bf72158d43b6e591d1bdda7c89273c835240e9701286d9771aec88ec64a8d
-  2025-07-13 12:38 UTC  in from 0x5842af293bb5e1e7c32df4320b45581b00ad99a1  0.0035 USDC  [lookalike group A]
+  2025-07-13 12:38  in from 0x5842af293bb5e1e7c32df4320b45581b00ad99a1  0.0035 USDC  [lookalike group B]
       transaction 0x957d2088f81d0e2ba08d975b8bc5a15df25cd8c3b367aa7f89bbd57637ab38f1
-  2025-07-11 23:31 UTC  out to 0x58427f346bf4a2bea1adb3231a478c92aa4699a1  0 USDC  [lookalike group A]
+  2025-07-11 23:31  out to 0x58427f346bf4a2bea1adb3231a478c92aa4699a1  0 USDC  [lookalike group B]
       transaction 0x0861ef6d3205b9c1e5bcf9649b4895e7b4e0f758b4e11c1a2d876247971d7d7b
-  2025-07-11 23:28 UTC  out to 0xfa0ac3c12f1d55706fe78b8c1407edee2f5e33a9  0 USDC
+  2025-07-11 23:28  out to 0xfa0ac3c12f1d55706fe78b8c1407edee2f5e33a9  0 USDC  [lookalike group A]
       transaction 0x3296c4ed622df7081c7db12274c4fe50f6f51eae07cc1651f1ee269c51e219dc
-Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
 The full list of 16 is in the report's data.
 
 == Tokens we don't recognise ==
 27 transfers. A token is identified only by its contract, so a token named USDT here need not be Tether's.
 Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
+13 of these tokens have a name that reads like a token we recognise. Each says below which real token it is not.
+The 5 tokens with the most transfers:
   "USDC": 0 in, 5 out
       contract 0xa5a687485a3f24c371a89142d11524853238e92c
+      This is not Circle's USDC. The real USDC on Ethereum is contract 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.
   "USDC": 0 in, 5 out
       contract 0xbe51628936610e1c54ee627d6d0249c3e1bb89a0
+      This is not Circle's USDC. The real USDC on Ethereum is contract 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.
   "USDC": 0 in, 3 out
       contract 0x40f145f96cbc90b5387a851150c18db939fca821
+      This is not Circle's USDC. The real USDC on Ethereum is contract 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.
   "USDС" (contains U+0421): 0 in, 2 out
       contract 0x4a5103510c7fddf4e398175b2aa7a397c2294fa0
+      This is not Circle's USDC. The real USDC on Ethereum is contract 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.
   "<U+2063>U<U+2063>S<U+206F>D<U+200E>С<U+206A><U+206A>" (contains U+2063, U+206F, U+200E, U+0421, U+206A): 0 in, 2 out
       contract 0x7f3c4d5b31316ff06d845a121ceb7a973b4717d7
-  "USDС" (contains U+0421): 0 in, 2 out
-      contract 0xacba164135904dc63c5418b57ff87efd341d7c80
-  "USDС" (contains U+0421): 0 in, 1 out
-      contract 0x26a7a3ce145d5c9904c5dd20b47b349db5f06420
-  "Swap your Voucher on bio[.]link/shibax": 1 in, 0 out
-      contract 0x80c39db187435c1d432b3837ccaf19c9c2bf89ae
-  "USDC": 0 in, 1 out
-      contract 0x888d534385a3727f3bbd2f4e8c3fc322a9cfdbd2
-  "USDС" (contains U+0421): 0 in, 1 out
-      contract 0x92a95554c79cf02171fab3112f2b2246481b8cf5
-  "<U+2063>U<U+2063><U+2063>S<U+2063><U+2063>DC" (contains U+2063): 0 in, 1 out
-      contract 0xa62d50a0fff76cfbaea2fcd493b888d5dafffd8e
-  "<U+200D>U<U+200E>S<U+2064>D<U+206D>С<U+200C><U+2062>" (contains U+200D, U+200E, U+2064, U+206D, U+0421, U+200C, U+2062): 0 in, 1 out
-      contract 0xb9900eebe0105fe719f2b474758f99fe63232a74
-  "ՍSDС" (contains U+054D, U+0421): 0 in, 1 out
-      contract 0xe6a73a771d11c4bf00ebb26f5909e83b0ab3cec1
-  "USDC": 0 in, 1 out
-      contract 0xfc593c767713859f060570a3376ff4f5669c89f8
+      This is not Circle's USDC. The real USDC on Ethereum is contract 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.
+  ...and 9 more tokens with 10 transfers, in the report's data.
 
 == Claims about this address ==
   - None of our sources makes a claim about this address.
@@ -184,7 +177,7 @@ If someone offers recovery, report that contact at ic3.gov as well.
 == Reporting what happened (DRAFT, not yet approved) ==
 Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
 
-  [ ] First, tell the exchange or wallet provider you sent from. Ask them to flag the transfer and record your report.
+  [ ] First, tell the exchange or wallet provider you sent from, and your bank, if the money started in a bank account. Ask them to flag the transfer and record your report.
   [ ] File with the FBI's Internet Crime Complaint Center (IC3) at ic3.gov.
   [ ] In the US, also report to the Federal Trade Commission at reportfraud.ftc.gov.
   [ ] Outside the US, report to your national police or fraud reporting centre, and at econsumer.gov, which consumer protection agencies in many countries use for cross-border scams.
@@ -202,5 +195,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): 7138f7ce45225a3d3636fb4f0384073d8ae3be6739473e7e1356044152815b46
+Fingerprint (SHA-256): 903ec6633401d26b27269a0d4ecf6accf478ba857fe247331d02e7b93d18ca63
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.
