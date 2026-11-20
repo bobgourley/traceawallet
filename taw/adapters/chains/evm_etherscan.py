@@ -397,8 +397,10 @@ class EtherscanAdapter:
                    accept=None):
         for attempt in range(1, self.max_attempts + 1):
             self._pacer.wait()
+            self._before_request(url)
             self.request_count += 1
             resp = self.http.request(method, url, params=query, json=body, headers=headers)
+            self._after_response(url, resp)
             sha = self.raw_store.save(self.source, url, stored, resp.status_code, resp.content)
 
             if resp.status_code in (429, 500, 502, 503, 504):
@@ -439,6 +441,12 @@ class EtherscanAdapter:
         raise AssertionError("unreachable")
 
     # -- hooks a provider dialect may override -------------------------------------
+
+    def _before_request(self, url: str) -> None:
+        """Called before every HTTP request (a metered provider checks its budget here)."""
+
+    def _after_response(self, url: str, resp) -> None:
+        """Called after every HTTP response, before it is stored."""
 
     def _body_error(self, data: Any) -> str | None:
         return _body_error(data)

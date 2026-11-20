@@ -64,7 +64,6 @@ BNB Smart Chain has no Blockscout instance and is not handled here.
 from __future__ import annotations
 
 import datetime as dt
-import time
 from collections import Counter
 from typing import Any
 
@@ -79,12 +78,33 @@ REST_URL = "https://api.blockscout.com/{chain_id}/api/v2"
 MAX_REST_PAGES = 400            # 50 transfers a page
 TAIL_WINDOW = 1_000             # blocks per probe when looking for the newest finished block
 TAIL_SPAN = 2_000_000           # how far back that search may go
-RANGE_TTL = 3600.0              # seconds a finished range is reused
-_RANGE_CACHE: dict[str, tuple[int, int, float]] = {}
+RANGE_TTL = dt.timedelta(hours=24)   # how long a found lower edge is trusted before it is re-checked
+REST_CREDITS, CALL_CREDITS = 50, 20  # estimated credits per call (Blockscout docs: 20 by default, 30-50 for
+                                     # some REST endpoints); the provider's x-credits-remaining is the truth
+
+
+class MemoryRangeStore:
+    """The finished range per chain, in this process only (tests, local runs)."""
+
+    def __init__(self):
+        self.rows: dict[str, tuple[int, int, dt.datetime]] = {}
+
+    def get(self, chain):
+        return self.rows.get(chain)
+
+    def put(self, chain, low, high, found_at):
+        self.rows[chain] = (low, high, found_at)
+
+    def drop(self, chain):
+        self.rows.pop(chain, None)
+
+
+_DEFAULT_RANGES = MemoryRangeStore()
 
 
 def clear_range_cache() -> None:
-    _RANGE_CACHE.clear()
+    _DEFAULT_RANGES.rows.clear()
+
 # Free tier, probed 2026-11-19: eth, arbitrum and optimism answer. Polygon and
 # Base answer HTTP 402 "Featured chain ... requires one of the following plans:
 # Builder, Business, Pro" (paid since 2026-10-01); BNB Smart Chain answers 404
@@ -112,13 +132,40 @@ class BlockscoutAdapter(EtherscanAdapter):
     tail_span = TAIL_SPAN
     range_step = 1_000                 # the lower edge is found to within max(range_step, high / 4096)
 
-    def __init__(self, chain: str, raw_store, api_key: str | None, *, rpc_url: str = RPC_URL, **kw):
+    def __init__(self, chain: str, raw_store, api_key: str | None, *, rpc_url: str = RPC_URL,
+                 budget=None, range_store=None, now=lambda: dt.datetime.now(dt.timezone.utc), **kw):
+        """budget: taw.budget.PostgresBudget (worker or scripts); None only in tests and fakes.
+        range_store: where the finished internal range is kept (Postgres in the worker)."""
         if chain not in CHAINS:
             raise ValueError(f"Blockscout does not serve chain {chain!r}")
         super().__init__(chain, raw_store, api_key, **kw)
         self.rpc_url = rpc_url.format(chain_id=self.info.chain_id)
         self.rest_url = REST_URL.format(chain_id=self.info.chain_id)
-        self._monotonic = kw.get("clock") or time.monotonic
+        self.budget = budget
+        self.ranges = range_store if range_store is not None else _DEFAULT_RANGES
+        self._now = now
+        self.credits_spent = 0
+        self.credits_remaining: int | None = None
+
+    # -- budget ---------------------------------------------------------------------
+
+    @staticmethod
+    def _credits(url: str) -> int:
+        return REST_CREDITS if "/api/v2/" in url else CALL_CREDITS
+
+    def _before_request(self, url: str) -> None:
+        if self.budget is not None:
+            self.budget.before_call(self._credits(url))       # raises BudgetExhausted
+
+    def _after_response(self, url: str, resp) -> None:
+        cost = self._credits(url)
+        self.credits_spent += cost
+        header = resp.headers.get("x-credits-remaining", "")
+        remaining = int(header) if header.strip().lstrip("-").isdigit() else None
+        if remaining is not None:
+            self.credits_remaining = remaining
+        if self.budget is not None:
+            self.budget.after_call(cost, remaining)
 
     # -- responses ----------------------------------------------------------------
 
@@ -383,40 +430,80 @@ class BlockscoutAdapter(EtherscanAdapter):
         return str(r.data.get("status")) != "2"
 
     def _internal_range(self, address, head):
-        cached = _RANGE_CACHE.get(self.chain)
-        if cached and self._monotonic() - cached[2] < RANGE_TTL:
-            lo, hi = cached[0], min(cached[1], head)
-            if lo <= hi:
+        """The finished range, found once a day and kept in the range store.
+
+        Within 24 hours of the last search the lower edge is reused and only the top
+        is extended to the current head (one probe, or a short search if the newest
+        blocks are unfinished). After 24 hours the search starts from the last known
+        edges: can the lower edge drop to block 0, and is [low, high] still finished?
+        That is two probes. Only if it is not does a full search run. Nothing runs on
+        a timer; this is called only by a lookup that reads internal transfers.
+        """
+        now = self._now()
+        cached = self.ranges.get(self.chain)
+        if cached is not None and cached[0] > head:
+            return self._full_search(address, head)  # pinned below the stored range: don't touch the store
+        if cached is not None:
+            lo, hi, found_at = cached
+            if now - found_at >= RANGE_TTL:
+                if self._internal_done(address, 0, hi):
+                    lo = 0
+                elif not self._internal_done(address, lo, hi):
+                    cached = None                  # the old range no longer holds: search afresh
+                found_at = now
+            if cached is not None:
+                if hi < head:
+                    hi = head if self._internal_done(address, hi, head) else self._extend_top(address, hi, head)
+                hi = min(hi, head)
+                self.ranges.put(self.chain, lo, hi, found_at)
                 return lo, hi
-        if self._internal_done(address, 0, head):
-            found = (0, head)
-        else:
-            hi = head
-            if not self._internal_done(address, max(0, head - self.tail_window), head):
-                bottom = max(0, head - self.tail_span)
-                if not self._internal_done(address, max(0, bottom - self.tail_window), bottom):
-                    raise BlockscoutIncomplete(f"no finished internal-transaction range in the last "
-                                               f"{self.tail_span:,} blocks")
-                lo_ok, hi_bad = bottom, head
-                while hi_bad - lo_ok > self.tail_window:
-                    mid = (lo_ok + hi_bad) // 2
-                    if self._internal_done(address, max(0, mid - self.tail_window), mid):
-                        lo_ok = mid
-                    else:
-                        hi_bad = mid
-                hi = lo_ok
-            if self._internal_done(address, 0, hi):
-                found = (0, hi)
-            else:
-                lo_bad, hi_ok = 0, hi
-                step = max(self.range_step, hi // 4096)
-                while hi_ok - lo_bad > step:
-                    mid = (lo_bad + hi_ok) // 2
-                    if self._internal_done(address, mid, hi):
-                        hi_ok = mid
-                    else:
-                        lo_bad = mid
-                found = (hi_ok, hi)
-        _RANGE_CACHE[self.chain] = (found[0], found[1], self._monotonic())
+        found = self._full_search(address, head)
+        self.ranges.put(self.chain, found[0], found[1], now)
         return found
 
+    def _extend_top(self, address: str, good: int, head: int) -> int:
+        """Highest block U in [good, head] with [good, U] finished (good is known finished)."""
+        lo_ok, hi_bad = good, head
+        while hi_bad - lo_ok > self.tail_window:
+            mid = (lo_ok + hi_bad) // 2
+            if self._internal_done(address, good, mid):
+                lo_ok = mid
+            else:
+                hi_bad = mid
+        return lo_ok
+
+    def _full_search(self, address, head):
+        if self._internal_done(address, 0, head):
+            return 0, head
+        hi = head
+        if not self._internal_done(address, max(0, head - self.tail_window), head):
+            bottom = max(0, head - self.tail_span)
+            if not self._internal_done(address, max(0, bottom - self.tail_window), bottom):
+                raise BlockscoutIncomplete(f"no finished internal-transaction range in the last "
+                                           f"{self.tail_span:,} blocks")
+            lo_ok, hi_bad = bottom, head
+            while hi_bad - lo_ok > self.tail_window:
+                mid = (lo_ok + hi_bad) // 2
+                if self._internal_done(address, max(0, mid - self.tail_window), mid):
+                    lo_ok = mid
+                else:
+                    hi_bad = mid
+            hi = lo_ok
+        if self._internal_done(address, 0, hi):
+            return 0, hi
+        lo_bad, hi_ok = 0, hi
+        step = max(self.range_step, hi // 4096)
+        while hi_ok - lo_bad > step:
+            mid = (lo_bad + hi_ok) // 2
+            if self._internal_done(address, mid, hi):
+                hi_ok = mid
+            else:
+                lo_bad = mid
+        return hi_ok, hi
+
+    def fetch_transfers(self, address, limit=2000):
+        try:
+            return super().fetch_transfers(address, limit)
+        except BlockscoutIncomplete:
+            self.ranges.drop(self.chain)           # the stored range was wrong: search again next time
+            raise
