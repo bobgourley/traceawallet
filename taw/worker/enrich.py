@@ -60,6 +60,12 @@ def goplus_step(data_conn, state_conn, actor: str) -> Callable:
     return step
 
 
+def label_step(data_conn) -> Callable:
+    def step(snap, batch, raw_store) -> str:
+        return labels.apply_to_lookup(data_conn, snap.chain, snap.address, batch.transfers).summary()
+    return step
+
+
 def price_step(data_conn, state_conn, actor: str) -> Callable:
     def step(snap, batch, raw_store) -> str:
         reader = ChainlinkReader(lambda chain: registry.adapter_for(chain, raw_store, state_conn=state_conn))
@@ -80,5 +86,6 @@ def run_steps(steps: list[tuple[str, Callable]], snap, batch, raw_store) -> list
 def for_worker(*, data_conn, state_conn, actor: str) -> Callable:
     steps = [("freeze status", freeze_step(data_conn, state_conn, actor)),
              ("GoPlus", goplus_step(data_conn, state_conn, actor)),
-             ("prices", price_step(data_conn, state_conn, actor))]
+             ("prices", price_step(data_conn, state_conn, actor)),
+             ("labels", label_step(data_conn))]
     return lambda snap, batch, raw_store: run_steps(steps, snap, batch, raw_store)

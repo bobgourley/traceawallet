@@ -855,3 +855,32 @@ def test_goplus_step_labels_checks_and_ledger(conns, monkeypatch):
     assert count(data, "SELECT calls FROM provider_budget WHERE provider = 'goplus' AND consumer = 'worker'") == 2
     assert step(SimpleNamespace(chain="btc", address="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"), None, raw_store) \
         .startswith("GoPlus: not asked")
+
+
+# -- applying labels to a lookup -----------------------------------------------------------------
+
+def test_counterparties_get_only_local_labels(conns):
+    from taw import labels
+    from taw.adapters.labels.base import LabelClaim
+    from tests.test_apply_labels import rec
+    data, raw = conns
+    me, payer, dest = EVM_ADDR, "0x" + "bb" * 20, "0x" + "cc" * 20
+    raw_store = store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test")
+    ofac_sha = raw_store.save("ofac-sdn", "https://sanctionslistservice.ofac.treas.gov/x", None, 200, b"sdn")
+    gp_sha = raw_store.save("goplus", "https://api.gopluslabs.io/x", None, 200, b"gp")
+
+    def claim(addr, cat, text, key, sha):
+        return LabelClaim(chain="eth", address=addr, category=cat, label=text, claim_key=key,
+                          source_date=dt.date(2026, 11, 19), raw_sha256=sha)
+    labels.sync(data, ACTOR, "ofac-sdn", [claim(dest, "sanctioned", "listed by OFAC on the SDN list: X", "sdn:1", ofac_sha),
+                                          claim(me, "sanctioned", "listed by OFAC on the SDN list: Y", "sdn:2", ofac_sha)],
+                raw_sha256=ofac_sha, source_date=dt.date(2026, 11, 19))
+    for addr in (me, payer):          # GoPlus said something about both, from earlier lookups
+        labels.sync(data, ACTOR, "goplus", [claim(addr, "malicious_flag", 'flagged by GoPlus: mixer = "1"', "goplus:mixer",
+                                                  gp_sha)], raw_sha256=gp_sha, source_date=None, only_address=("eth", addr))
+    applied = labels.apply_to_lookup(data, "eth", me, [rec("eth", "native", payer, me), rec("eth", "native", me, dest)])
+    assert sorted(f["source"] for f in applied.address) == ["goplus", "ofac-sdn"]           # every source
+    assert applied.counterparties == {dest: {"roles": ["destination"], "labels": applied.counterparties[dest]["labels"]}}
+    assert [f["source"] for f in applied.counterparties[dest]["labels"]] == ["ofac-sdn"]
+    assert payer not in applied.counterparties                                              # its GoPlus flag is not local
+    assert applied.summary() == "labels: 2 on the address; 1 of 2 first-hop address(es) carry an OFAC or exchange label"

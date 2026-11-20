@@ -156,3 +156,66 @@ def record_check(conn, actor: str, source_slug: str, chain: str, address: str, *
             " VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s)",
             (store.source_id(conn, source_slug), address_id, subject, block, result, json.dumps(detail, default=str),
              raw_id))
+
+
+# ---------------------------------------------------------------------------
+# Applying labels to a lookup (design: DECISIONS.md 2026-11-20 "Labels: applying them")
+# ---------------------------------------------------------------------------
+
+# Answered from our own tables: applying them costs no API calls.
+LOCAL_SOURCES = ("ofac-sdn", "exchange-por")
+
+
+def counterparties(chain: str, address: str, records) -> dict[str, set[str]]:
+    """{address: {'funder', 'destination'}} one hop from `address`, from its transfers.
+
+    Account chains: funders sent to it, destinations received from it. Bitcoin rows
+    are one side of a transaction each, so a funder is another input of a
+    transaction that paid the address, and a destination is an output of a
+    transaction that spent from it ("outputs of transactions that spent from this
+    address"); the address's own change is left out.
+    """
+    me = address.lower() if chain != "tron" else address
+    same = (lambda a: a is not None and a.lower() == me) if chain != "tron" else (lambda a: a == me)
+    out: dict[str, set[str]] = defaultdict(set)
+    if chain == "btc":
+        by_tx: dict[str, list] = defaultdict(list)
+        for r in records:
+            by_tx[r.tx_hash].append(r)
+        for rows in by_tx.values():
+            paid = any(r.kind == "utxo_out" and same(r.to_address) for r in rows)
+            spent = any(r.kind == "utxo_in" and same(r.from_address) for r in rows)
+            for r in rows:
+                if paid and r.kind == "utxo_in" and r.from_address and not same(r.from_address):
+                    out[r.from_address].add("funder")
+                if spent and r.kind == "utxo_out" and r.to_address and not same(r.to_address):
+                    out[r.to_address].add("destination")
+        return dict(out)
+    for r in records:
+        if same(r.to_address) and r.from_address and not same(r.from_address):
+            out[r.from_address].add("funder")
+        if same(r.from_address) and r.to_address and not same(r.to_address):
+            out[r.to_address].add("destination")
+    return dict(out)
+
+
+@dataclass(frozen=True)
+class Applied:
+    address: list[dict]                         # every current label, from every source
+    counterparties: dict[str, dict]             # address -> {"roles": [...], "labels": [...]} (local sources only)
+    counterparties_checked: int
+
+    def summary(self) -> str:
+        hit = len(self.counterparties)
+        return (f"labels: {len(self.address)} on the address; {hit} of {self.counterparties_checked} first-hop "
+                f"address(es) carry an OFAC or exchange label")
+
+
+def apply_to_lookup(conn, chain: str, address: str, records) -> Applied:
+    """The looked-up address gets every source's labels. Its funders and first-hop
+    destinations get only the local sources (OFAC, the exchange file)."""
+    own = current(conn, chain, [address])[address]
+    parties = counterparties(chain, address, records)
+    found = current(conn, chain, sorted(parties), sources=list(LOCAL_SOURCES)) if parties else {}
+    hits = {a: {"roles": sorted(parties[a]), "labels": labs} for a, labs in found.items() if labs}
+    return Applied(own, hits, len(parties))
