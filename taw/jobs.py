@@ -4,6 +4,9 @@ A job is "fetch this address". Its payload holds the chain and the address and
 nothing else: no user id, session, IP or anything a person typed besides the
 address. Two people asking about the same address share one job through
 dedupe_key and the job_one_live index.
+
+lookup_match is the one job tied to a lookup: its payload is the lookup's id and
+nothing else. The victim's inputs stay on the private lookup row.
 """
 from __future__ import annotations
 
@@ -17,6 +20,7 @@ LOOKUP = "address_lookup"
 OFAC_REFRESH = "ofac_refresh"
 EXCHANGE_REFRESH = "exchange_refresh"
 BLACKLIST_REFRESH = "blacklist_refresh"
+MATCH = "lookup_match"
 # kind -> hour (UTC) it runs each day. blacklist_refresh runs after Blockscout's
 # allowance resets at 00:00 UTC.
 DAILY = {OFAC_REFRESH: 23, EXCHANGE_REFRESH: 6, BLACKLIST_REFRESH: 1}
@@ -62,6 +66,25 @@ def enqueue_lookup(conn, chain: str, address: str) -> tuple[int, bool]:
     if row is None:              # finished between the two statements; queue a fresh one
         return enqueue_lookup(conn, chain, address)
     return row[0], False
+
+
+def enqueue_match(conn, lookup_id: str) -> int | None:
+    """Queue transaction matching for a lookup. Its payload is the lookup id only."""
+    row = conn.execute(
+        "INSERT INTO job (kind, dedupe_key, payload) VALUES (%s, %s, %s::jsonb)"
+        " ON CONFLICT (kind, dedupe_key) WHERE status IN ('queued', 'running') DO NOTHING RETURNING id",
+        (MATCH, f"match:{lookup_id}", json.dumps({"lookup_id": str(lookup_id)}))).fetchone()
+    return row[0] if row else None
+
+
+def read_match_payload(payload: Any) -> str:
+    import uuid
+    if not isinstance(payload, dict) or set(payload) != {"lookup_id"}:
+        raise PayloadError("a lookup_match payload must be exactly lookup_id")
+    try:
+        return str(uuid.UUID(str(payload["lookup_id"])))
+    except ValueError as exc:
+        raise PayloadError("lookup_id is not a uuid") from exc
 
 
 @dataclass(frozen=True)

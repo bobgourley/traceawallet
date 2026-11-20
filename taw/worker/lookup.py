@@ -29,6 +29,9 @@ class Outcome:
     message: str
     reused: bool
     saved: store.LookupSaved | None = None
+    snapshot_id: int | None = None       # the snapshot the lookup ended with, new or reused
+    chain: str | None = None
+    address: str | None = None
 
 
 def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
@@ -47,7 +50,8 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
     if fresh is not None:
         store_module.record_reused_lookup(data_conn, actor, chain, address, fresh)
         return Outcome(f"reused snapshot {fresh.id} (block {fresh.as_of_block}, fetched "
-                       f"{fresh.fetched_at:%Y-%m-%d %H:%M:%S} UTC)", reused=True)
+                       f"{fresh.fetched_at:%Y-%m-%d %H:%M:%S} UTC)", reused=True, snapshot_id=fresh.id,
+                       chain=chain, address=address)
 
     adapter = adapter_for(chain, raw_store)
     snap = adapter.fetch_snapshot(address)
@@ -67,7 +71,7 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
     return Outcome(
         f"snapshot {saved.snapshot_id} at block {snap.as_of_block}; {saved.transfers_seen} transfers "
         f"({saved.transfers_new} new{note}); {saved.addresses_seen} addresses{warning}{extra}",
-        reused=False, saved=saved,
+        reused=False, saved=saved, snapshot_id=saved.snapshot_id, chain=chain, address=snap.address,
     )
 
 

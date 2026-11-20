@@ -5,6 +5,11 @@ Job kinds:
   ofac_refresh       taw/worker/lists.py, daily
   exchange_refresh   taw/worker/lists.py, daily
   blacklist_refresh  taw/worker/lists.py, daily: the global index of stablecoin blacklist events
+  lookup_match       taw/lookups.py: the victim's transaction, once the lookup's address jobs finish
+
+After an address_lookup the worker builds the report for its snapshot (stored once
+per build, taw/report/store.py) and recounts lookup_count for the address. A
+failure there is a note on the job's log line; the lookup itself stands.
 
 A failing job is retried after a growing wait until max_attempts, then marked
 failed with a plain-language last_error. Some failures (a TronGrid 403, a bad
@@ -19,9 +24,10 @@ from typing import Callable
 
 import psycopg
 
-from taw import config, jobs, store
+from taw import config, jobs, lookups, store
 from taw.adapters import registry
 from taw.adapters.base import BucketRawStore
+from taw.report import store as report_store
 from taw.worker import enrich, lists, lookup
 
 WORKER_ID = f"{socket.gethostname()}-{os.getpid()}"
@@ -35,8 +41,25 @@ def connect() -> psycopg.Connection:
     return psycopg.connect(config.DATABASE_URL, autocommit=True)
 
 
+def after_lookup(data_conn, actor: str, outcome: lookup.Outcome) -> str:
+    """Build the snapshot's report and recount prior lookups. Never raises."""
+    notes = []
+    try:
+        rep = report_store.build_and_store(data_conn, actor, outcome.snapshot_id)
+        notes.append(f"report {rep.id} {'reused' if rep.reused else 'built'} (sha256 {rep.sha256[:12]})")
+    except Exception as exc:                                          # noqa: BLE001
+        notes.append(f"report: not built ({type(exc).__name__}: {exc})")
+    try:
+        with store.actor_transaction(data_conn, actor):
+            lookups.refresh_count(data_conn, outcome.chain, outcome.address)
+    except Exception as exc:                                          # noqa: BLE001
+        notes.append(f"lookup count: not updated ({type(exc).__name__})")
+    return "; ".join(notes)
+
+
 def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for: Callable,
-           actor: str = ACTOR, log=print, store_module=store, enrich: Callable | None = None) -> str:
+           actor: str = ACTOR, log=print, store_module=store, enrich: Callable | None = None,
+           after: Callable | None = None) -> str:
     """Run one claimed job and record its outcome on the job row. Returns the status."""
     if job.attempts > job.max_attempts:     # reclaimed after the worker died too many times
         jobs.mark_failed(data_conn, job.id, f"Gave up after {job.max_attempts} attempts: the worker "
@@ -45,7 +68,7 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         return "failed"
     list_jobs = {jobs.OFAC_REFRESH: lists.refresh_ofac, jobs.EXCHANGE_REFRESH: lists.refresh_exchanges,
                  jobs.BLACKLIST_REFRESH: lists.refresh_blacklists}
-    if job.kind != jobs.LOOKUP and job.kind not in list_jobs:
+    if job.kind not in (jobs.LOOKUP, jobs.MATCH) and job.kind not in list_jobs:
         # During a deploy the old worker can claim a job kind only the new code knows.
         # Put it back for a newer worker instead of failing it.
         jobs.defer_until(data_conn, job, jobs.later(UNKNOWN_KIND_WAIT),
@@ -53,7 +76,15 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         log(f"job {job.id}: no handler for {job.kind!r}, deferred")
         return "queued"
     try:
-        if job.kind in list_jobs:
+        if job.kind == jobs.MATCH:
+            status = lookups.run_match(data_conn, actor, jobs.read_match_payload(job.payload),
+                                       adapter_for=adapter_for, raw_store=raw_store_factory())
+            if status == "wait":
+                jobs.defer_until(data_conn, job, jobs.later(lookups.MATCH_WAIT_SECONDS),
+                                 "Waiting for the lookup's address jobs to finish.")
+                return "queued"
+            outcome = lookup.Outcome(f"match: {status}", reused=False)      # the status only: inputs stay private
+        elif job.kind in list_jobs:
             outcome = lookup.Outcome(list_jobs[job.kind](data_conn=data_conn, raw_store=raw_store_factory(),
                                                          actor=actor), reused=False)
         else:
@@ -77,8 +108,11 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         wait = jobs.retry_later(data_conn, job, message)
         log(f"job {job.id}: attempt {job.attempts} of {job.max_attempts} failed, retrying in {wait}s: {message}")
         return "queued"
+    message = outcome.message
+    if after is not None and job.kind == jobs.LOOKUP and outcome.snapshot_id is not None:
+        message += "; " + after(data_conn, actor, outcome)
     jobs.mark_done(data_conn, job.id)
-    log(f"job {job.id}: done: {outcome.message}")
+    log(f"job {job.id}: done: {message}")
     return "done"
 
 
@@ -91,7 +125,8 @@ def run_once(s3_client=None) -> bool:
                raw_store_factory=lambda: store.RecordingRawStore(raw_conn, ACTOR, s3_client=s3_client),
                adapter_for=lambda chain, raw_store: registry.adapter_for(chain, raw_store, state_conn=raw_conn),
                log=lambda m: print(m, flush=True),
-               enrich=enrich.for_worker(data_conn=data_conn, state_conn=raw_conn, actor=ACTOR))
+               enrich=enrich.for_worker(data_conn=data_conn, state_conn=raw_conn, actor=ACTOR),
+               after=after_lookup)
         return True
 
 
