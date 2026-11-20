@@ -1,0 +1,238 @@
+{
+  "case": "ddc-1-25-cv-02967-usdt",
+  "court": "United States District Court for the District of Columbia",
+  "docket": "1:25-cv-02967",
+  "filed": "2025-09-02",
+  "caption": "United States of America v. Approximately 868,247 USDT",
+  "links": [
+    "https://www.justice.gov/usao-dc/media/1412676/dl"
+  ],
+  "network_note": "The complaint says \"USDT_TRX (USDT which resides and is transacted on the Tron Network)\"; checked with Tether's Tron contract. Its Bitcoin addresses are recorded but no Bitcoin facts are checked yet.",
+  "document_sha256": "e4636890c356bbf8fe9b89572c420b225cbeb92c54fc8548b3816eee56d8c0e0",
+  "addresses": [
+    {
+      "address": "TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN",
+      "chain": "tron",
+      "paragraphs": [
+        "16",
+        "45",
+        "46",
+        "54"
+      ],
+      "complaint_says": "\"KNWAN\", one of the two \"Subject Virtual Currency Addresses\""
+    },
+    {
+      "address": "TH4qXPSp3S5g3HnDr1pgnEq4XAoJh7McvZ",
+      "chain": "tron",
+      "paragraphs": [
+        "16",
+        "53",
+        "54",
+        "55"
+      ],
+      "complaint_says": "\"7McvZ\", one of the two \"Subject Virtual Currency Addresses\""
+    },
+    {
+      "address": "bc1px0jrexmzlefw8slm3mxldz9sxchxxr58d02nc5udeu645e27awaq7ang6k",
+      "chain": "btc",
+      "paragraphs": [
+        "43"
+      ],
+      "complaint_says": "\"ang6k\""
+    },
+    {
+      "address": "19sr6fy83JhYoTUmmTigXkh6AKp1oMMBz6",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "45"
+      ],
+      "complaint_says": "\"MMBz6\""
+    },
+    {
+      "address": "36WE6V1SVqrmzTp8Kgya9RQs9PUrzxN4hw",
+      "chain": "btc",
+      "paragraphs": [
+        "50"
+      ],
+      "complaint_says": "\"36WE6\""
+    },
+    {
+      "address": "166429kBXqFZLfhMjw5WM6MJ3yFMDHhrgM",
+      "chain": "btc",
+      "paragraphs": [
+        "50",
+        "52",
+        "table on page 22"
+      ],
+      "complaint_says": "\"HhrgM\""
+    },
+    {
+      "address": "bc1qvulygn35l3c7uspcj9lvacrzhk6gmccgppar3x",
+      "chain": "btc",
+      "paragraphs": [
+        "51",
+        "table on page 22"
+      ],
+      "complaint_says": "\"par3x\""
+    },
+    {
+      "address": "bc1qdrv8tacv0feev4pd5aja7z3hqf3qa5a2vazctl",
+      "chain": "btc",
+      "paragraphs": [
+        "table on page 22"
+      ],
+      "complaint_says": "a counterparty address in the table"
+    },
+    {
+      "address": "bc1qy6a3rrw9enmj6ywngdtwm26kun8ss4eavd9kv5",
+      "chain": "btc",
+      "paragraphs": [
+        "table on page 22"
+      ],
+      "complaint_says": "a counterparty address in the table"
+    },
+    {
+      "address": "bc1qwgpy4eh9dj3dlczcwvq6j53kdhhmg0n9qkfnhz",
+      "chain": "btc",
+      "paragraphs": [
+        "table on page 22"
+      ],
+      "complaint_says": "a counterparty address in the table"
+    }
+  ],
+  "facts": [
+    {
+      "id": "F1",
+      "paragraph": "16",
+      "quote": "which held approximately 465,514.638375 USDT",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_reached",
+        "token": "USDT",
+        "address": "TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN",
+        "amount": "465514.638375"
+      }
+    },
+    {
+      "id": "F2",
+      "paragraph": "16",
+      "quote": "which held approximately 402,732.728429 USDT",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_reached",
+        "token": "USDT",
+        "address": "TH4qXPSp3S5g3HnDr1pgnEq4XAoJh7McvZ",
+        "amount": "402732.728429"
+      }
+    },
+    {
+      "id": "F3",
+      "paragraph": "16",
+      "quote": "The Defendant Property is approximately 868,247.366804 USDT.",
+      "check": null,
+      "not_checkable_reason": "The total of F1 and F2 (465,514.638375 + 402,732.728429 = 868,247.366804), each checked on its own."
+    },
+    {
+      "id": "F4",
+      "paragraph": "45, 46",
+      "quote": "The 359,217.08 USDT received via the SwapSpace transfers on October 29, 2024",
+      "check": {
+        "chain": "tron",
+        "kind": "token_received_run",
+        "token": "USDT",
+        "address": "TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN",
+        "date": "2024-10-29",
+        "amount": "359217.08"
+      }
+    },
+    {
+      "id": "F5",
+      "paragraph": "46",
+      "quote": "made up approximately 73.98% of all USDT_TRX received by KNWAN to date",
+      "check": {
+        "chain": "tron",
+        "kind": "received_share",
+        "token": "USDT",
+        "address": "TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN",
+        "amount": "359217.08",
+        "percent": "73.98",
+        "approx": true
+      }
+    },
+    {
+      "id": "F6",
+      "paragraph": "46",
+      "quote": "there were two withdrawals of 10,000 USDT_TRX from KNWAN on or about October 30, 2024",
+      "check": {
+        "chain": "tron",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "from": "TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN",
+        "read": "from",
+        "date": "2024-10-30",
+        "amount": "10000"
+      }
+    },
+    {
+      "id": "F7",
+      "paragraph": "46",
+      "quote": "and on or about November 2, 2024",
+      "check": {
+        "chain": "tron",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "from": "TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN",
+        "read": "from",
+        "date": "2024-11-02",
+        "amount": "10000",
+        "context_quote": "there were two withdrawals of 10,000 USDT_TRX from KNWAN"
+      }
+    },
+    {
+      "id": "F8",
+      "paragraph": "46",
+      "quote": "On or about November 4, 2024, Tether froze KNWAN at the request of the FBI.",
+      "check": null,
+      "not_checkable_reason": "Freeze status needs the stablecoin freeze loader (not built yet)."
+    },
+    {
+      "id": "F9",
+      "paragraph": "54",
+      "quote": "334,491.98 USDT was sent to 7McvZ",
+      "check": {
+        "chain": "tron",
+        "kind": "token_received_run",
+        "token": "USDT",
+        "address": "TH4qXPSp3S5g3HnDr1pgnEq4XAoJh7McvZ",
+        "amount": "334491.98"
+      }
+    },
+    {
+      "id": "F10",
+      "paragraph": "54",
+      "quote": "87,137.04 USDT was sent to KNWAN",
+      "check": {
+        "chain": "tron",
+        "kind": "token_received_run",
+        "token": "USDT",
+        "address": "TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN",
+        "amount": "87137.04"
+      }
+    },
+    {
+      "id": "F11",
+      "paragraph": "55",
+      "quote": "comprises approximately 68.57% of all USDT_TRX received by 7McvZ",
+      "check": null,
+      "not_checkable_reason": "The share's numerator (everything 7McvZ received through that SwapSpace account) is not given as an amount, and the sending addresses are not printed."
+    },
+    {
+      "id": "F12",
+      "paragraph": "55",
+      "quote": "7McvZ was blacklisted by Tether on or about November 4, 2024",
+      "check": null,
+      "not_checkable_reason": "Freeze status needs the stablecoin freeze loader (not built yet)."
+    }
+  ]
+}

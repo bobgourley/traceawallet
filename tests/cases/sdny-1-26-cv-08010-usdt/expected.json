@@ -1,0 +1,365 @@
+{
+  "case": "sdny-1-26-cv-08010-usdt",
+  "court": "United States District Court for the Southern District of New York",
+  "docket": "1:26-cv-08010",
+  "filed": "2026-09-14",
+  "caption": "United States of America v. All USD Tether Held in the Following Cryptocurrency Addresses: TGuqbYqJ4m1J8dKWB3NVnsuXtgXCQkgdyf, TBJT9BP7cM5yYne9kTdf2HNu9mX1WpRQpt, TTc6TVtmRUpYR9fhZeixsNkJuCMRzFqfcb, TVmYFoST9AGCoxryWJCfMSa6wB2fzkqm2d, TSkqigdsdzjzZvAokFNfJBBfHU8HQ7CvAa, TBxCvqQiCQFJqJRc6GWdJhnwCZv4EDdVaV, TXW9gwHiB5fr6gCsQjkRErGxWGa9pyCCrz, TPVZt64P6tkAiVfZBuWdg2ycjPyYkxjxNX, TPDQC3qpjhAykg87exSVy7LxTcXUvndaxW, TVrxXvMehX5rkFYYZ2gj3E1RLVMNst8TQH",
+  "links": [
+    "https://www.justice.gov/usao-sdny/media/1461216/dl"
+  ],
+  "network_note": "The complaint names USDT and Tron-format (T...) addresses; checked on Tron with Tether's Tron contract.",
+  "balance_note": "Paragraph 52's balances are \"currently\" held, so they are checked at the end of the filing date, 2026-09-14 UTC, from the address's USDT transfer history.",
+  "document_sha256": "3325270bb886085a975308d50b18b0f2e91c6f9133162dd9ba2191ae5ddde231",
+  "addresses": [
+    {
+      "address": "TGuqbYqJ4m1J8dKWB3NVnsuXtgXCQkgdyf",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(b)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TGuqb Address\"), a defendant in rem"
+    },
+    {
+      "address": "TBJT9BP7cM5yYne9kTdf2HNu9mX1WpRQpt",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(a)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TBJT9 Address\"), a defendant in rem"
+    },
+    {
+      "address": "TTc6TVtmRUpYR9fhZeixsNkJuCMRzFqfcb",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(c)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TTc6T Address\"), a defendant in rem"
+    },
+    {
+      "address": "TVmYFoST9AGCoxryWJCfMSa6wB2fzkqm2d",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(d)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TVmYF Address\"), a defendant in rem"
+    },
+    {
+      "address": "TSkqigdsdzjzZvAokFNfJBBfHU8HQ7CvAa",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(e)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TSkqi Address\"), a defendant in rem"
+    },
+    {
+      "address": "TBxCvqQiCQFJqJRc6GWdJhnwCZv4EDdVaV",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(f)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TBxCv Address\"), a defendant in rem"
+    },
+    {
+      "address": "TXW9gwHiB5fr6gCsQjkRErGxWGa9pyCCrz",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(g)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TXW9g Address\"), a defendant in rem"
+    },
+    {
+      "address": "TPVZt64P6tkAiVfZBuWdg2ycjPyYkxjxNX",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(h)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TPVZt Address\"), a defendant in rem"
+    },
+    {
+      "address": "TPDQC3qpjhAykg87exSVy7LxTcXUvndaxW",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(i)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TPDQC Address\"), a defendant in rem"
+    },
+    {
+      "address": "TVrxXvMehX5rkFYYZ2gj3E1RLVMNst8TQH",
+      "chain": "tron",
+      "paragraphs": [
+        "caption",
+        "1(j)",
+        "51",
+        "52"
+      ],
+      "complaint_says": "one of the ten \"Target Addresses\" (the \"TVrxX Address\"), a defendant in rem"
+    }
+  ],
+  "facts": [
+    {
+      "id": "F1",
+      "paragraph": "52",
+      "quote": "TGuqb Address July 26, 2025 12,756,824.22",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TGuqbYqJ4m1J8dKWB3NVnsuXtgXCQkgdyf",
+        "date": "2026-09-14",
+        "amount": "12756824.22",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F2",
+      "paragraph": "52",
+      "quote": "TBJT9 Address July 26, 2025 1,007,838.22",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TBJT9BP7cM5yYne9kTdf2HNu9mX1WpRQpt",
+        "date": "2026-09-14",
+        "amount": "1007838.22",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F3",
+      "paragraph": "52",
+      "quote": "TTc6T Address July 26, 2025 11,308,530.44",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TTc6TVtmRUpYR9fhZeixsNkJuCMRzFqfcb",
+        "date": "2026-09-14",
+        "amount": "11308530.44",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F4",
+      "paragraph": "52",
+      "quote": "TVmYF Address June 15, 2025 1,500,000.00",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TVmYFoST9AGCoxryWJCfMSa6wB2fzkqm2d",
+        "date": "2026-09-14",
+        "amount": "1500000.00",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F5",
+      "paragraph": "52",
+      "quote": "TSkqi Address June 15, 2025 1,700,000.00",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TSkqigdsdzjzZvAokFNfJBBfHU8HQ7CvAa",
+        "date": "2026-09-14",
+        "amount": "1700000.00",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F6",
+      "paragraph": "52",
+      "quote": "TBxCv Address June 15, 2025 5,350,000.00",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TBxCvqQiCQFJqJRc6GWdJhnwCZv4EDdVaV",
+        "date": "2026-09-14",
+        "amount": "5350000.00",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F7",
+      "paragraph": "52",
+      "quote": "TXW9g Address June 15, 2025 5,200,001.00",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TXW9gwHiB5fr6gCsQjkRErGxWGa9pyCCrz",
+        "date": "2026-09-14",
+        "amount": "5200001.00",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F8",
+      "paragraph": "52",
+      "quote": "TPVZt Address June 15, 2025 4,000,010.00",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TPVZt64P6tkAiVfZBuWdg2ycjPyYkxjxNX",
+        "date": "2026-09-14",
+        "amount": "4000010.00",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F9",
+      "paragraph": "52",
+      "quote": "TPDQC Address June 15, 2025 6,000,000.00",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TPDQC3qpjhAykg87exSVy7LxTcXUvndaxW",
+        "date": "2026-09-14",
+        "amount": "6000000.00",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F10",
+      "paragraph": "52",
+      "quote": "TVrxX Address June 15, 2025 12,369,163.71",
+      "check": {
+        "chain": "tron",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "TVrxXvMehX5rkFYYZ2gj3E1RLVMNst8TQH",
+        "date": "2026-09-14",
+        "amount": "12369163.71",
+        "approx": true,
+        "context_quote": "The Defendants -in-rem were frozen on the below listed dates and currently contain approximately the below amounts of USDT"
+      }
+    },
+    {
+      "id": "F11",
+      "paragraph": "52, 54",
+      "quote": "To date, Tether has frozen all of the Defendants -in-rem, which collectively hold approximately 61,192,367.59 USDT.",
+      "check": null,
+      "not_checkable_reason": "The total of F1 to F10, each checked on its own."
+    },
+    {
+      "id": "F12",
+      "paragraph": "52",
+      "quote": "The Defendants -in-rem were frozen on the below listed dates",
+      "check": null,
+      "not_checkable_reason": "Freeze dates need the stablecoin freeze loader (not built yet)."
+    },
+    {
+      "id": "F13",
+      "paragraph": "51(b)",
+      "quote": "The TTc6T Address was activated on June 14, 2025",
+      "check": {
+        "chain": "tron",
+        "kind": "activated_on",
+        "addresses": [
+          "TTc6TVtmRUpYR9fhZeixsNkJuCMRzFqfcb"
+        ],
+        "date": "2025-06-14"
+      }
+    },
+    {
+      "id": "F14",
+      "paragraph": "51(b)",
+      "quote": "that same day, it received an incoming transfer of approximately 2 million USDT from the TWzSi Entity A address",
+      "check": {
+        "chain": "tron",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "to": "TTc6TVtmRUpYR9fhZeixsNkJuCMRzFqfcb",
+        "from_prefix": "TWzSi",
+        "read": "to",
+        "date": "2025-06-14",
+        "amount": "2000000",
+        "approx": true
+      }
+    },
+    {
+      "id": "F15",
+      "paragraph": "51(c)",
+      "quote": "the TPDQC Address, and the TVrxX Address were all activated on",
+      "check": {
+        "chain": "tron",
+        "kind": "activated_on",
+        "addresses": [
+          "TVmYFoST9AGCoxryWJCfMSa6wB2fzkqm2d",
+          "TSkqigdsdzjzZvAokFNfJBBfHU8HQ7CvAa",
+          "TBxCvqQiCQFJqJRc6GWdJhnwCZv4EDdVaV",
+          "TXW9gwHiB5fr6gCsQjkRErGxWGa9pyCCrz",
+          "TPVZt64P6tkAiVfZBuWdg2ycjPyYkxjxNX",
+          "TPDQC3qpjhAykg87exSVy7LxTcXUvndaxW",
+          "TVrxXvMehX5rkFYYZ2gj3E1RLVMNst8TQH"
+        ],
+        "date": "2025-05-14",
+        "context_quote": "May 14, 2025, by the same address."
+      }
+    },
+    {
+      "id": "F16",
+      "paragraph": "51(c)",
+      "quote": "May 14, 2025, by the same address.",
+      "check": {
+        "chain": "tron",
+        "kind": "activated_by_one_address",
+        "addresses": [
+          "TVmYFoST9AGCoxryWJCfMSa6wB2fzkqm2d",
+          "TSkqigdsdzjzZvAokFNfJBBfHU8HQ7CvAa",
+          "TBxCvqQiCQFJqJRc6GWdJhnwCZv4EDdVaV",
+          "TXW9gwHiB5fr6gCsQjkRErGxWGa9pyCCrz",
+          "TPVZt64P6tkAiVfZBuWdg2ycjPyYkxjxNX",
+          "TPDQC3qpjhAykg87exSVy7LxTcXUvndaxW",
+          "TVrxXvMehX5rkFYYZ2gj3E1RLVMNst8TQH"
+        ]
+      }
+    },
+    {
+      "id": "F17",
+      "paragraph": "51(c)",
+      "quote": "After activation, they all received large incoming transfers of USDT that were sent from the TWzS i Entity A address, by way of pass -through addresses.",
+      "check": null,
+      "not_checkable_reason": "The sending address is printed only in part (\"TWzSi\") and the pass-through addresses are not printed."
+    }
+  ]
+}

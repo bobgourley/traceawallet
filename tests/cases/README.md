@@ -18,7 +18,8 @@ Rules (from the owner, 2026-11-20):
   address belongs to a scam. `tests/test_cases_files.py` enforces that, and
   checks every address's checksum.
 - `scripts/check_cases.py` runs the facts through our adapters, live, and
-  reports each as confirmed, contradicted, not found, or not checkable yet.
+  reports each as confirmed, differs, not found, or not checkable yet. Where a
+  figure differs, both numbers are kept and the complaint is not called wrong.
 
 Every quote was matched against the text extracted from the complaint PDF
 (sha256 in `expected.json`) when the file was written.
@@ -28,6 +29,8 @@ Every quote was matched against the text extracted from the complaint PDF
 | `wdpa-2-26-cv-00087-usdt`: W.D. Pa., 5,680,000 USDT, address ending 74bf | Usable: 11 full addresses, a dated chain of 11 transfers |
 | `edny-1-25-cv-05745-btc`: E.D.N.Y., about 127,271 BTC | Usable: 25 Attachment A addresses; three checked |
 | `ddc-1-25-cv-01907-usdt-gb`: D.D.C., 225,364,961 USDT, victim G.B. | Usable: one transfer between two fully printed addresses |
+| `sdny-1-26-cv-08010-usdt`: S.D.N.Y., ten Tron addresses, 61,192,367.59 USDT | Usable (alternate for N.D. Ohio 4:25-cv-01780): ten full addresses, balances, activation dates |
+| `ddc-1-25-cv-02967-usdt`: D.D.C., about 868,247 USDT on Tron | Usable (alternate for N.D. Ohio 1:25-cv-01137): two full Tron addresses, dated transfers, balances |
 | N.D. Ohio, 325,060 USDT, 4:25-cv-01780, filed 2025-08-27 | **Unusable**: prints no address in full |
 | N.D. Ohio, 679,981.22 USDT, 1:25-cv-01137, filed 2025-06-02 | **Unusable**: prints no address in full |
 
@@ -38,3 +41,8 @@ the two defendant addresses are `TGZdF . . . mYHyPDF` and `THr7k . . . q9gskdN`.
 Both are scanned PDFs with no text layer. Their stated facts, such as freeze
 dates, balances at freeze and dated transfers, would be good tests if a source
 printing the full addresses turned up.
+
+**Alternates.** The two Tron cases above replace the N.D. Ohio cases. A third
+candidate was found and not built: M.D. Fla. 8:26-cv-00046, which also prints
+full addresses. The D.D.C. complaint about 225 million USDT was also looked at
+for Tron addresses and prints none in full.
