@@ -38,6 +38,13 @@ Railway deploys whatever lands on `main`, so nothing goes to `main` directly.
    skipped test counts as a failure. Fix and push again until the run is green.
 3. Show the owner the passing run and ask before merging to `main`.
 
+## Review files for the owner
+
+Save every review file written for the owner in `~/Downloads/`, named
+`taw-review-` plus the date and a short title, e.g.
+`~/Downloads/taw-review-2026-11-20-report-wording.md`. These files live outside
+the repo and are never committed.
+
 ## Stack
 
 - Railway: `web` and `worker` services from this repo, Postgres, a bucket.
