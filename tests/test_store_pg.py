@@ -633,3 +633,85 @@ def test_deferred_job_keeps_its_attempts(conns):
     assert count(data, "SELECT attempts FROM job WHERE id = %s", job_id) == 0
     data.execute("UPDATE job SET run_after = now() WHERE id = %s", (job_id,))
     assert jobs.claim(data, "w2").attempts == 1           # the deferred try did not count
+
+
+# -- prices (0011) ---------------------------------------------------------------------------
+
+class StubPriceReader:
+    """Saves a raw response per read, like the real reader, and answers ETH with a
+    price and everything else as stale."""
+
+    def __init__(self, raw_store):
+        self.raw_store, self.reads = raw_store, []
+
+    def read(self, asset, start, size):
+        from decimal import Decimal
+        from taw.adapters.prices import chainlink as cl
+        self.reads.append((asset, start, size))
+        n = len(self.reads)
+        sha = self.raw_store.save("blockscout", "https://api.blockscout.com/1/json-rpc", {"read": n}, 200,
+                                  f'{{"result": "{n}"}}'.encode())
+        block_sha = self.raw_store.save("blockscout", "https://api.blockscout.com/v2/api", {"block": n}, 200,
+                                        f'{{"result": {{"blockNumber": "{n}"}}}}'.encode())
+        ok = asset == "ETH"
+        return cl.PriceRead(asset, start, size, "ok" if ok else "stale", Decimal("1719.0477") if ok else None,
+                            cl.FEEDS[asset], 1000 + n, 7, start - dt.timedelta(seconds=60), 60, sha, block_sha)
+
+
+def price_records():
+    from taw.adapters.base import TransferRecord
+    now = dt.datetime(2026, 11, 20, 4, 40, tzinfo=dt.timezone.utc)
+
+    def rec(chain, contract, hours_ago):
+        return TransferRecord(chain=chain, tx_hash="0x" + "ab" * 32, kind="token" if contract else "native",
+                              event_index=0, from_address="a", to_address="b", token_contract=contract,
+                              token_symbol=None, token_decimals=6, amount_raw=1, block_number=1,
+                              block_time=now - dt.timedelta(hours=hours_ago), source_slug="x", raw_sha256="0" * 64)
+    return now, [rec("eth", None, 1), rec("eth", None, 300), rec("tron", "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t", 300)]
+
+
+def test_prices_are_read_once_and_kept(conns):
+    from taw import pricing
+    data, raw = conns
+    reader = StubPriceReader(store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test"))
+    now, recs = price_records()
+    first = pricing.fill(data, ACTOR, recs, reader, now=now)
+    assert (first.needed, first.read, first.priced, first.reused) == (3, 3, 2, 0)
+    rows = data.execute("SELECT asset, bucket_size, status::text, usd IS NULL, source_id = (SELECT id FROM source"
+                        " WHERE slug = 'chainlink') FROM price ORDER BY id").fetchall()
+    assert sorted(rows) == [("ETH", "day", "ok", False, True), ("ETH", "hour", "ok", False, True),
+                            ("USDT", "day", "stale", True, True)]
+    again = pricing.fill(data, ACTOR, recs, reader, now=now)
+    assert (again.read, again.reused) == (0, 3) and len(reader.reads) == 3        # nothing read twice
+    for statement in ("UPDATE price SET usd = 1", "DELETE FROM price", "TRUNCATE price"):
+        with pytest.raises(psycopg.errors.RaiseException, match="append-only"):
+            data.execute(statement)
+
+
+def test_price_cap_leaves_the_oldest_for_later(conns):
+    from taw import pricing
+    data, raw = conns
+    reader = StubPriceReader(store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test"))
+    now, recs = price_records()
+    out = pricing.fill(data, ACTOR, recs, reader, now=now, cap=1)
+    assert (out.read, out.left_for_later) == (1, 2) and reader.reads[0][2] == "hour"   # newest first
+    assert "left for a later lookup" in out.summary()
+
+
+def test_price_rows_must_be_consistent(conns):
+    data, _ = conns
+    good = ("ETH", dt.datetime(2026, 11, 1, tzinfo=dt.timezone.utc), "day", "ok", 1719)
+    bad = [("ETH", dt.datetime(2026, 11, 1, 3, tzinfo=dt.timezone.utc), "day", "ok", 1719),   # not a day start
+           ("ETH", dt.datetime(2026, 11, 1, tzinfo=dt.timezone.utc), "day", "stale", 1719),   # price on a stale read
+           ("ETH", dt.datetime(2026, 11, 1, tzinfo=dt.timezone.utc), "day", "ok", None)]      # ok with no price
+    raw_id = count(data, "INSERT INTO raw_response (source_id, sha256, bucket_key, request_url, http_status, byte_size)"
+                         " VALUES ((SELECT id FROM source WHERE slug = 'blockscout'), repeat('a', 64), 'k', 'u', 200, 1)"
+                         " RETURNING id")
+    sql = ("INSERT INTO price (asset, bucket_start, bucket_size, status, usd, feed_chain, feed_address, block_number,"
+           " max_age_seconds, source_id, raw_response_id, block_raw_response_id) VALUES (%s, %s, %s, %s, %s, 'eth',"
+           " '0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419', 1, 4500, (SELECT id FROM source WHERE slug = 'chainlink'),"
+           " %s, %s)")
+    data.execute(sql, (*good, raw_id, raw_id))
+    for row in bad:
+        with pytest.raises(psycopg.errors.CheckViolation):
+            data.execute(sql, (*row, raw_id, raw_id))
