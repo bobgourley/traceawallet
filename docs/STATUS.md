@@ -244,7 +244,9 @@ Postgres, its volume and the bucket are in US East too. Check with
 2. OFAC (branch `ofac`): built. Daily load of the SDN list into `label`; case 4 checked (none listed).
 3. Freeze status (branch `freeze`): built. USDT/USDC status for the looked-up address after each
    lookup; dates only where cheap (USDC on EVM, USDT0 on Arbitrum).
-4. Label loaders: OFAC SDN list, GoPlus (never for Bitcoin; logo and "Powered by GoPlus"),
+4. GoPlus (branch `goplus`): built. One call per lookup for EVM and Tron addresses, never Bitcoin;
+   its own daily ledger in calls.
+5. Label loaders: OFAC SDN list, GoPlus (never for Bitcoin; logo and "Powered by GoPlus"),
    stablecoin freeze checks, the exchange wallet file.
 3. Transaction matching: find the victim's own transfer from what they entered.
 4. The report.

@@ -3,6 +3,42 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (morning): Labels: GoPlus
+
+**What is asked.** `GET /api/v1/address_security/{address}?chain_id=` for the
+looked-up address only. The chain ids are 1, 42161, 10 and `tron`, all listed
+in GoPlus's reference (updated 2026-08-20). Never Bitcoin. The reply is stored
+unmodified as a raw response under the `goplus` source. Each field GoPlus sets
+to "1" becomes one label that quotes the field and value exactly, with
+GoPlus's own data source when it names one: `flagged by GoPlus:
+phishing_activities = "1" (data source: SlowMist)`. `contract_address` is a
+description, not a flag. `number_of_malicious_contracts_created` counts when
+it isn't "0". A flag that disappears on a later lookup is withdrawn, not
+deleted. Every question goes in `label_check`, "no flags" included. The
+logo and "Powered by GoPlus" rule (2026-11-20 evening) applies wherever these
+are shown.
+
+**Access token, sent bare.** The worker uses `GOPLUS_APP_KEY` and
+`GOPLUS_APP_SECRET` to get a token from `POST /api/v1/token`; it lasts two
+hours and is reused. GoPlus's docs show `Authorization: Bearer <token>`, but
+live on 2026-11-20 that form was refused (code 4012, "signature verification
+failure") and the bare token worked. Without keys it calls with no token.
+
+**Daily ledger, in calls.** `provider_budget` now has a `goplus` row beside
+`blockscout`, with the same split: the worker may use all of it, scripts 30%.
+GoPlus's free plan is 150 compute units a minute, 30,000 a day and 150,000 a
+month (gopluslabs.io/security-api). It doesn't say how many units one address
+call costs, and its replies carry no count. So the ledger counts calls against
+`GOPLUS_DAILY_CALLS`, default 1,000, until GoPlus states the cost. The token
+request counts as a call. A lookup uses one or two GoPlus calls. If the
+allowance runs out, GoPlus is skipped for that lookup and the job log says so;
+the lookup still completes.
+
+**Live check (2026-11-20).** One call for an S.D.N.Y. address
+(`TGuqb...kgdyf`, frozen by Tether per the complaint and per the contract)
+returned no flags. "No flags" means GoPlus has nothing on it, not that it is
+clean; the report must say so.
+
 ## 2026-11-20 (morning): Labels: stablecoin freeze status
 
 **Function names, from each contract's published code** (2026-11-20). The EVM
