@@ -3,6 +3,45 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (afternoon): Audit: one entry per label load
+
+The owner decided this before the first OKX load (about 500,000 labels).
+Writing a full copy of every row into `event_log` would have doubled the
+load's size for no gain, since labels are append-only and can't be changed
+after they are written.
+
+**File loads** (OFAC's SDN list, `data/exchange_wallets.csv`, OKX's monthly
+file) now do everything in one transaction:
+
+1. Work out the rows to add, supersede or withdraw.
+2. Write the `label_load` row, with the file's sha256 (0015).
+3. Insert the labels with that `load_id`.
+4. Compute a digest over the inserted rows.
+5. Write one `event_log` entry: action `load`, entity `label_load`, payload
+   with source, publication date, file sha256, row count, the rows' sha256 and
+   the method.
+
+A label with a `load_id` skips the per-row audit trigger. The trigger now
+fires `WHEN (NEW.load_id IS NULL)`. A load that changes nothing still gets its
+`label_load` row and its `event_log` entry, with 0 rows.
+
+**The digest** (`labels.load_digest`) covers the load's rows in id order, one
+line each:
+
+`json_build_array(id, chain, address, source, category, label, claim_url,
+source_date, observed_at in UTC, status, supersedes_id, raw_response_id,
+claim_key)`
+
+The digest is the sha256 of those lines, each ending in a newline. Every field
+is in a fixed text form, so the digest can be recomputed from the tables alone.
+`scripts/verify_label_loads.py` does that for every load, or one, and exits 1
+on any mismatch. A test edits a loaded row with the immutability trigger
+switched off, and the verifier catches it.
+
+**Labels written one at a time** (freeze status, GoPlus) have no load id and
+keep the full per-row copy. The 1,716 OFAC labels from the first production
+load (2026-11-20, before this change) also keep theirs.
+
 ## 2026-11-20 (midday): Labels: exchange wallets
 
 **Which lists** (owner's choice, 2026-11-20). Only lists an exchange published
