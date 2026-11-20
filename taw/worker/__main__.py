@@ -19,7 +19,7 @@ import psycopg
 from taw import config, jobs, store
 from taw.adapters import registry
 from taw.adapters.base import BucketRawStore
-from taw.worker import enrich, lookup
+from taw.worker import enrich, lists, lookup
 
 WORKER_ID = f"{socket.gethostname()}-{os.getpid()}"
 ACTOR = f"worker:{WORKER_ID}"
@@ -39,14 +39,18 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
                                             "stopped partway through each time.")
         log(f"job {job.id}: failed, too many attempts")
         return "failed"
-    if job.kind != jobs.LOOKUP:
+    if job.kind not in (jobs.LOOKUP, jobs.OFAC_REFRESH):
         jobs.mark_failed(data_conn, job.id, f"No handler for job kind {job.kind!r}.")
         log(f"job {job.id}: no handler for {job.kind!r}")
         return "failed"
     try:
-        outcome = lookup.run_lookup(job.payload, data_conn=data_conn, raw_store=raw_store_factory(),
-                                    actor=actor, adapter_for=adapter_for, store_module=store_module,
-                                    enrich=enrich)
+        if job.kind == jobs.OFAC_REFRESH:
+            outcome = lookup.Outcome(lists.refresh_ofac(data_conn=data_conn, raw_store=raw_store_factory(),
+                                                        actor=actor), reused=False)
+        else:
+            outcome = lookup.run_lookup(job.payload, data_conn=data_conn, raw_store=raw_store_factory(),
+                                        actor=actor, adapter_for=adapter_for, store_module=store_module,
+                                        enrich=enrich)
     except Exception as exc:
         resets_at = lookup.allowance_reset(exc)
         if resets_at is not None:
@@ -82,11 +86,25 @@ def run_once(s3_client=None) -> bool:
         return True
 
 
+DAILY_CHECK_SECONDS = 600
+
+
+def queue_daily_jobs() -> None:
+    with connect() as conn:
+        for kind in jobs.DAILY:
+            if jobs.ensure_daily(conn, kind):
+                print(f"queued today's {kind}", flush=True)
+
+
 def main() -> None:
     print(f"worker {WORKER_ID} started", flush=True)
     s3_client = None
+    last_daily = 0.0
     while True:
         try:
+            if time.monotonic() - last_daily > DAILY_CHECK_SECONDS:
+                last_daily = time.monotonic()
+                queue_daily_jobs()
             if s3_client is None and os.environ.get("BUCKET_ENDPOINT"):
                 s3_client = BucketRawStore._client_from_env()
             if not run_once(s3_client):

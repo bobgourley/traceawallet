@@ -14,6 +14,8 @@ from typing import Any
 from taw.adapters.registry import normalize_address
 
 LOOKUP = "address_lookup"
+OFAC_REFRESH = "ofac_refresh"
+DAILY = {OFAC_REFRESH: 23}       # kind -> hour (UTC) it runs each day
 RETRY_BASE_SECONDS = 30          # waits of 30 s, 2 min, 8 min, ... between attempts
 STALE_AFTER = "30 minutes"       # a 'running' job older than this lost its worker
 
@@ -114,3 +116,20 @@ def defer_until(conn, job: Job, when, message: str) -> None:
 def mark_failed(conn, job_id: int, message: str) -> None:
     conn.execute("UPDATE job SET status = 'failed', last_error = %s, finished_at = now() WHERE id = %s",
                  (message, job_id))
+
+
+def ensure_daily(conn, kind: str, *, now=None) -> bool:
+    """Queue today's run of a daily job unless one was already queued for today.
+    It runs at DAILY[kind]:00 UTC, or at once if no run of that kind ever finished.
+    Returns True when a job was queued."""
+    import datetime as dt
+    now = now or dt.datetime.now(dt.timezone.utc)
+    at = dt.datetime.combine(now.date(), dt.time(DAILY[kind]), dt.timezone.utc)
+    ever = conn.execute("SELECT 1 FROM job WHERE kind = %s AND status = 'done' LIMIT 1", (kind,)).fetchone()
+    when = at if ever else now
+    row = conn.execute(
+        "INSERT INTO job (kind, dedupe_key, payload, run_after)"
+        " SELECT %s, %s, '{}'::jsonb, %s WHERE NOT EXISTS (SELECT 1 FROM job WHERE kind = %s AND dedupe_key = %s)"
+        " ON CONFLICT (kind, dedupe_key) WHERE status IN ('queued', 'running') DO NOTHING RETURNING id",
+        (kind, f"{kind}:{now.date()}", when, kind, f"{kind}:{now.date()}")).fetchone()
+    return row is not None

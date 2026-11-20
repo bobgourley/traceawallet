@@ -715,3 +715,74 @@ def test_price_rows_must_be_consistent(conns):
     for row in bad:
         with pytest.raises(psycopg.errors.CheckViolation):
             data.execute(sql, (*row, raw_id, raw_id))
+
+
+# -- labels: OFAC (0012) -------------------------------------------------------------------------
+
+def ofac_publication(raw):
+    import pathlib
+    from taw.adapters.labels import ofac
+    body = (pathlib.Path(__file__).parent / "fixtures" / "ofac" / "SDN_sample.xml").read_bytes()
+    raw_store = store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test")
+    sha = raw_store.save("ofac-sdn", ofac.URL, None, 200, body)
+    published, count, rows = ofac.parse(body)
+    evm = ["arbitrum", "base", "bsc", "eth", "optimism", "polygon"]
+    found, unmapped = ofac.claims(published, rows, evm, sha)
+    from taw.adapters.labels.base import Publication
+    return Publication("ofac-sdn", published, sha, found, unmapped=len(unmapped)), raw_store
+
+
+def test_ofac_load_is_idempotent_and_matches_evm_without_case(conns):
+    from taw import labels
+    data, raw = conns
+    pub, _ = ofac_publication(raw)
+    first = labels.load_publication(data, ACTOR, pub)
+    assert first.added == first.claims == len(pub.claims) and first.withdrawn == 0
+    again = labels.load_publication(data, ACTOR, pub)
+    assert (again.added, again.changed, again.withdrawn) == (0, 0, 0)
+    assert count(data, "SELECT count(*) FROM label_load") == 2
+    eth = next(c for c in pub.claims if c.chain == "eth")
+    shouty = "0x" + eth.address[2:].upper()
+    found = labels.current(data, "eth", [shouty])[shouty]
+    assert found and all(f["source"] == "ofac-sdn" and f["category"] == "sanctioned" for f in found)
+    assert found[0]["source_date"] == dt.date(2026, 11, 19)
+
+
+def test_ofac_delisting_withdraws_and_relisting_supersedes(conns):
+    import dataclasses
+    from taw import labels
+    data, raw = conns
+    pub, _ = ofac_publication(raw)
+    labels.load_publication(data, ACTOR, pub)
+    gone = pub.claims[0]
+    later = dataclasses.replace(pub, source_date=dt.date(2026, 11, 20), claims=pub.claims[1:])
+    out = labels.load_publication(data, ACTOR, later)
+    assert out.withdrawn == 1 and out.added == 0
+    assert count(data, "SELECT count(*) FROM label_current WHERE claim_key = %s", gone.claim_key) == 0
+    row = data.execute("SELECT status::text, source_date, supersedes_id IS NOT NULL FROM label"
+                       " WHERE claim_key = %s ORDER BY id DESC LIMIT 1", (gone.claim_key,)).fetchone()
+    assert row == ("withdrawn", dt.date(2026, 11, 20), True)
+    back = labels.load_publication(data, ACTOR, pub)
+    assert back.changed == 1                                       # relisted: supersedes the withdrawal
+    assert count(data, "SELECT count(*) FROM label WHERE claim_key = %s", gone.claim_key) == 3
+    renamed = dataclasses.replace(pub.claims[1], label=pub.claims[1].label + " (corrected)")
+    out = labels.sync(data, ACTOR, "ofac-sdn", [renamed, *pub.claims[2:], pub.claims[0]],
+                      raw_sha256=pub.raw_sha256, source_date=pub.source_date)
+    assert (out.changed, out.withdrawn) == (1, 0)
+    with pytest.raises(psycopg.errors.RaiseException, match="append-only"):
+        data.execute("DELETE FROM label_load")
+
+
+def test_daily_job_is_queued_once_a_day(conns):
+    data, _ = conns
+    now = dt.datetime(2026, 11, 20, 5, tzinfo=dt.timezone.utc)
+    assert jobs.ensure_daily(data, jobs.OFAC_REFRESH, now=now)
+    assert not jobs.ensure_daily(data, jobs.OFAC_REFRESH, now=now)
+    run_after = count(data, "SELECT run_after FROM job WHERE kind = %s", jobs.OFAC_REFRESH)
+    assert run_after == now                                        # never ran before: at once
+    data.execute("UPDATE job SET status = 'done' WHERE kind = %s", (jobs.OFAC_REFRESH,))
+    assert not jobs.ensure_daily(data, jobs.OFAC_REFRESH, now=now)  # today's already done
+    tomorrow = now + dt.timedelta(days=1)
+    assert jobs.ensure_daily(data, jobs.OFAC_REFRESH, now=tomorrow)
+    assert count(data, "SELECT max(run_after) FROM job WHERE kind = %s", jobs.OFAC_REFRESH) == \
+        dt.datetime(2026, 11, 21, 23, tzinfo=dt.timezone.utc)
