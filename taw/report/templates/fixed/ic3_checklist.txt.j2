@@ -8,7 +8,7 @@ Report promptly. How quickly a report is made affects whether funds can still be
 
 Gather these for the report:
   [ ] Each payment you made: the date, the amount, the asset (for example USDT on Tron) and the transaction hash
-  [ ] The address you sent from, and the address you sent to (this report's address: {{ d.header.address }} on {{ d.header.chain_name }})
+  [ ] The address you sent from, and the address you sent to (this report's address: {{ d.header.address|copyable }} on {{ d.header.chain_name }})
   [ ] The exchange or wallet app you sent from, and your account details there
   [ ] The names, usernames, phone numbers, email addresses and websites the other party used
   [ ] Messages, screenshots and any documents they sent you

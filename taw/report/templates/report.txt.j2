@@ -8,7 +8,7 @@
 {% set priced = d.prices_available %}
 {% macro amount_line(x) %}{{ x.total|num }} {{ x.asset or (x.symbol|defang) }} in {{ plural(x.count, "transfer" if not btc else "output") }} {{ when_span(x.first, x.last) }}{% if priced %} ({{ x.usd|usd }}){% endif %}{% endmacro %}
 {% macro party(r, i) %}
-  {{ i }}. {{ r.address }}{% if r.lookalike_group %}  [lookalike group {{ r.lookalike_group }}]{% endif %}
+  {{ i }}. {{ r.address|addr }}{% if r.lookalike_group %}  [lookalike group {{ r.lookalike_group }}]{% endif %}
 
 {% for x in r.assets %}
      {{ amount_line(x) }}
@@ -18,7 +18,7 @@
 {% endfor %}
 {% endmacro %}
 TraceAWallet report
-{{ h.chain_name }} address {{ h.address }}
+{{ h.chain_name }} address {{ h.address|copyable }}
 
 As of block {{ h.as_of_block|num }} ({{ h.as_of_time|when }}). Lists and labels as they stood at {{ h.labels_as_of|when }}.
 All times in this report are UTC.
@@ -39,7 +39,7 @@ Destroyed: {{ x.issuer }} destroyed {{ x.amount|num }} {{ x.token }} held at thi
 {% endfor %}
 {% if sm.largest_destination %}
 {% set ld = sm.largest_destination %}
-Largest {{ "destination" if not btc else "output to another address" }}: {{ ld.address }}, {{ ld.total|num }} {{ ld.asset }}{% if ld.share_percent %}, {{ ld.share_percent }}% of the {{ ld.asset }} that left this address{% endif %}.
+Largest {{ "destination" if not btc else "output to another address" }}: {{ ld.address|addr }}, {{ ld.total|num }} {{ ld.asset }}{% if ld.share_percent %}, {{ ld.share_percent }}% of the {{ ld.asset }} that left this address{% endif %}.
 {% else %}
 Largest destination: nothing left this address{{ " to another address" if btc }}.
 {% endif %}
@@ -59,8 +59,8 @@ Only you see this section. It is not part of the report or its fingerprint.
 {% set m = match %}
 {% if m.status == "matched" %}
 {% set t = m.transfer %}
-Found{% if m.method == "tx_hash" %} by its transaction hash{% elif m.method.startswith("sender_amount") %} by sender, amount and date{% else %} by amount and date{% endif %}: {{ t.amount|num }} {{ t.asset or t.symbol }} from {{ t["from"] or "the inputs of the transaction" }} to this address on {{ t.time|when }}.
-  transaction {{ t.tx_hash }}, block {{ t.block|num }}
+Found{% if m.method == "tx_hash" %} by its transaction hash{% elif m.method.startswith("sender_amount") %} by sender, amount and date{% else %} by amount and date{% endif %}: {{ t.amount|num }} {{ t.asset or t.symbol }} from {{ (t["from"]|addr) if t["from"] else "the inputs of the transaction" }} to this address on {{ t.time|when }}.
+  transaction {{ t.tx_hash|txh }}, block {{ t.block|num }}
 {% if m.balance and m.balance.status == "worked_out" %}
 {{ t.asset or t.symbol }} at this address just before your transfer arrived: {{ m.balance.before|num }}. Just after: {{ m.balance.after|num }}.
 {% elif m.balance and m.balance.reason == "native_fees" %}
@@ -71,8 +71,8 @@ The balance just before and after your transfer is not worked out, because the h
 {% if m.next_outgoing %}
 Next transfers of {{ t.asset or t.symbol }} out of this address after yours:
 {% for x in m.next_outgoing %}
-  {{ x.time|when }}  {{ x.amount|num }} {{ x.asset or x.symbol }} to {{ x.to }}
-      transaction {{ x.tx_hash }}
+  {{ x.time|when }}  {{ x.amount|num }} {{ x.asset or x.symbol }} to {{ x.to|addr }}
+      transaction {{ x.tx_hash|txh }}
 {% endfor %}
 These are the next transfers of the same asset out of this address after yours. This does not show that they were your funds: an address can hold money from many people.
 {% else %}
@@ -81,11 +81,11 @@ No transfer of {{ t.asset or t.symbol }} out of this address after yours was rea
 {% elif m.status == "candidates" %}
 More than one transfer fits what you entered, so none was picked. Check each against your own records:
 {% for t in m.candidates %}
-  {{ t.time|when }}  {{ t.amount|num }} {{ t.asset or t.symbol }} from {{ t["from"] }}
-      transaction {{ t.tx_hash }}
+  {{ t.time|when }}  {{ t.amount|num }} {{ t.asset or t.symbol }} from {{ t["from"]|addr }}
+      transaction {{ t.tx_hash|txh }}
 {% endfor %}
 {% elif m.status == "pays_another_address" %}
-The transaction you entered exists, but it does not pay this address. It paid: {{ m.paid_addresses|join(", ") }}.
+The transaction you entered exists, but it does not pay this address. It paid: {{ m.paid_addresses|map("addr")|join(", ") }}.
 You may have the wrong address. Check the receiving address in your exchange or wallet records.
 {% elif m.status == "not_found" %}
 No transfer matching what you entered was found{% if m.reason == "tx_not_found" %}: the transaction hash is not known on {{ h.chain_name }}{% endif %}.
@@ -119,7 +119,7 @@ The address is {{ "a contract" if h.is_contract else "not a contract (an ordinar
 {% for t in hd.tokens if t.recognised and t.amount_raw != "0" %}
 {{ t.asset or t.symbol }}: {{ t.amount|num }}{% if priced %} ({{ t.usd|usd }}){% endif %}{% if t.freezable %}. Issued by {{ t.issuer }}, which can freeze it.{% endif %}
 
-  contract {{ t.contract }}
+  contract {{ t.contract|copyable }}
 {% endfor %}
 {% if hd.unrecognised_count %}
 Also held: {{ plural(hd.unrecognised_count, "token") }} we don't recognise (see "Tokens we don't recognise").
@@ -136,18 +136,18 @@ Freeze status:
 {% for fz in hd.freeze %}
 {% if fz.status == "frozen" %}
   {{ fz.token }}: frozen by {{ fz.issuer }}{% if fz.since %} since {{ fz.since|when }}{% endif %}. This address can no longer send {{ fz.token }}. A freeze does not return money to anyone; that takes legal process. {{ fz.issuer }} can later release the frozen {{ fz.token }} or destroy it.
-    Detail: the {{ fz.token }} contract {{ fz.contract }} reports {{ fz.function }} = true{% if fz.block %} at block {{ fz.block|num }}{% else %} at the chain's latest block when checked{% endif %}{% if fz.since %}; frozen in block {{ fz.since_block|num }}, transaction {{ fz.since_tx }}{% else %}; freeze date: {{ fz.date_note or "not found" }}{% endif %}.
+    Detail: the {{ fz.token }} contract {{ fz.contract|copyable }} reports {{ fz.function }} = true{% if fz.block %} at block {{ fz.block|num }}{% else %} at the chain's latest block when checked{% endif %}{% if fz.since %}; frozen in block {{ fz.since_block|num }}, transaction {{ fz.since_tx|txh }}{% else %}; freeze date: {{ fz.date_note or "not found" }}{% endif %}.
 {% elif fz.status == "not_frozen" %}
   {{ fz.token }}: not frozen.
-    Detail: the {{ fz.token }} contract {{ fz.contract }} reports {{ fz.function }} = false{% if fz.block %} at block {{ fz.block|num }}{% else %} at the chain's latest block when checked{% endif %}.
+    Detail: the {{ fz.token }} contract {{ fz.contract|copyable }} reports {{ fz.function }} = false{% if fz.block %} at block {{ fz.block|num }}{% else %} at the chain's latest block when checked{% endif %}.
 {% elif fz.status == "no_answer" %}
-  {{ fz.token }}: unknown. The contract {{ fz.contract }} gave no answer.
+  {{ fz.token }}: unknown. The contract {{ fz.contract|copyable }} gave no answer.
 {% else %}
   {{ fz.token }}: not checked for this report.
 {% endif %}
 {% for x in fz.destructions %}
   {{ fz.issuer }} destroyed {{ x.amount|num }} {{ fz.token }} held at this address on {{ x.time|when }}.
-    Detail: block {{ x.block|num }}, transaction {{ x.tx_hash }}.
+    Detail: block {{ x.block|num }}, transaction {{ x.tx_hash|txh }}.
 {% endfor %}
 {% else %}
   No stablecoin on {{ h.chain_name }} is checked for freezes.
@@ -166,7 +166,7 @@ No transfers were read for this address.
 Received counts outputs paying this address. Spent counts inputs it spent; one output of a spending transaction is usually change returning to the spender.
 {% endif %}
 {% for r in a.assets %}
-{{ r.asset or r.symbol }}{% if r.contract %} (contract {{ r.contract }}){% endif %}:
+{{ r.asset or r.symbol }}{% if r.contract %} (contract {{ r.contract|copyable }}){% endif %}:
 {% if btc %}
   received: {{ plural(r["in"].count, "output") }}, {{ r["in"].total|num }}{% if priced and r["in"].count %} ({{ r["in"].usd|usd }}){% endif %}
 
@@ -215,8 +215,8 @@ Addresses that sent to this address, largest first. Zero, very small and unrecog
 {% endif %}
 
 {% if f.first_funder %}
-First funder read: {{ f.first_funder.addresses|join(", ") or "unknown" }}, {{ f.first_funder.amount|num }} {{ f.first_funder.symbol|defang }} on {{ f.first_funder.time|when }}.
-  transaction {{ f.first_funder.tx_hash }}
+First funder read: {{ (f.first_funder.addresses|map("addr")|join(", ")) if f.first_funder.addresses else "unknown" }}, {{ f.first_funder.amount|num }} {{ f.first_funder.symbol|defang }} on {{ f.first_funder.time|when }}.
+  transaction {{ f.first_funder.tx_hash|txh }}
 {% if c.transfers.truncated %}
   The history read is truncated, so this is the earliest transfer read, not necessarily the first one.
 {% endif %}
@@ -233,7 +233,7 @@ Some addresses in this report begin and end with the same characters. Wallets of
 {% for g in d.lookalikes %}
   Group {{ g.group }}:
 {% for x in g.addresses %}
-    {{ x }}{% if x == h.address %}  (this report's address){% endif %}
+    {{ x|addr }}{% if x == h.address %}  (this report's address){% endif %}
 
 {% endfor %}
 {% if g.includes_this_address %}
@@ -250,7 +250,7 @@ Checked: {{ plural(ls.destinations_checked, "destination") }} and {{ plural(ls.f
 {% endfor %}
 Matched: {{ ls.matched|length }}.
 {% for m in ls.matched %}
-  {{ m.address }} ({{ m.roles|join(" and ") }})
+  {{ m.address|addr }} ({{ m.roles|join(" and ") }})
 {% for l in m.labels %}
     {{ l.label }} (source: {{ l.source_name }}, dated {{ l.source_date or "undated" }}; read {{ l.observed_at|day }})
 {% endfor %}
@@ -264,9 +264,9 @@ Zero-value transfers: {{ s.zero.count|num }}. Very small transfers (below 1 USDT
 {% if small %}
 The newest {{ [small|length, 5]|min }}:
 {% for r in small[:5] %}
-  {{ r.time|when }}  {{ "in from" if r.direction == "in" else "out to" }} {{ r.counterparty or "unknown" }}  {{ r.amount|num }} {{ r.symbol|defang }}{% if r.lookalike_group %}  [lookalike group {{ r.lookalike_group }}]{% endif %}
+  {{ r.time|when }}  {{ "in from" if r.direction == "in" else "out to" }} {{ (r.counterparty|addr) if r.counterparty else "unknown" }}  {{ r.amount|num }} {{ r.symbol|defang }}{% if r.lookalike_group %}  [lookalike group {{ r.lookalike_group }}]{% endif %}
 
-      transaction {{ r.tx_hash }}
+      transaction {{ r.tx_hash|txh }}
 {% endfor %}
 {% if small|length > 5 %}
 The full list of {{ small|length|num }} is in the report's data.
@@ -283,9 +283,9 @@ Token names are chosen by their creators and are often advertisements. Do not co
 The {{ "token" if a.unrecognised_tokens|length == 1 else (a.unrecognised_tokens|length|string + " tokens") }} with the most transfers:
 {% for r in a.unrecognised_tokens %}
   "{{ r.symbol|defang }}"{% if r.odd_characters %} (contains {{ r.odd_characters|join(", ") }}){% endif %}: {{ r["in"].count }} in, {{ r.out.count }} out
-      contract {{ r.contract }}
+      contract {{ r.contract|copyable }}
 {% if r.imitates %}
-      This is not {% if r.imitates.issuer %}{{ r.imitates.issuer }}'s {% endif %}{{ r.imitates.asset }}.{% if r.imitates.contract %} The real {{ r.imitates.asset }} on {{ h.chain_name }} is contract {{ r.imitates.contract }}.{% endif %}
+      This is not {% if r.imitates.issuer %}{{ r.imitates.issuer }}'s {% endif %}{{ r.imitates.asset }}.{% if r.imitates.contract %} The real {{ r.imitates.asset }} on {{ h.chain_name }} is contract {{ r.imitates.contract|copyable }}.{% endif %}
 
 {% endif %}
 {% endfor %}
@@ -298,7 +298,7 @@ The {{ "token" if a.unrecognised_tokens|length == 1 else (a.unrecognised_tokens|
 {% set lb = d.labels %}
 {% for l in lb.address %}
   - {{ l.label }}
-    source: {{ l.source_name }}; dated {{ l.source_date or "undated" }}; read {{ l.observed_at|day }}{% if l.claim_url %}; {{ l.claim_url }}{% endif %}
+    source: {{ l.source_name }}; dated {{ l.source_date or "undated" }}; read {{ l.observed_at|day }}{% if l.claim_url %}; {{ l.claim_url|link }}{% endif %}
 
 {% else %}
   - None of our sources makes a claim about this address.
@@ -363,9 +363,9 @@ Accounts on TraceAWallet that have looked up this address: {{ prior_lookups }}.
 This count is read when the report is shown and is not part of the report's fingerprint.
 
 == Look further ==
-  {{ d.links.explorer.name }}: {{ d.links.explorer.url }}
-  Chainabuse: {{ d.links.chainabuse }}
-  Arkham: {{ d.links.arkham }}
+  {{ d.links.explorer.name }}: {{ d.links.explorer.url|link }}
+  Chainabuse: {{ d.links.chainabuse|link }}
+  Arkham: {{ d.links.arkham|link }}
 These sites are run by others. What they show is their own.
 
 == Sources ==

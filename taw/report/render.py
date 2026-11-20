@@ -137,10 +137,18 @@ def when_span(first, last) -> str:
     return f"on {day(first)}" if day(first) == day(last) else f"from {day(first)} to {day(last)}"
 
 
-def _env() -> Environment:
+def _same(value) -> str:
+    return "" if value is None else str(value)
+
+
+def _env(html: bool = False) -> Environment:
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)), undefined=StrictUndefined, trim_blocks=True,
-                      lstrip_blocks=True, keep_trailing_newline=True, autoescape=False)
+                      lstrip_blocks=True, keep_trailing_newline=True, autoescape=html)
     env.filters.update(num=num, when=when, day=day, usd=usd, defang=defang)
+    if html:
+        env.filters.update(addr=_html_addr, txh=_html_copy, copyable=_html_copy, link=_html_link)
+    else:
+        env.filters.update(addr=_same, txh=_same, copyable=_same, link=_same)
     env.globals.update(when_span=when_span, USED_FOR_WORDS=USED_FOR_WORDS, CREDITS=CREDITS, LIST_NAMES=LIST_NAMES,
                        HISTORY_WORDS=HISTORY_WORDS, SKIP_CHECKS=SKIP_CHECKS)
     env.globals.update(plural=plural, CHECK_TITLES=CHECK_TITLES, STATUS_WORDS=STATUS_WORDS,
@@ -176,3 +184,89 @@ def outside_fixed_sections(text: str) -> str:
         elif not inside:
             out.append(ln)
     return "\n".join(out)
+
+
+
+# -- HTML ------------------------------------------------------------------------------------
+#
+# The web page is the same template rendered with autoescape on, so it says exactly
+# what the text says. Addresses get a copy button and a "look up this address" link,
+# hashes and contracts a copy button, links out an anchor. The buttons carry no text
+# of their own (their label is aria-label plus CSS), so the page's text is the
+# report's text. Each "== heading ==" becomes a section; long ones start collapsed.
+
+from urllib.parse import quote  # noqa: E402
+
+from markupsafe import Markup, escape  # noqa: E402
+
+ALWAYS_OPEN = ("Summary", "Your transaction (private)", "Holdings at block", "Report fingerprint", "Chains")
+COLLAPSE_AFTER = 8          # lines; longer sections start closed
+
+
+def _copy_button(value: str) -> Markup:
+    return Markup('<button type="button" class="copy" data-copy="{0}" aria-label="Copy {0}"></button>').format(value)
+
+
+def _html_copy(value) -> Markup:
+    if not value:
+        return Markup("")
+    v = str(value)
+    return Markup('<code class="id">{0}</code>{1}').format(v, _copy_button(v))
+
+
+def _html_addr(value) -> Markup:
+    if not value:
+        return Markup("")
+    v = str(value)
+    return Markup('<code class="id">{0}</code>{1}<a class="lookup" href="/?address={2}" '
+                  'aria-label="Look up {0}"></a>').format(v, _copy_button(v), quote(v, safe=""))
+
+
+def _html_link(value) -> Markup:
+    if not value:
+        return Markup("")
+    v = str(value)
+    if not v.startswith("https://"):
+        return Markup("{0}").format(v)
+    return Markup('<a href="{0}" rel="noopener noreferrer nofollow" target="_blank">{0}</a>').format(v)
+
+
+def _is_heading(line: str) -> bool:
+    return line.startswith("== ") and line.endswith(" ==")
+
+
+def render_html(data: dict, *, prior_lookups: str | None = None, public_id: str | None = None,
+                sha256: str | None = None, match: dict | None = None) -> Markup:
+    """The report as HTML: the text template, autoescaped, one element per line."""
+    body = _env(html=True).get_template("report.txt.j2").render(d=data, prior_lookups=prior_lookups,
+                                                                public_id=public_id, sha256=sha256, match=match)
+    start_marker, end_marker = str(escape(FIXED_START.split("{")[0])), str(escape(FIXED_END))
+    sections: list[tuple[str | None, list[str], bool]] = [(None, [], False)]
+    fixed = False
+    for raw in body.splitlines():
+        line = raw.rstrip()
+        bare = str(Markup(line).striptags()) if "<" in line else line
+        if line.startswith(start_marker):
+            fixed = True
+            continue
+        if line == end_marker:
+            fixed = False
+            continue
+        if _is_heading(bare.strip()):
+            sections.append((bare.strip()[3:-3], [], fixed))
+            continue
+        if line.strip():
+            sections[-1][1].append(line)
+    out = []
+    for title, lines, is_fixed in sections:
+        rows = "".join(
+            '<div class="ln i{0}">{1}</div>'.format(min((len(l) - len(l.lstrip(" "))) // 2, 4), l.lstrip(" "))
+            for l in lines)
+        if title is None:
+            out.append(f'<header class="report-head">{rows}</header>')
+            continue
+        is_open = title.startswith(ALWAYS_OPEN) or len(lines) <= COLLAPSE_AFTER
+        cls = "sec fixed" if is_fixed else ("sec private" if title.startswith("Your transaction") else "sec")
+        out.append(f'<details class="{cls}"{" open" if is_open else ""}><summary><h2>{escape(title)}</h2></summary>'
+                   f'{rows}</details>')
+    return Markup('<article class="report">' + "".join(out) + "</article>")
