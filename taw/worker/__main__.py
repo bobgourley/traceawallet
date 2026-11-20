@@ -39,14 +39,15 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
                                             "stopped partway through each time.")
         log(f"job {job.id}: failed, too many attempts")
         return "failed"
-    if job.kind not in (jobs.LOOKUP, jobs.OFAC_REFRESH):
+    list_jobs = {jobs.OFAC_REFRESH: lists.refresh_ofac, jobs.EXCHANGE_REFRESH: lists.refresh_exchanges}
+    if job.kind != jobs.LOOKUP and job.kind not in list_jobs:
         jobs.mark_failed(data_conn, job.id, f"No handler for job kind {job.kind!r}.")
         log(f"job {job.id}: no handler for {job.kind!r}")
         return "failed"
     try:
-        if job.kind == jobs.OFAC_REFRESH:
-            outcome = lookup.Outcome(lists.refresh_ofac(data_conn=data_conn, raw_store=raw_store_factory(),
-                                                        actor=actor), reused=False)
+        if job.kind in list_jobs:
+            outcome = lookup.Outcome(list_jobs[job.kind](data_conn=data_conn, raw_store=raw_store_factory(),
+                                                         actor=actor), reused=False)
         else:
             outcome = lookup.run_lookup(job.payload, data_conn=data_conn, raw_store=raw_store_factory(),
                                         actor=actor, adapter_for=adapter_for, store_module=store_module,

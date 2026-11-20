@@ -15,7 +15,8 @@ from taw.adapters.registry import normalize_address
 
 LOOKUP = "address_lookup"
 OFAC_REFRESH = "ofac_refresh"
-DAILY = {OFAC_REFRESH: 23}       # kind -> hour (UTC) it runs each day
+EXCHANGE_REFRESH = "exchange_refresh"
+DAILY = {OFAC_REFRESH: 23, EXCHANGE_REFRESH: 6}       # kind -> hour (UTC) it runs each day
 RETRY_BASE_SECONDS = 30          # waits of 30 s, 2 min, 8 min, ... between attempts
 STALE_AFTER = "30 minutes"       # a 'running' job older than this lost its worker
 

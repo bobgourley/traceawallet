@@ -884,3 +884,66 @@ def test_counterparties_get_only_local_labels(conns):
     assert [f["source"] for f in applied.counterparties[dest]["labels"]] == ["ofac-sdn"]
     assert payer not in applied.counterparties                                              # its GoPlus flag is not local
     assert applied.summary() == "labels: 2 on the address; 1 of 2 first-hop address(es) carry an OFAC or exchange label"
+
+
+# -- labels: exchange wallet lists (0014) ------------------------------------------------------------
+
+def okx_publication(raw_store, month, keep=None, extra=()):
+    import dataclasses
+    import pathlib
+    from taw.adapters.labels import exchanges
+    from taw.adapters.labels.base import Publication
+    body = (pathlib.Path(__file__).parent / "fixtures" / "okx" / "por_sample.zip").read_bytes()
+    sha = raw_store.save("okx-por", exchanges.okx_url(month), None, 200, body + month.isoformat().encode())
+    claims, detail = exchanges.parse_okx(body, month, sha)
+    claims = (claims if keep is None else claims[:keep]) + [dataclasses.replace(claims[0], address=a) for a in extra]
+    return Publication("okx-por", month, sha, claims, detail=detail)
+
+
+def test_okx_monthly_refresh_adds_and_withdraws_without_rewriting(conns):
+    from taw import labels
+    data, raw = conns
+    raw_store = store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test")
+    nov, dec = dt.date(2026, 11, 1), dt.date(2026, 12, 1)
+    first = labels.load_publication(data, ACTOR, okx_publication(raw_store, nov))
+    assert first.added == first.claims == 11
+    new_addr = "0x" + "ab" * 20
+    dec_pub = okx_publication(raw_store, dec, keep=10, extra=[new_addr])           # one gone, one new
+    out = labels.load_publication(data, ACTOR, dec_pub)
+    assert (out.added, out.changed, out.withdrawn) == (1, 0, 1)
+    assert count(data, "SELECT count(*) FROM label") == 13                         # 11 + 1 new + 1 withdrawal
+    kept = data.execute("SELECT label, source_date FROM label_current WHERE claim_key LIKE 'okx:%%'"
+                        " ORDER BY id LIMIT 1").fetchone()
+    assert "on 2026-11-01" in kept[0] and kept[1] == nov                           # first-listed date kept
+    newest = labels.current(data, "eth", [new_addr])[new_addr]
+    assert [f["label"][:44] for f in newest] == ["listed by OKX as its wallet on 2026-12-01 (t"]
+    assert count(data, "SELECT count(*) FROM label_load WHERE source_id = (SELECT id FROM source"
+                       " WHERE slug = 'okx-por')") == 2
+
+
+def test_exchange_refresh_job(conns):
+    from taw.adapters.labels.exchanges import NotPublished
+    from taw.worker.lists import refresh_exchanges
+    data, raw = conns
+    raw_store = store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test")
+
+    class NoOkx:
+        def load(self, month):
+            raise NotPublished("none")
+    first = refresh_exchanges(data_conn=data, raw_store=raw_store, actor=ACTOR, today=dt.date(2026, 11, 20),
+                              okx=NoOkx())
+    assert first.startswith("exchange file: ") and "OKX 2026-11: not published yet" in first
+    assert count(data, "SELECT count(*) FROM label_current WHERE source_id = (SELECT id FROM source"
+                       " WHERE slug = 'exchange-por')") > 50
+    again = refresh_exchanges(data_conn=data, raw_store=raw_store, actor=ACTOR, today=dt.date(2026, 11, 21),
+                              okx=NoOkx())
+    assert again.startswith("exchange file unchanged")
+
+    class FixtureOkx:
+        def load(self, month):
+            return okx_publication(raw_store, month)
+    loaded = refresh_exchanges(data_conn=data, raw_store=raw_store, actor=ACTOR, today=dt.date(2026, 11, 22),
+                               okx=FixtureOkx())
+    assert "OKX 2026-11: 11 claim(s): 11 added" in loaded
+    assert "OKX 2026-11: already loaded" in refresh_exchanges(data_conn=data, raw_store=raw_store, actor=ACTOR,
+                                                              today=dt.date(2026, 11, 23), okx=FixtureOkx())
