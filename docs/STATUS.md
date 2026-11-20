@@ -3,6 +3,25 @@
 Last updated 2026-11-20. Design choices and their reasons are in
 [DECISIONS.md](DECISIONS.md).
 
+## Parked wording items (2026-11-20)
+
+The owner asked for these to be parked, not built now, while the web interface is
+built. All but the last were already built and merged to main (0866801, the
+third wording pass) before that request arrived. They stay on main unless the
+owner asks for them to be reverted. Nothing more is to be done on them for now.
+
+| Item | State |
+|---|---|
+| Summary lines: received, sent and remaining per asset | built, on main |
+| Lookalike check including the report's own address | built, on main |
+| "Not that issuer's token" statement, with the real contract | built, on main |
+| Token warning removed from the small-transfers section | built, on main |
+| Plainer wording for chains not covered | built, on main |
+| Balance before and after the victim's transfer | built, on main |
+| One note that all times are UTC | built, on main |
+| "And your bank" line in the reporting checklist | built, on main |
+| A golden report built through Blockscout for an Ethereum address | parked, not built |
+
 ## Live
 
 - `traceawallet-web` and `traceawallet-worker` run on Railway (project "adaptable-connection").
