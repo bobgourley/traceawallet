@@ -2,8 +2,10 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 from taw import db
+from taw.api import router as api_router
 
-app = FastAPI(title="TraceAWallet", docs_url=None, redoc_url=None)
+app = FastAPI(title="TraceAWallet", docs_url=None, redoc_url=None, openapi_url=None)
+app.include_router(api_router)
 
 
 @app.get("/healthz")
