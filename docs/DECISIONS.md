@@ -3,6 +3,45 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (night): Sign-in first, Cloudflare IPs, the GoPlus logo
+
+**Sign-in before the form.** While the site is invite-only, a signed-out visitor
+sees a short welcome and a Sign in button, not the form; a signed-in stranger
+sees the invite-only notice. The start-before-sign-in path stays in the code
+behind `LOOKUP_BEFORE_SIGN_IN=1`, which is off. With it off, the API refuses a
+lookup that has only a session.
+
+**The visitor's IP behind Cloudflare.** traceawallet.com resolves to Cloudflare
+(nameservers eric and melinda.ns.cloudflare.com; responses carry both
+`cf-ray` and `x-railway-edge`).
+- **Which header.** The per-connection limit uses Cloudflare's
+  `CF-Connecting-IP`, but only when the connection Railway saw (`X-Real-IP`,
+  which its edge overwrites) comes from Cloudflare's published ranges, read
+  2026-11-20.
+- **Why.** A request sent straight to the Railway domain can't choose its own
+  IP; it falls back to `X-Real-IP`.
+- **Checking it live.** `GET /api/v1/connection` returns the first 16
+  characters of the salted hash the limit counts, and never the IP.
+
+**GoPlus logo.**
+- **Where it comes from.** It's the horizontal logo from GoPlus's own media
+  kit (gopluslabs.io/en/media-kit), downloaded 2026-11-20. The SVG's sha256 is
+  `4cc4fa68…24e5`; it has no scripts or external references. It is served from
+  our own origin as `/static/goplus-logo.svg`.
+- **Terms.** The kit offers the logos for partner and press use and states no
+  further terms. The API licence asks for the logo with "Powered by GoPlus"
+  wherever results are shown.
+- **Where it appears.** Beside GoPlus's result in every web report, and on the
+  About page. The wordmark is white, so it sits on GoPlus's own dark brand
+  colour (#151515). The text report keeps the written credit.
+
+**Clerk keys already in Railway.** Both services hold development-instance
+keys (`pk_test_`, `sk_test_`), from the application the owner created on
+2026-11-16. Its Frontend API is `profound-prawn-7291.clerk.accounts.dev`. A
+development instance works on our domain and shows a "development mode" badge.
+A production instance, needed before the site opens beyond testers, takes
+DNS records for a clerk subdomain.
+
 ## 2026-11-20 (night): The web interface
 
 **The site is a client of the API.** The pages call `/api/v1` over the loopback

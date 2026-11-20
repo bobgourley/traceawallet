@@ -303,7 +303,7 @@ The {{ "token" if a.unrecognised_tokens|length == 1 else (a.unrecognised_tokens|
 {% else %}
   - None of our sources makes a claim about this address.
 {% endfor %}
-GoPlus: {% if lb.goplus.status == "no_flags" %}GoPlus has no flags for this address. Powered by GoPlus.{% elif lb.goplus.status == "flags" %}flagged by GoPlus: {{ lb.goplus.flags|join(", ") }}{% if lb.goplus.data_source %} (data source named by GoPlus: {{ lb.goplus.data_source }}){% endif %}. Powered by GoPlus.{% elif lb.goplus.status == "never_asked_btc" %}not asked. GoPlus answers every Bitcoin address with no flags, so its answer would say nothing.{% else %}not asked about this address for this report.{% endif %}
+GoPlus: {% if lb.goplus.status == "no_flags" %}GoPlus has no flags for this address. {{ "Powered by GoPlus."|goplus }}{% elif lb.goplus.status == "flags" %}flagged by GoPlus: {{ lb.goplus.flags|join(", ") }}{% if lb.goplus.data_source %} (data source named by GoPlus: {{ lb.goplus.data_source }}){% endif %}. {{ "Powered by GoPlus."|goplus }}{% elif lb.goplus.status == "never_asked_btc" %}not asked. GoPlus answers every Bitcoin address with no flags, so its answer would say nothing.{% else %}not asked about this address for this report.{% endif %}
 
 
 == Is the history complete? ==

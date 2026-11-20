@@ -10,9 +10,12 @@ Who is asking (taw/auth.py):
                                                  and nothing else; signing in claims it
 The API reads no cookies, so a cross-site form cannot act through it.
 
-Client IP: the web pages pass the visitor's IP in X-TAW-Client-IP, which is
-trusted only from the loopback address (the pages run in the same process).
-Otherwise X-Real-IP, which Railway's edge sets on every request it forwards.
+Client IP: guard.client_ip. Cloudflare's CF-Connecting-IP when the request
+reached Railway from Cloudflare's ranges, otherwise X-Real-IP (which Railway's
+edge overwrites); the web pages pass the IP they worked out as X-Real-IP.
+
+Before sign-in: a lookup may start with only a session (and Turnstile) when
+LOOKUP_BEFORE_SIGN_IN=1. Off while the site is invite-only.
 
 Until every setting the site needs exists (auth.missing_settings) every route
 answers 503, so a deploy without them opens nothing.
@@ -67,14 +70,7 @@ def member(who: Identity | None = Depends(caller)) -> Identity:
 
 
 def client_ip(request: Request) -> str | None:
-    peer = request.client.host if request.client else None
-    forwarded = request.headers.get("x-taw-client-ip")
-    try:
-        if forwarded and peer and ipaddress.ip_address(peer).is_loopback:
-            return forwarded.strip()
-    except ValueError:
-        pass
-    return (request.headers.get("x-real-ip") or "").strip() or peer
+    return guard.client_ip(request.headers, request.client.host if request.client else None)
 
 
 def conn():
@@ -105,6 +101,16 @@ class LookupIn(BaseModel):
     turnstile_token: str | None = Field(default=None, max_length=2048)
 
 
+@router.get("/connection")
+def connection(request: Request) -> dict:
+    """The salted hash of your connection's IP, shortened: what the per-connection limit
+    counts. For checking that two networks give two different values. Shows no IP."""
+    from taw.auth import setting
+    if not setting("HASH_SALT"):
+        raise HTTPException(status_code=503, detail="The site is not open yet.")
+    return {"connection": guard.salted("ip", client_ip(request))[:16]}
+
+
 @router.get("/me", dependencies=[Depends(ready)])
 def me(who: Identity | None = Depends(caller)) -> dict:
     if who is None:
@@ -118,7 +124,7 @@ def create_lookup(body: LookupIn, request: Request, who: Identity | None = Depen
     if who is not None and not who.invited:
         raise HTTPException(status_code=403, detail="This site is invite-only for now.")
     session = (x_taw_session or "").strip() or None
-    if who is None and not session:
+    if who is None and (not session or not guard.lookups_before_sign_in()):
         raise HTTPException(status_code=401, detail="Please sign in.")
     ip = client_ip(request)
     check = guard.verify_turnstile(body.turnstile_token, ip)

@@ -72,6 +72,12 @@ def browser(site, db_url):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture
+def before_sign_in(monkeypatch):
+    """The start-before-sign-in path, which is off while the site is invite-only."""
+    monkeypatch.setenv("LOOKUP_BEFORE_SIGN_IN", "1")
+
+
 def csrf_of(html: str) -> str:
     return re.search(r'name="csrf" value="([0-9a-f]{64})"', html).group(1)
 
@@ -100,6 +106,7 @@ def test_unconfigured_site_shows_coming_soon_and_the_api_is_closed(db_url, monke
 
 # -- starting a lookup ------------------------------------------------------------------------
 
+@pytest.mark.usefixtures("before_sign_in")
 def test_a_lookup_starts_before_sign_in_and_signing_in_claims_it(browser, db_url):
     r = submit(browser, rf.CASES[KNWAN][1])
     assert r.status_code == 303 and r.headers["location"].startswith("/sign-in?next=/lookups/")
@@ -116,6 +123,7 @@ def test_a_lookup_starts_before_sign_in_and_signing_in_claims_it(browser, db_url
         assert c.execute("SELECT clerk_user_id FROM lookup WHERE id = %s", (lid,)).fetchone()[0] == "user_tester"
 
 
+@pytest.mark.usefixtures("before_sign_in")
 def test_turnstile_failure_starts_nothing(browser, db_url):
     r = submit(browser, rf.CASES[KNWAN][1], turnstile="wrong")
     assert r.status_code == 400 and "We could not confirm you are a person" in r.text
@@ -123,6 +131,7 @@ def test_turnstile_failure_starts_nothing(browser, db_url):
         assert c.execute("SELECT count(*) FROM lookup").fetchone()[0] == 0
 
 
+@pytest.mark.usefixtures("before_sign_in")
 def test_forms_need_their_csrf_token(browser, db_url):
     browser.get("/")
     r = browser.post("/lookups", data={"csrf": "0" * 64, "address": rf.CASES[KNWAN][1],
@@ -132,6 +141,7 @@ def test_forms_need_their_csrf_token(browser, db_url):
         assert c.execute("SELECT count(*) FROM lookup").fetchone()[0] == 0
 
 
+@pytest.mark.usefixtures("before_sign_in")
 def test_limit_per_ip_before_sign_in(browser, monkeypatch):
     monkeypatch.setitem(guard.LIMITS, "ip_hour", 2)
     assert submit(browser, rf.CASES[KNWAN][1]).status_code == 303
@@ -149,6 +159,7 @@ def test_limit_per_account_after_sign_in(browser, monkeypatch):
     assert r.status_code == 429 and "1 lookups in the past hour. Please wait an hour" in r.text
 
 
+@pytest.mark.usefixtures("before_sign_in")
 def test_site_wide_limit_on_anonymous_lookups(browser, monkeypatch):
     monkeypatch.setitem(guard.LIMITS, "anonymous_site_day", 1)
     assert submit(browser, rf.CASES[KNWAN][1], ip="198.51.100.1").status_code == 303
@@ -160,8 +171,12 @@ def test_site_wide_limit_on_anonymous_lookups(browser, monkeypatch):
 
 def test_invite_only(browser):
     sign_in(browser, "user_stranger", STRANGER)
-    r = submit(browser, rf.CASES[KNWAN][1])
+    r = browser.get("/")
     assert r.status_code == 403 and "invite-only" in r.text
+    stranger = {"Authorization": f"Bearer {token('user_stranger', STRANGER)}"}
+    made = browser.post("/api/v1/lookups", json={"address": rf.CASES[KNWAN][1], "turnstile_token": "pass"},
+                        headers=stranger)
+    assert made.status_code == 403
     assert browser.get("/account").status_code == 403
     api = browser.get("/api/v1/lookups", headers={"Authorization": f"Bearer {token('user_stranger', STRANGER)}"})
     assert api.status_code == 403
@@ -254,6 +269,7 @@ def test_account_lists_and_deletes(browser, db_url):
 # -- headers -----------------------------------------------------------------------------------
 
 def test_security_headers_and_noindex(browser):
+    sign_in(browser)
     home = browser.get("/")
     csp = home.headers["content-security-policy"]
     assert "default-src 'self'" in csp and "frame-ancestors 'none'" in csp and "'unsafe-eval'" not in csp
@@ -301,3 +317,52 @@ def test_reports_as_text_through_the_api(browser, db_url):
     assert "Tether destroyed 465,514.638375 USDT" in text and f"Report id: {pid}" in text
     assert "looked up this address here: 1" in text or "looked up this address: 1" in text
     assert browser.get(f"/api/v1/reports/{pid}").status_code == 401           # results only after sign-in
+
+
+
+# -- sign-in before the form (the default while invite-only) --------------------------------------
+
+def test_by_default_the_form_needs_sign_in(browser, db_url):
+    home = browser.get("/")
+    assert home.status_code == 200 and "Please sign in to start" in home.text and 'action="/lookups"' not in home.text
+    r = browser.post("/lookups", data={"csrf": "x", "address": rf.CASES[KNWAN][1]})
+    assert r.status_code in (303, 400)
+    api = browser.post("/api/v1/lookups", json={"address": rf.CASES[KNWAN][1], "turnstile_token": "pass"},
+                       headers={"X-TAW-Session": "s" * 43})
+    assert api.status_code == 401
+    with psycopg.connect(db_url) as c:
+        assert c.execute("SELECT count(*) FROM lookup").fetchone()[0] == 0
+    sign_in(browser)
+    assert 'action="/lookups"' in browser.get("/").text
+    sign_in(browser, "user_stranger", STRANGER)
+    assert browser.get("/").status_code == 403
+
+
+# -- the visitor's IP behind Cloudflare -----------------------------------------------------------
+
+def test_cloudflare_ip_is_believed_only_from_cloudflare():
+    via_cf = {"cf-connecting-ip": "198.51.100.23", "x-real-ip": "172.70.1.2"}           # 172.64.0.0/13
+    assert guard.client_ip(via_cf, "10.0.0.1") == "198.51.100.23"
+    direct = {"cf-connecting-ip": "1.2.3.4", "x-real-ip": "203.0.113.50"}               # not Cloudflare: forged
+    assert guard.client_ip(direct, "10.0.0.1") == "203.0.113.50"
+    assert guard.client_ip({"x-real-ip": "2001:db8::1"}, None) == "2001:db8::1"
+    assert guard.client_ip({"cf-connecting-ip": "1.2.3.4"}, "10.0.0.1") == "10.0.0.1"
+    v6 = {"cf-connecting-ip": "2001:db8::9", "x-real-ip": "2606:4700::1"}
+    assert guard.client_ip(v6, None) == "2001:db8::9"
+
+
+def test_two_networks_give_two_connection_hashes(browser):
+    one = browser.get("/api/v1/connection", headers={"CF-Connecting-IP": "198.51.100.1", "X-Real-IP": "172.70.1.2"})
+    two = browser.get("/api/v1/connection", headers={"CF-Connecting-IP": "198.51.100.2", "X-Real-IP": "172.70.1.2"})
+    same = browser.get("/api/v1/connection", headers={"CF-Connecting-IP": "198.51.100.1", "X-Real-IP": "172.71.9.9"})
+    assert one.json()["connection"] != two.json()["connection"] == two.json()["connection"]
+    assert one.json()["connection"] == same.json()["connection"]
+    assert "198.51" not in one.text
+
+
+def test_goplus_logo_beside_its_result():
+    from taw.report.render import render_html
+    from tests.test_report import built
+    html = str(render_html(built("wdpa-2-26-cv-00087-usdt")[1]))
+    assert '<img src="/static/goplus-logo.svg" alt="GoPlus logo"' in html and "Powered by GoPlus" in html
+    assert "goplus-logo" not in str(render_html(built("edny-1-25-cv-05745-btc")[1]))     # not asked for Bitcoin

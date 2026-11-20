@@ -5,7 +5,7 @@ production, set by TAW_API_URL), passing:
 
   Authorization: Bearer <the __session cookie Clerk keeps in the browser>
   X-TAW-Session: <our own random session id, cookie taw_sid>
-  X-Real-IP:     <the visitor's IP, as Railway's edge gave it to us>
+  X-Real-IP:     <the visitor's IP, worked out by guard.client_ip>
 
 Cookies: taw_sid is HttpOnly, Secure, SameSite=Lax, a random 32-byte id. Forms
 carry a CSRF token, an HMAC of that id with HASH_SALT, checked on every POST.
@@ -65,7 +65,8 @@ class Api:
         sid = request.cookies.get(SESSION_COOKIE)
         if sid:
             headers["X-TAW-Session"] = sid
-        ip = request.headers.get("x-real-ip") or (request.client.host if request.client else None)
+        from taw.guard import client_ip
+        ip = client_ip(request.headers, request.client.host if request.client else None)
         if ip:
             headers["X-Real-IP"] = ip
         r = self.http.request(method, "/api/v1" + path, headers=headers, json=json, params=params)
@@ -161,7 +162,13 @@ FIELDS = ("address", "chain", "asset", "amount", "sent_on", "sending_address", "
 def home(request: Request, address: str = "", api: Api = Depends(get_api)):
     if (r := not_ready(request)) is not None:
         return r
-    who(request, api)
+    me = who(request, api)
+    from taw.guard import lookups_before_sign_in
+    if not lookups_before_sign_in():
+        if not me.get("signed_in"):
+            return page(request, "welcome.html")
+        if not me.get("invited"):
+            return page(request, "invite_only.html", status=403)
     new = ensure_session(request)
     resp = page(request, "index.html", form={"address": address[:100]}, error=None)
     return set_session(resp, request) if new else resp
@@ -182,6 +189,9 @@ def start_lookup(request: Request, api: Api = Depends(get_api), csrf: str = Form
                     error="This form has expired. Please reload the page and try again.")
     if me.get("signed_in") and not me.get("invited"):
         return page(request, "invite_only.html", status=403)
+    from taw.guard import lookups_before_sign_in
+    if not me.get("signed_in") and not lookups_before_sign_in():
+        return RedirectResponse("/sign-in?next=/", status_code=303)
     platform = platform.strip()
     body = {"address": address.strip(), "chain": chain or None, "asset": asset.strip() or None,
             "amount": amount.strip() or None, "sent_on": sent_on or None,

@@ -146,9 +146,9 @@ def _env(html: bool = False) -> Environment:
                       lstrip_blocks=True, keep_trailing_newline=True, autoescape=html)
     env.filters.update(num=num, when=when, day=day, usd=usd, defang=defang)
     if html:
-        env.filters.update(addr=_html_addr, txh=_html_copy, copyable=_html_copy, link=_html_link)
+        env.filters.update(addr=_html_addr, txh=_html_copy, copyable=_html_copy, link=_html_link, goplus=_html_goplus)
     else:
-        env.filters.update(addr=_same, txh=_same, copyable=_same, link=_same)
+        env.filters.update(addr=_same, txh=_same, copyable=_same, link=_same, goplus=_same)
     env.globals.update(when_span=when_span, USED_FOR_WORDS=USED_FOR_WORDS, CREDITS=CREDITS, LIST_NAMES=LIST_NAMES,
                        HISTORY_WORDS=HISTORY_WORDS, SKIP_CHECKS=SKIP_CHECKS)
     env.globals.update(plural=plural, CHECK_TITLES=CHECK_TITLES, STATUS_WORDS=STATUS_WORDS,
@@ -229,6 +229,14 @@ def _html_link(value) -> Markup:
     if not v.startswith("https://"):
         return Markup("{0}").format(v)
     return Markup('<a href="{0}" rel="noopener noreferrer nofollow" target="_blank">{0}</a>').format(v)
+
+
+def _html_goplus(text) -> Markup:
+    """GoPlus's API licence asks for its logo with "Powered by GoPlus" wherever its
+    results are shown. The logo is GoPlus's horizontal logo from its media kit
+    (gopluslabs.io/en/media-kit, downloaded 2026-11-20), served from our own origin."""
+    return Markup('<span class="goplus"><img src="/static/goplus-logo.svg" alt="GoPlus logo" width="104" '
+                  'height="21">{0}</span>').format(text)
 
 
 def _is_heading(line: str) -> bool:

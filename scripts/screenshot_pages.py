@@ -85,11 +85,15 @@ def main(out: pathlib.Path) -> None:
         ("05-shared-report-sdny", f"/reports/{pid}", 390),
         ("06-shared-report-sdny-desktop", f"/reports/{pid}", 1280),
         ("07-my-lookups", "/account", 390),
-        ("08-about", "/about", 390), ("09-privacy", "/privacy", 390), ("10-terms", "/terms", 390),
+        ("08-about", "/about", 390), ("08b-goplus-credit-in-report", f"/lookups/{case3}#claims", 390), ("09-privacy", "/privacy", 390), ("10-terms", "/terms", 390),
     ]
     from playwright.sync_api import sync_playwright
     with sync_playwright() as pw:
         browser = pw.chromium.launch(channel="chrome")
+        signed_in = who["id"]
+        who["id"] = None
+        shoot(browser, base + "/", out / "00-signed-out-welcome.png", 390)
+        who["id"] = signed_in
         for label, path, width in shots:
             shoot(browser, base + path, out / f"{label}.png", width)
         who["id"] = Identity("user_stranger", "stranger@example.org")
@@ -102,10 +106,17 @@ def main(out: pathlib.Path) -> None:
 
 def shoot(browser, url: str, path: pathlib.Path, width: int) -> None:
     page = browser.new_page(viewport={"width": width, "height": 800}, device_scale_factor=2 if width < 600 else 1)
-    page.goto(url.replace("#details", ""), wait_until="load")
+    page.goto(url.replace("#details", "").replace("#claims", ""), wait_until="load")
     page.wait_for_timeout(2500)                     # let the Turnstile widget draw
     if url.endswith("#details"):
         page.evaluate("document.querySelectorAll('details').forEach(d => d.open = true)")
+    if url.endswith("#claims"):
+        page.locator("summary", has_text="Claims about this address").first.screenshot(path=str(path))
+        section = page.locator("details", has=page.locator("summary", has_text="Claims about this address")).first
+        section.screenshot(path=str(path))
+        page.close()
+        print(path.name)
+        return
     wide = page.evaluate("document.documentElement.scrollWidth > window.innerWidth")
     page.screenshot(path=str(path), full_page=True)
     page.close()
