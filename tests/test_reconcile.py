@@ -310,3 +310,27 @@ def test_eip7702_account_skips_the_nonce_check():
     s = dataclasses.replace(snap(nonce=4), eip7702_delegate="0x" + "c" * 40)
     c = check(run_checks(s, batch([], sent=3), []), "tx_count")
     assert c.status == NOT_RUN and "EIP-7702" in c.reason
+
+
+
+def test_optimism_nonce_counts_only_since_the_regenesis():
+    s = dataclasses.replace(snap(nonce=12), chain="optimism", nonce_before_history=7, history_start_block=0)
+    c = check(run_checks(s, batch([], sent=5, chain="optimism"), []), "tx_count")
+    assert c.status == PASSED
+    assert c.details == {"nonce": 12, "transactions_sent": 5, "history_start_block": 0,
+                         "transactions_before_history": 7,
+                         "transactions_before_history_note": "unavailable from any explorer",
+                         "nonce_since_history_start": 5}
+
+
+def test_optimism_nonce_mismatch_since_the_regenesis_fails():
+    s = dataclasses.replace(snap(nonce=12), chain="optimism", nonce_before_history=7, history_start_block=0)
+    c = check(run_checks(s, batch([], sent=4, chain="optimism"), []), "tx_count")
+    assert c.status == FAILED and c.reason == ("The address sent 5 transactions since block 0 (nonce) but the "
+                                               "provider listed 4")
+
+
+def test_optimism_nonce_at_the_regenesis_unread_is_not_run():
+    s = dataclasses.replace(snap(nonce=12), chain="optimism", nonce_before_history=None, history_start_block=0)
+    c = check(run_checks(s, batch([], sent=5, chain="optimism"), []), "tx_count")
+    assert c.status == NOT_RUN and "block 0" in c.reason

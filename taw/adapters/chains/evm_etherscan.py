@@ -131,6 +131,10 @@ class EvmChain:
     confirmations: int         # blocks behind latest that we read at
     stablecoins: tuple[tuple[str, str], ...] = ()   # (contract, display name)
     native_decimals: int = 18
+    # First block of the history explorers can list, when the chain restarted its history
+    # but kept account state. OP Mainnet's regenesis on 2021-11-11 carried nonces and
+    # balances into block 0 and dropped the earlier transactions from every explorer.
+    history_start_block: int | None = None
 
 
 # Freezable stablecoins: each contract's verified ABI on Etherscan was read on
@@ -165,7 +169,7 @@ CHAINS: dict[str, EvmChain] = {c.id: c for c in (
     EvmChain("optimism", 10, "OP Mainnet", "ETH", 10, (
         ("0x0b2c639c533813f4aa9d7837caf62653d097ff85", "USDC (Circle)"),
         ("0x7f5c764cbc14f9669b88837ca1490cca17c31607", "USDC.e (bridged)"),
-    )),
+    ), history_start_block=0),
     EvmChain("base", 8453, "Base", "ETH", 10, (
         ("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", "USDC (Circle)"),
         ("0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42", "EURC (Circle)"),
@@ -670,6 +674,12 @@ class EtherscanAdapter:
         nonce, nonce_sha = self._nonce(addr, tag)
         if nonce_sha:
             shas.append(nonce_sha)
+        before = None
+        start = self.info.history_start_block
+        if start is not None:
+            before, before_sha = self._nonce(addr, hex(start))
+            if before_sha:
+                shas.append(before_sha)
 
         page = self._request({"module": "account", "action": "tokentx", "address": addr, "startblock": 0,
                               "endblock": head.number, "page": 1, "offset": TOKEN_PAGE, "sort": "desc"})
@@ -700,6 +710,7 @@ class EtherscanAdapter:
             native_balance_raw=decode_uint(native_hex), token_balances=tuple(balances),
             is_contract=is_contract, truncated=truncated, source_slug=self.source, raw_sha256=tuple(shas),
             balances_read=tuple(checked), nonce=nonce, eip7702_delegate=delegate,
+            nonce_before_history=before, history_start_block=start,
         )
 
     def fetch_transfers(self, address: str, limit: int = 2000) -> TransferBatch:

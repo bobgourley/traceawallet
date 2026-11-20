@@ -77,6 +77,11 @@ class AddressSnapshot:
     balances_read: tuple[str, ...] | None = None
     nonce: int | None = None                  # EVM: transactions sent, at as_of_block; None if not read
     eip7702_delegate: str | None = None       # EVM: the code an EIP-7702 account delegates to
+    # EVM chains whose visible history starts after the account already existed (OP
+    # Mainnet's regenesis, 2021-11-11): the nonce at that first block, i.e. transactions
+    # sent before it, which no explorer lists. None where history is complete.
+    nonce_before_history: int | None = None
+    history_start_block: int | None = None
 
     def native_balance(self) -> Decimal:
         return Decimal(self.native_balance_raw).scaleb(-self.native_decimals)

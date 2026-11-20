@@ -192,9 +192,23 @@ def tx_count_check(snap: AddressSnapshot, batch: TransferBatch) -> CheckResult:
                            {"delegate": snap.eip7702_delegate})
     if batch.truncated or batch.sent_tx_count is None:
         return CheckResult(name, NOT_RUN, "The history is truncated, so not every transaction sent was read.")
-    details = {"nonce": snap.nonce, "transactions_sent": batch.sent_tx_count}
-    if snap.nonce == batch.sent_tx_count:
+    details: dict = {"nonce": snap.nonce, "transactions_sent": batch.sent_tx_count}
+    expected = snap.nonce
+    if snap.history_start_block is not None:
+        if snap.nonce_before_history is None:
+            return CheckResult(name, NOT_RUN, f"The nonce at block {snap.history_start_block:,}, where this chain's "
+                                              "listed history starts, could not be read.")
+        expected = snap.nonce - snap.nonce_before_history
+        details.update({"history_start_block": snap.history_start_block,
+                        "transactions_before_history": snap.nonce_before_history,
+                        "transactions_before_history_note": "unavailable from any explorer",
+                        "nonce_since_history_start": expected})
+    if expected == batch.sent_tx_count:
         return CheckResult(name, PASSED, None, details)
+    if snap.history_start_block is not None:
+        return CheckResult(name, FAILED, f"The address sent {expected} transactions since block "
+                                         f"{snap.history_start_block:,} (nonce) but the provider listed "
+                                         f"{batch.sent_tx_count}", details)
     return CheckResult(name, FAILED, f"The address has sent {snap.nonce} transactions (nonce) but the provider "
                                      f"listed {batch.sent_tx_count}", details)
 
