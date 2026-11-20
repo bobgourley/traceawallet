@@ -383,3 +383,24 @@ def test_used_up_allowance_waits_for_the_reset_without_counting_an_attempt(tmp_p
     assert when == next_reset() + dt.timedelta(minutes=5)
     assert message.startswith("Blockscout's daily allowance used up, resets at 00:00 UTC.")
     assert "this attempt is not counted" in message
+
+
+# -- steps after the lookup is saved (prices, labels) ------------------------------------------
+
+def test_enrich_notes_are_logged_and_a_failing_step_does_not_fail_the_job(tmp_path):
+    from taw.worker.enrich import run_steps
+
+    def broken(snap, batch, raw_store):
+        raise RuntimeError("feed node down")
+    seen = []
+
+    def enrich(snap, batch, raw_store):
+        seen.append(len(batch.transfers))
+        return run_steps([("prices", lambda *a: "prices: 3 bucket(s) needed"), ("labels", broken)],
+                         snap, batch, raw_store)
+    conn, logs = FakeConn(), []
+    status = handle(job({"chain": "tron", "address": ADDR}), data_conn=conn,
+                    raw_store_factory=lambda: LocalRawStore(tmp_path / "raw"), adapter_for=replay_adapter_for(tmp_path),
+                    actor="worker:test", log=logs.append, store_module=FakeStore(), enrich=enrich)
+    assert status == "done" and seen
+    assert "; prices: 3 bucket(s) needed; labels: not done (RuntimeError: feed node down)" in logs[-1]

@@ -19,7 +19,7 @@ import psycopg
 from taw import config, jobs, store
 from taw.adapters import registry
 from taw.adapters.base import BucketRawStore
-from taw.worker import lookup
+from taw.worker import enrich, lookup
 
 WORKER_ID = f"{socket.gethostname()}-{os.getpid()}"
 ACTOR = f"worker:{WORKER_ID}"
@@ -32,7 +32,7 @@ def connect() -> psycopg.Connection:
 
 
 def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for: Callable,
-           actor: str = ACTOR, log=print, store_module=store) -> str:
+           actor: str = ACTOR, log=print, store_module=store, enrich: Callable | None = None) -> str:
     """Run one claimed job and record its outcome on the job row. Returns the status."""
     if job.attempts > job.max_attempts:     # reclaimed after the worker died too many times
         jobs.mark_failed(data_conn, job.id, f"Gave up after {job.max_attempts} attempts: the worker "
@@ -45,7 +45,8 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         return "failed"
     try:
         outcome = lookup.run_lookup(job.payload, data_conn=data_conn, raw_store=raw_store_factory(),
-                                    actor=actor, adapter_for=adapter_for, store_module=store_module)
+                                    actor=actor, adapter_for=adapter_for, store_module=store_module,
+                                    enrich=enrich)
     except Exception as exc:
         resets_at = lookup.allowance_reset(exc)
         if resets_at is not None:
@@ -76,7 +77,8 @@ def run_once(s3_client=None) -> bool:
         handle(job, data_conn=data_conn,
                raw_store_factory=lambda: store.RecordingRawStore(raw_conn, ACTOR, s3_client=s3_client),
                adapter_for=lambda chain, raw_store: registry.adapter_for(chain, raw_store, state_conn=raw_conn),
-               log=lambda m: print(m, flush=True))
+               log=lambda m: print(m, flush=True),
+               enrich=enrich.for_worker(data_conn=data_conn, state_conn=raw_conn, actor=ACTOR))
         return True
 
 

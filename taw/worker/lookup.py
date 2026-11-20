@@ -32,7 +32,9 @@ class Outcome:
 
 
 def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
-               adapter_for: Callable, store_module=store) -> Outcome:
+               adapter_for: Callable, store_module=store, enrich: Callable | None = None) -> Outcome:
+    """enrich(snap, batch, raw_store) -> list of notes runs after the lookup is saved
+    (prices, labels). It must not raise for a provider problem; the lookup stands."""
     chain, address = read_lookup_payload(payload)
 
     fresh = store_module.fresh_snapshot(data_conn, chain, address)
@@ -48,9 +50,10 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
     saved = store_module.save_lookup(data_conn, actor, snap, batch, recon=recon)
     note = ", truncated at the limit" if batch.truncated else ""
     warning = ("; HISTORY MAY BE INCOMPLETE: " + "; ".join(recon.incomplete_reasons)) if recon.history_incomplete else ""
+    extra = "".join(f"; {n}" for n in (enrich(snap, batch, raw_store) if enrich else []))
     return Outcome(
         f"snapshot {saved.snapshot_id} at block {snap.as_of_block}; {saved.transfers_seen} transfers "
-        f"({saved.transfers_new} new{note}); {saved.addresses_seen} addresses{warning}",
+        f"({saved.transfers_new} new{note}); {saved.addresses_seen} addresses{warning}{extra}",
         reused=False, saved=saved,
     )
 
