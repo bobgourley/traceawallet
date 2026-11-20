@@ -52,3 +52,39 @@ thousands, too many for a first test.
 The complaint's dated transfers (paragraphs 50, 55 and 56) involve row 1, row 6
 and the cluster totals, not these three addresses. Row 6 and row 1 have 1,566
 and 1,643 transactions, which is why they aren't checked here.
+
+## Discrepancies
+
+We tried to work out what the paragraph 44 amounts measure for rows 15, 21 and
+23. No on-chain measure we tried gives them. The complaint doesn't say how its
+figures were computed. Both numbers are recorded in `expected.json`
+(`discrepancies`, D1 to D3), and the checker reports F1 to F3 as DIFFERS with a
+pointer to them.
+
+Read on 2026-11-20 from mempool.space. Blockstream returned the same
+transactions, and row 21's balance and count checks pass, so the history we
+read is complete.
+
+Each address received its funds in 2019 or early 2020 and then held a steady
+balance until 2020-12-28. That day two transactions emptied it. Each had one
+input and one output and paid a fee of 0.00075 BTC.
+
+| Measure tried | Row 15 | Row 21 | Row 23 |
+|---|---|---|---|
+| Paragraph 44 | 0.5084661 | 212.5930613 | 2.16989588 |
+| Total ever received | 0.6067160 | 625.1975312 | 2.27436552 |
+| Moved out on 2020-12-28, including fees | 0.4989664 | 212.5897816 | 2.16661592 |
+| Moved out on 2020-12-28, outputs only | 0.4974664 | 212.5882816 | 2.16511592 |
+| Balance, 1 to 28 December 2020 | 0.4989664 | 212.5897816 | 2.16661592 |
+| Balance, 29 to 31 December 2020 | 0 | 0 | 0 |
+
+The closest figure is the balance held through December until the transfers
+out, the same number as the amount moved out including fees. Paragraph 44 is
+higher than it by 0.0094997 BTC for row 15, 0.0032797 BTC for row 21 and
+0.00327996 BTC for row 23. Rows 21 and 23 differ by almost exactly the same
+amount, and row 15 by about three times that. We have no explanation for the
+pattern and record it as found.
+
+Also tried and not matching: the largest balance each address ever held, the
+largest single output, and the fees counted in other ways (one fee, both fees,
+or each transaction's share).

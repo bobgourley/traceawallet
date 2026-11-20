@@ -257,6 +257,9 @@ def main() -> int:
                 sys.exit(f"Stopped at {name} {fact['id']}: {exc}")
             except Exception as exc:                       # report and carry on with the other facts
                 verdict, detail = "ERROR", f"{type(exc).__name__}: {exc}"
+            recorded = [d["id"] for d in case.get("discrepancies", []) if d["fact"] == fact["id"]]
+            if verdict == "DIFFERS" and recorded:
+                detail += f" (recorded in expected.json as {', '.join(recorded)})"
             print(f"  {fact['id']:<4} ¶{fact['paragraph']:<6} {verdict:<17} {detail}")
     return 0
 

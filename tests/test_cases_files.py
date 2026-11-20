@@ -42,6 +42,11 @@ def test_case_file(path):
             for ref in (c.get("after"), c.get("before")):
                 if ref:
                     assert ids.index(ref) < ids.index(fact["id"]), fact["id"]
+    for d in case.get("discrepancies", []):
+        # A figure no on-chain measure reproduces: both numbers, what was tried, no verdict on the complaint.
+        assert d["fact"] in ids and d["address"].lower() in printed, d["id"]
+        assert d["complaint_figure_btc"] and d["closest_chain_figure_btc"] and d["measures_tested"], d["id"]
+        assert not re.search(r"\b(wrong|error|mistake|incorrect)", json.dumps(d).lower()), d["id"]
 
 
 @pytest.mark.parametrize("path", CASES, ids=[p.parent.name for p in CASES])
