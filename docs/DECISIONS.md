@@ -3,6 +3,76 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (night): Bitcoin through Esplora
+
+**mempool.space is primary and Blockstream is the cross-check, behind one
+client.** Both speak the Esplora REST API (`taw/adapters/chains/btc_esplora.py`,
+docs at github.com/Blockstream/esplora/blob/master/API.md). Probed on
+2026-11-20 with one tip-height call each: both answered height 976,665 with
+HTTP 200 and no rate-limit headers. mempool.space caches for 1 second and
+Blockstream for 10. Neither publishes a limit, and mempool.space's docs warn
+of 429s and bans, so requests are paced at 2 a second. 429 and 5xx answers are
+retried with growing waits, honouring Retry-After. Neither needs a key.
+
+Their terms are silent (data-sources.md). Self-hosting either one is the clean
+path for the public site and stays open.
+
+**Addresses.** P2PKH (`1…`) and P2SH (`3…`) are checked with the base58
+checksum. SegWit v0 (`bc1q…`) is checked as bech32 (BIP-173), and taproot and
+later versions (`bc1p…`) as bech32m (BIP-350). Testnet and mixed-case bech32
+are refused. bech32 is stored lower case.
+
+**One height.** Everything is as of the tip height read at the start.
+Unconfirmed transactions are ignored and counted. Confirmed transactions above
+the height, which arrive if a block is mined during the lookup, are read, set
+aside and counted. The provider's address totals and unspent outputs are
+corrected by exactly those transactions, so every comparison is at one height.
+
+**Rows follow migration 0003.** A `utxo_in` is an input, with `from` set; a
+`utxo_out` is an output, with `to` set. `event_index` is the real input or
+output position. For each transaction, every input and output of this address
+is stored, plus the other parties' inputs and outputs, capped at 200 per
+transaction. Capped transactions are listed in the check
+`other_party_rows_capped`, which does not mark the history incomplete, since
+our own rows are never capped. Coinbase inputs and outputs without an address
+are skipped. Amounts are in satoshis, decimals 8.
+
+**Truncation.** Up to 1,000 transactions, newest first. Past that the batch is
+truncated, and paging continues to the end of the history to fetch the
+earliest transaction, up to 400 pages (10,000 transactions). Esplora lists
+only newest first, so there is no shortcut to the oldest. If the end isn't
+reached, `earliest_transaction` fails and first activity is unknown. A
+truncated history is never reconciled.
+
+**Checks, under the same names as the other chains:**
+
+- `native_reconciliation`: received minus spent from our rows must equal the
+  provider's address totals and the sum of its unspent outputs.
+- `tx_count`: the transactions we stored must equal the provider's count at
+  the height.
+
+Bitcoin has no tokens, so the token checks are left out. An adapter's own
+check now replaces the generic one of the same name.
+
+**Never GoPlus for Bitcoin.** `registry.goplus_allowed("btc")` is false, and a
+test holds it there.
+
+**Live cross-check, 2026-11-20.** Address
+`bc1q4t93pz7k8xaqsckmh30we380xw8ggtq4xanvmp` at height 976,672, through
+mempool.space and Blockstream:
+
+- No differences: 14 transactions, 154 rows, balance 1,733,405 sat.
+- All checks passed. The balance matched three ways (our rows, the provider's
+  totals, the unspent outputs), and the count was 14 = 14.
+- mempool.space's own address page showed the same balance (0.01733405), total
+  received (0.05660986), sent (0.03927581) and 14 transactions, with first
+  and last activity at the same seconds.
+- Blockstream's page renders only with JavaScript and could not be read
+  automatically. Its API answers matched mempool.space's exactly.
+
+The wallet also shows why 0003 forbids "sent to": each of its six spends
+returned change to itself.
+
 ## 2026-11-20 (evening): regenesis, spam gaps, GoPlus, NBCTF
 
 **OP Mainnet's regenesis hides early transactions from every explorer.** On
