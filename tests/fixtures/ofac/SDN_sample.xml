@@ -1,0 +1,670 @@
+<?xml version="1.0" standalone="yes"?>
+<sdnList xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/XML">
+  <publshInformation>
+    <Publish_Date>11/19/2026</Publish_Date>
+    <Record_Count>19595</Record_Count>
+  </publshInformation>
+  <sdnEntry>
+    <uid>26323</uid>
+    <firstName>Guanghua</firstName>
+    <lastName>ZHENG</lastName>
+    <sdnType>Individual</sdnType>
+    <programList>
+      <program>SDNTK</program>
+    </programList>
+    <idList>
+      <id>
+        <uid>16995</uid>
+        <idType>Identification Number</idType>
+        <idNumber>310108195511041616</idNumber>
+        <idCountry>China</idCountry>
+      </id>
+      <id>
+        <uid>17254</uid>
+        <idType>Chinese Commercial Code</idType>
+        <idNumber>6774 1639 5478</idNumber>
+      </id>
+      <id>
+        <uid>17541</uid>
+        <idType>Passport</idType>
+        <idNumber>E51809923</idNumber>
+        <idCountry>China</idCountry>
+        <issueDate>25 May 2015</issueDate>
+        <expirationDate>24 May 2025</expirationDate>
+      </id>
+      <id>
+        <uid>130732</uid>
+        <idType>Gender</idType>
+        <idNumber>Male</idNumber>
+      </id>
+      <id>
+        <uid>131739</uid>
+        <idType>Digital Currency Address - LTC</idType>
+        <idNumber>LaizKtS5DUhPuP1nTQcc83MS7HwK6vk85z</idNumber>
+      </id>
+      <id>
+        <uid>131736</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>33Kja69SQVc8kozpoP7Qw6HFtGxHkiWzTz</idNumber>
+      </id>
+      <id>
+        <uid>131737</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>3MkUNScqf21EcfWq6T4x2MFgBeSTqhB5t6</idNumber>
+      </id>
+      <id>
+        <uid>131797</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>18uKfaUjgG52rVeXEi3wxnveww7zZuECtE</idNumber>
+      </id>
+      <id>
+        <uid>131742</uid>
+        <idType>Email Address</idType>
+        <idNumber>zhenguanghua1955@outlook.com</idNumber>
+      </id>
+      <id>
+        <uid>131743</uid>
+        <idType>Email Address</idType>
+        <idNumber>zhenguanghua1955@gmail.com</idNumber>
+      </id>
+    </idList>
+    <nationalityList>
+      <nationality>
+        <uid>30735</uid>
+        <country>China</country>
+        <mainEntry>true</mainEntry>
+      </nationality>
+    </nationalityList>
+    <citizenshipList>
+      <citizenship>
+        <uid>30733</uid>
+        <country>China</country>
+        <mainEntry>true</mainEntry>
+      </citizenship>
+    </citizenshipList>
+    <dateOfBirthList>
+      <dateOfBirthItem>
+        <uid>30728</uid>
+        <dateOfBirth>04 Nov 1955</dateOfBirth>
+        <mainEntry>true</mainEntry>
+      </dateOfBirthItem>
+    </dateOfBirthList>
+    <placeOfBirthList>
+      <placeOfBirthItem>
+        <uid>31761</uid>
+        <placeOfBirth>Shanghai, China</placeOfBirth>
+        <mainEntry>true</mainEntry>
+      </placeOfBirthItem>
+    </placeOfBirthList>
+  </sdnEntry>  <sdnEntry>
+    <uid>29584</uid>
+    <firstName>Danil</firstName>
+    <lastName>POTEKHIN</lastName>
+    <sdnType>Individual</sdnType>
+    <programList>
+      <program>CYBER2</program>
+    </programList>
+    <idList>
+      <id>
+        <uid>136443</uid>
+        <idType>Gender</idType>
+        <idNumber>Male</idNumber>
+      </id>
+      <id>
+        <uid>136444</uid>
+        <idType>Email Address</idType>
+        <idNumber>potekhinl4@bk.ru</idNumber>
+      </id>
+      <id>
+        <uid>136445</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1Q9UAQbcDezmyouFrzt94t4dSMxgsUfW1X</idNumber>
+      </id>
+      <id>
+        <uid>136446</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1Kys8fqDen8NGFUJ6AFcXfFW5qquuTH4eh</idNumber>
+      </id>
+      <id>
+        <uid>136447</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0x7F367cC41522cE07553e823bf3be79A889DEbe1B</idNumber>
+      </id>
+      <id>
+        <uid>154595</uid>
+        <idType>Secondary sanctions risk:</idType>
+        <idNumber>Ukraine-/Russia-Related Sanctions Regulations, 31 CFR 589.201</idNumber>
+      </id>
+    </idList>
+    <akaList>
+      <aka>
+        <uid>46410</uid>
+        <type>a.k.a.</type>
+        <category>weak</category>
+        <lastName>cronuswar</lastName>
+      </aka>
+      <aka>
+        <uid>46411</uid>
+        <type>a.k.a.</type>
+        <category>weak</category>
+        <lastName>SERGEY, Kireev Valerievich</lastName>
+      </aka>
+    </akaList>
+    <addressList>
+      <address>
+        <uid>44630</uid>
+        <city>Voronezh</city>
+        <country>Russia</country>
+      </address>
+    </addressList>
+    <dateOfBirthList>
+      <dateOfBirthItem>
+        <uid>36440</uid>
+        <dateOfBirth>14 Sep 1995</dateOfBirth>
+        <mainEntry>true</mainEntry>
+      </dateOfBirthItem>
+      <dateOfBirthItem>
+        <uid>36441</uid>
+        <dateOfBirth>14 Sep 1990</dateOfBirth>
+        <mainEntry>false</mainEntry>
+      </dateOfBirthItem>
+      <dateOfBirthItem>
+        <uid>36442</uid>
+        <dateOfBirth>08 Aug 1990</dateOfBirth>
+        <mainEntry>false</mainEntry>
+      </dateOfBirthItem>
+    </dateOfBirthList>
+  </sdnEntry>  <sdnEntry>
+    <uid>33151</uid>
+    <lastName>SUEX OTC, S.R.O.</lastName>
+    <sdnType>Entity</sdnType>
+    <programList>
+      <program>CYBER2</program>
+    </programList>
+    <idList>
+      <id>
+        <uid>22833</uid>
+        <idType>Legal Entity Number</idType>
+        <idNumber>5299007NTWCC3U23WM81</idNumber>
+        <idCountry>Czech Republic</idCountry>
+      </id>
+      <id>
+        <uid>22853</uid>
+        <idType>Company Number</idType>
+        <idNumber>07486049</idNumber>
+        <idCountry>Czech Republic</idCountry>
+      </id>
+      <id>
+        <uid>143100</uid>
+        <idType>Digital Currency Address - USDT</idType>
+        <idNumber>0x2f389ce8bd8ff92de3402ffce4691d17fc4f6535</idNumber>
+      </id>
+      <id>
+        <uid>143101</uid>
+        <idType>Digital Currency Address - USDT</idType>
+        <idNumber>0x19aa5fe80d33a56d56c78e82ea5e50e5d80b4dff</idNumber>
+      </id>
+      <id>
+        <uid>143102</uid>
+        <idType>Digital Currency Address - USDT</idType>
+        <idNumber>1KUUJPkyDhamZXgpsyXqNGc3x1QPXtdhgz</idNumber>
+      </id>
+      <id>
+        <uid>143103</uid>
+        <idType>Digital Currency Address - USDT</idType>
+        <idNumber>1CF46Rfbp97absrs7zb7dFfZS6qBXUm9EP</idNumber>
+      </id>
+      <id>
+        <uid>143104</uid>
+        <idType>Digital Currency Address - USDT</idType>
+        <idNumber>1LrxsRd7zNuxPJcL5rttnoeJFy1y4AffYY</idNumber>
+      </id>
+      <id>
+        <uid>143105</uid>
+        <idType>Digital Currency Address - USDT</idType>
+        <idNumber>1Df883c96LVauVsx9FEgnsourD8DELwCUQ</idNumber>
+      </id>
+      <id>
+        <uid>143107</uid>
+        <idType>Digital Currency Address - USDT</idType>
+        <idNumber>16iWn2J1McqjToYLHSsAyS6En3QA8YQ91H</idNumber>
+      </id>
+      <id>
+        <uid>143050</uid>
+        <idType>Organization Established Date</idType>
+        <idNumber>25 Sep 2018</idNumber>
+      </id>
+      <id>
+        <uid>142980</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>12HQDsicffSBaYdJ6BhnE22sfjTESmmzKx</idNumber>
+      </id>
+      <id>
+        <uid>143000</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1L4ncif9hh9TnUveqWq77HfWWt6CJWtrnb</idNumber>
+      </id>
+      <id>
+        <uid>143001</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>13mnk8SvDGqsQTHbiGiHBXqtaQCUKfcsnP</idNumber>
+      </id>
+      <id>
+        <uid>143002</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1Edue8XZCWNoDBNZgnQkCCivDyr9GEo4x6</idNumber>
+      </id>
+      <id>
+        <uid>143003</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1ECeZBxCVJ8Wm2JSN3Cyc6rge2gnvD3W5K</idNumber>
+      </id>
+      <id>
+        <uid>143005</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1J9oGoAiHeRfeMZeUnJ9W7RpV55CdKtgYE</idNumber>
+      </id>
+      <id>
+        <uid>143006</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1295rkVyNfFpqZpXvKGhDqwhP1jZcNNDMV</idNumber>
+      </id>
+      <id>
+        <uid>143007</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1LiNmTUPSJEd92ZgVJjAV3RT9BzUjvUCkx</idNumber>
+      </id>
+      <id>
+        <uid>143008</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1LrxsRd7zNuxPJcL5rttnoeJFy1y4AffYY</idNumber>
+      </id>
+      <id>
+        <uid>143046</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1KUUJPkyDhamZXgpsyXqNGc3x1QPXtdhgz</idNumber>
+      </id>
+      <id>
+        <uid>143047</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1CF46Rfbp97absrs7zb7dFfZS6qBXUm9EP</idNumber>
+      </id>
+      <id>
+        <uid>143049</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1Df883c96LVauVsx9FEgnsourD8DELwCUQ</idNumber>
+      </id>
+      <id>
+        <uid>143060</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>bc1qdt3gml5z5n50y5hm04u2yjdphefkm0fl2zdj68</idNumber>
+      </id>
+      <id>
+        <uid>143106</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1B64QRxfaa35MVkf7sDjuGUYAP5izQt7Qi</idNumber>
+      </id>
+      <id>
+        <uid>143011</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0x2f389ce8bd8ff92de3402ffce4691d17fc4f6535</idNumber>
+      </id>
+      <id>
+        <uid>143014</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0x19aa5fe80d33a56d56c78e82ea5e50e5d80b4dff</idNumber>
+      </id>
+      <id>
+        <uid>143020</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0xe7aa314c77f4233c18c6cc84384a9247c0cf367b</idNumber>
+      </id>
+      <id>
+        <uid>143063</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0x308ed4b7b49797e1a98d3818bff6fe5385410370</idNumber>
+      </id>
+      <id>
+        <uid>154602</uid>
+        <idType>Secondary sanctions risk:</idType>
+        <idNumber>Ukraine-/Russia-Related Sanctions Regulations, 31 CFR 589.201</idNumber>
+      </id>
+      <id>
+        <uid>142960</uid>
+        <idType>Website</idType>
+        <idNumber>suex.io</idNumber>
+      </id>
+    </idList>
+    <akaList>
+      <aka>
+        <uid>52229</uid>
+        <type>a.k.a.</type>
+        <category>weak</category>
+        <lastName>SUCCESSFUL EXCHANGE</lastName>
+      </aka>
+    </akaList>
+    <addressList>
+      <address>
+        <uid>49822</uid>
+        <address1>Presnenskaya Embankment, 12</address1>
+        <address2>Federation East Tower</address2>
+        <address3>Floor 31, Suite Q</address3>
+        <city>Moscow</city>
+        <postalCode>123317</postalCode>
+        <country>Russia</country>
+      </address>
+      <address>
+        <uid>49823</uid>
+        <address1>Skorepka 1058/8 Stare Mesto</address1>
+        <city>Prague</city>
+        <postalCode>110 00</postalCode>
+        <country>Czech Republic</country>
+      </address>
+    </addressList>
+  </sdnEntry>  <sdnEntry>
+    <uid>38419</uid>
+    <firstName>Ahmad</firstName>
+    <lastName>KHATIBI AGHADA</lastName>
+    <sdnType>Individual</sdnType>
+    <programList>
+      <program>CYBER2</program>
+      <program>IFSR</program>
+      <program>IRGC</program>
+    </programList>
+    <idList>
+      <id>
+        <uid>27719</uid>
+        <idType>National ID No.</idType>
+        <idNumber>4449889711</idNumber>
+        <idCountry>Iran</idCountry>
+      </id>
+      <id>
+        <uid>27720</uid>
+        <idType>Passport</idType>
+        <idNumber>K30843288</idNumber>
+        <idCountry>Iran</idCountry>
+      </id>
+      <id>
+        <uid>154393</uid>
+        <idType>Additional Sanctions Information -</idType>
+        <idNumber>Subject to Secondary Sanctions</idNumber>
+      </id>
+      <id>
+        <uid>153720</uid>
+        <idType>Gender</idType>
+        <idNumber>Male</idNumber>
+      </id>
+      <id>
+        <uid>153723</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1H939dom7i4WDLCKyGbXUp3fs9CSTNRzgL</idNumber>
+      </id>
+      <id>
+        <uid>153724</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>bc1q3y5v2khlyvemcz042wl98dzflywr8ghglqws6s</idNumber>
+      </id>
+      <id>
+        <uid>153725</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>bc1qx3e2axj3wsfn0ndtvlwmkghmmgm4583nqg8ngk</idNumber>
+      </id>
+    </idList>
+    <akaList>
+      <aka>
+        <uid>60173</uid>
+        <type>a.k.a.</type>
+        <category>strong</category>
+        <lastName>KHATIBI</lastName>
+        <firstName>Ahmad</firstName>
+      </aka>
+    </akaList>
+    <addressList>
+      <address>
+        <uid>57449</uid>
+        <country>Iran</country>
+      </address>
+    </addressList>
+    <nationalityList>
+      <nationality>
+        <uid>53721</uid>
+        <country>Iran</country>
+        <mainEntry>true</mainEntry>
+      </nationality>
+    </nationalityList>
+    <dateOfBirthList>
+      <dateOfBirthItem>
+        <uid>53719</uid>
+        <dateOfBirth>21 Mar 1977</dateOfBirth>
+        <mainEntry>true</mainEntry>
+      </dateOfBirthItem>
+    </dateOfBirthList>
+    <placeOfBirthList>
+      <placeOfBirthItem>
+        <uid>53722</uid>
+        <placeOfBirth>Ardakan, Yazd Province, Iran</placeOfBirth>
+        <mainEntry>true</mainEntry>
+      </placeOfBirthItem>
+    </placeOfBirthList>
+  </sdnEntry>  <sdnEntry>
+    <uid>42498</uid>
+    <firstName>Hyon Sop</firstName>
+    <lastName>SIM</lastName>
+    <sdnType>Individual</sdnType>
+    <remarks>(Linked To: KOREA KWANGSON BANKING CORP)</remarks>
+    <programList>
+      <program>NPWMD</program>
+    </programList>
+    <idList>
+      <id>
+        <uid>32060</uid>
+        <idType>Passport</idType>
+        <idNumber>109484100</idNumber>
+        <idCountry>Korea, North</idCountry>
+        <expirationDate>24 Dec 2024</expirationDate>
+      </id>
+      <id>
+        <uid>161248</uid>
+        <idType>Transactions Prohibited For Persons Owned or Controlled By U.S. Financial Institutions:</idType>
+        <idNumber>North Korea Sanctions Regulations section 510.214</idNumber>
+      </id>
+      <id>
+        <uid>196597</uid>
+        <idType>Digital Currency Address - TRX</idType>
+        <idNumber>TGXE9dGWawjfd3xqFSho1h1bRbRv9wUGrF</idNumber>
+      </id>
+      <id>
+        <uid>196598</uid>
+        <idType>Digital Currency Address - TRX</idType>
+        <idNumber>TPDLpXxPcaSsupEZ3yrVksmNkYP5SLeKxu</idNumber>
+      </id>
+      <id>
+        <uid>196599</uid>
+        <idType>Digital Currency Address - TRX</idType>
+        <idNumber>TNTFhgFoKH4srBMiWbfrVFqP2AThSmdwf1</idNumber>
+      </id>
+      <id>
+        <uid>196600</uid>
+        <idType>Digital Currency Address - TRX</idType>
+        <idNumber>TXhf9nU9bjo1j9z5qEesHdr6gtdndfnA4T</idNumber>
+      </id>
+      <id>
+        <uid>196601</uid>
+        <idType>Digital Currency Address - TRX</idType>
+        <idNumber>TK17wfSPp32RWrnzZPrGpv7TxdNFvvvE2s</idNumber>
+      </id>
+      <id>
+        <uid>196602</uid>
+        <idType>Digital Currency Address - TRX</idType>
+        <idNumber>TYeQD2VddTZ9NkFkAnT9DD8cUGetGUQZB2</idNumber>
+      </id>
+      <id>
+        <uid>161088</uid>
+        <idType>Digital Currency Address - ARB</idType>
+        <idNumber>0x4f47bc496083c727c5fbe3ce9cdf2b0f6496270c</idNumber>
+      </id>
+      <id>
+        <uid>161089</uid>
+        <idType>Digital Currency Address - BSC</idType>
+        <idNumber>0x4f47bc496083c727c5fbe3ce9cdf2b0f6496270c</idNumber>
+      </id>
+      <id>
+        <uid>160979</uid>
+        <idType>Gender</idType>
+        <idNumber>Male</idNumber>
+      </id>
+      <id>
+        <uid>160982</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0x4f47bc496083c727c5fbe3ce9cdf2b0f6496270c</idNumber>
+      </id>
+      <id>
+        <uid>196604</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0xd04E33461FEA8302c5E1e13895b60cEe8AEfda7F</idNumber>
+      </id>
+      <id>
+        <uid>196605</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0x76EA76CA4Eb727f18956aB93445a94c5280412B9</idNumber>
+      </id>
+      <id>
+        <uid>196606</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0xFb3eFf152ea55D1BfA04Dbdd509A80fD7b72cdEB</idNumber>
+      </id>
+      <id>
+        <uid>196607</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0xFda1Ec4A6178d4916b001a065422D31EBE5F62FF</idNumber>
+      </id>
+      <id>
+        <uid>196608</uid>
+        <idType>Digital Currency Address - ETH</idType>
+        <idNumber>0x747AFB5c7A7fc34B547cD0FDEbf9b91759C5a52b</idNumber>
+      </id>
+      <id>
+        <uid>161249</uid>
+        <idType>Secondary sanctions risk:</idType>
+        <idNumber>North Korea Sanctions Regulations, sections 510.201 and 510.210</idNumber>
+      </id>
+    </idList>
+    <akaList>
+      <aka>
+        <uid>65972</uid>
+        <type>a.k.a.</type>
+        <category>strong</category>
+        <lastName>SIM</lastName>
+        <firstName>Hyo'n-so'p</firstName>
+      </aka>
+    </akaList>
+    <addressList>
+      <address>
+        <uid>63368</uid>
+        <city>Dandong</city>
+        <country>China</country>
+      </address>
+    </addressList>
+    <nationalityList>
+      <nationality>
+        <uid>60981</uid>
+        <country>Korea, North</country>
+        <mainEntry>true</mainEntry>
+      </nationality>
+    </nationalityList>
+    <dateOfBirthList>
+      <dateOfBirthItem>
+        <uid>60978</uid>
+        <dateOfBirth>25 Nov 1983</dateOfBirth>
+        <mainEntry>true</mainEntry>
+      </dateOfBirthItem>
+    </dateOfBirthList>
+    <placeOfBirthList>
+      <placeOfBirthItem>
+        <uid>60980</uid>
+        <placeOfBirth>Pyongyang, North Korea</placeOfBirth>
+        <mainEntry>true</mainEntry>
+      </placeOfBirthItem>
+    </placeOfBirthList>
+  </sdnEntry>  <sdnEntry>
+    <uid>45404</uid>
+    <firstName>Mingming</firstName>
+    <lastName>WANG</lastName>
+    <sdnType>Individual</sdnType>
+    <remarks>(Linked To: HEBEI GUANLANG BIOTECHNOLOGY CO., LTD.)</remarks>
+    <programList>
+      <program>ILLICIT-DRUGS-EO14059</program>
+    </programList>
+    <idList>
+      <id>
+        <uid>35155</uid>
+        <idType>National ID No.</idType>
+        <idNumber>130531198903120212</idNumber>
+        <idCountry>China</idCountry>
+      </id>
+      <id>
+        <uid>165919</uid>
+        <idType>Gender</idType>
+        <idNumber>Male</idNumber>
+      </id>
+      <id>
+        <uid>165920</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>1MLPqwaFFUBZePTjpR3nxRoK19Cv9mPCc7</idNumber>
+      </id>
+      <id>
+        <uid>165923</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>3HePkztPU6UsdENxnyQHFrdZA6eVKeMtvz</idNumber>
+      </id>
+      <id>
+        <uid>165924</uid>
+        <idType>Digital Currency Address - XBT</idType>
+        <idNumber>TUCsTq7TofTCJRRoHk6RvhMoS2mJLm5Yzq</idNumber>
+      </id>
+      <id>
+        <uid>165925</uid>
+        <idType>Digital Currency Address - USDT</idType>
+        <idNumber>0xfac583c0cf07ea434052c49115a4682172ab6b4f</idNumber>
+      </id>
+    </idList>
+    <addressList>
+      <address>
+        <uid>67574</uid>
+        <address1>No. 509 Fengjiazhai Village</address1>
+        <address2>Fengjiazhai Township</address2>
+        <address3>Guangzong County</address3>
+        <city>Xingtai City</city>
+        <stateOrProvince>Hebei</stateOrProvince>
+        <country>China</country>
+      </address>
+    </addressList>
+    <nationalityList>
+      <nationality>
+        <uid>65918</uid>
+        <country>China</country>
+        <mainEntry>true</mainEntry>
+      </nationality>
+    </nationalityList>
+    <citizenshipList>
+      <citizenship>
+        <uid>65916</uid>
+        <country>China</country>
+        <mainEntry>true</mainEntry>
+      </citizenship>
+    </citizenshipList>
+    <dateOfBirthList>
+      <dateOfBirthItem>
+        <uid>65910</uid>
+        <dateOfBirth>12 Mar 1989</dateOfBirth>
+        <mainEntry>true</mainEntry>
+      </dateOfBirthItem>
+    </dateOfBirthList>
+    <placeOfBirthList>
+      <placeOfBirthItem>
+        <uid>65913</uid>
+        <placeOfBirth>Hebei, China</placeOfBirth>
+        <mainEntry>true</mainEntry>
+      </placeOfBirthItem>
+    </placeOfBirthList>
+  </sdnEntry></sdnList>
