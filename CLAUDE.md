@@ -63,8 +63,10 @@ Out of scope: multi-hop tracing, PDF export, alerts, public API keys, file uploa
 
     migrations/          numbered SQL files
     scripts/migrate.py   migration runner
-    taw/main.py          web app (will split into api/ and web/)
+    taw/main.py          web app; mounts the API
+    taw/api/             /api/v1 routes (off unless TAW_API_ENABLED=1)
+    taw/lookups.py       private lookups, their jobs, transaction matching runs
     taw/worker/          job loop
     taw/adapters/        chains/, labels/, prices/ (to be built)
-    taw/report/          builder, canonical JSON, hash, templates (to be built)
+    taw/report/          builder, canonical JSON, hash, templates
     tests/cases/         five ground-truth cases from DOJ forfeiture complaints

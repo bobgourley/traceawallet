@@ -3,6 +3,110 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (evening): Reports, matching and the lookup API
+
+**A report is one snapshot.** One chain, one address, one snapshot, and the
+chain data comes only from the source that produced that snapshot. The
+transfers are that source's rows in transactions touching the address, up to
+the snapshot block and recorded by the time the snapshot was taken. Labels,
+label checks and prices are read as they stood at a cut-off, `labels_as_of`,
+which is part of the report. Building again from the same snapshot with the
+same cut-off gives the same data and the same sha256, and the same build is
+stored once (`report.snapshot_id`, migration 0017). The hash covers the
+canonical JSON the 0001 schema comment names. The canonical form refuses
+floats, dates and very large integers rather than guessing how to print them,
+so amounts and times are strings.
+
+**What is outside the hash.** The prior-lookup count changes after a report is
+built, so it is read from `lookup_count` when the report is shown, bucketed
+(none, 1, 2 to 5, 6 to 20, more than 20). It is never part of `report.data`.
+
+**Wording lives in templates.** `report.data` holds facts, codes and numbers.
+All prose is in `taw/report/templates/`. A test fails if assessment words
+(scam, fraud, safe, clean, suspicious and the like) appear anywhere outside
+the two fixed sections: the recovery-scam warning and the IC3 checklist. Both
+are marked as drafts until the owner approves them.
+
+**Set apart, neutrally.** Three kinds of transfer are listed on their own and
+left out of the first-hop lists:
+- zero-value transfers
+- tiny ones: below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC
+- tokens we don't recognise
+
+A token is identified by its contract. The fixtures show why: they hold tokens
+named "USDT" and "USDC" from other contracts, and symbols with Cyrillic
+letters and invisible characters, which the report prints as `<U+2063>` and
+the like.
+
+**Lookalike addresses (added without being asked).** The S.D.N.Y. address has
+small funders such as `TWzkby…KBqchq` that begin and end like its largest
+destination `TWzSi…KBqchq`. That is the address the complaint calls "TWzSi
+Entity A". The report points out any first-hop address that shares its first
+two characters after the prefix and its last four with another one in the same
+report, and says to check every character. It makes no claim about why.
+
+**Prices.** USD comes only from stored Chainlink rows. With no row the report
+says "no price available" and leaves the figure out; it is never counted as
+zero. The share held in freezable stablecoins is worked out only when every
+holding has a price. Production has no price rows yet, so for now every
+figure reads "no price available".
+
+**Matching** (`taw/matching.py`). The result is stored on the lookup row only
+(`lookup.match_result`). The audit trigger on `lookup` logs ids only, so the
+inputs and the result never reach the event log, and `lookup_redact()` clears
+them.
+
+How it matches:
+- **With a hash.** The transaction is read directly (`fetch_transaction`, new on
+  every chain adapter), at any age. If it pays a different address the result
+  says so and lists the addresses it paid.
+- **Without a hash.** It tries sender, amount and date, then amount and date.
+  The amount received may be up to 1% below the amount stated, plus rounding of
+  the last digit given. The date allows a day either side, in UTC.
+- **More than one fit.** All candidates are returned and none is picked.
+- **Nothing found.** The result says whether that settles it. It doesn't when
+  the history read was truncated before the date given.
+- **After a match.** It lists the next outgoing transfers of the same asset,
+  with the sentence that this does not show they were the victim's funds.
+  Zero-value transfers are left out of that list, because others can create
+  them.
+
+The case 3 example: A.T.'s 242,209.53 USDC was one of 15 transfers in a
+Coinbase batch transaction, and 242,209.413589 USDC arrived. The next USDC out
+is the 230,000 to `0x5842b2…` that paragraph 22 describes.
+
+**Jobs.** A lookup starts one `address_lookup` job per chain: three for a 0x
+address (Ethereum, Arbitrum One, OP Mainnet). Jobs are still shared, and
+`lookup_job` records which ones a lookup started. When the victim gave a hash
+or an amount, one `lookup_match` job waits for those jobs to finish. Its
+payload is the lookup id and nothing else. After an address lookup the worker
+builds the report and recounts `lookup_count`; a failure there is a note, not
+a failed lookup.
+
+**The API** (`taw/api/`): `POST /api/v1/lookups`, `GET /api/v1/lookups/{id}`
+and `GET /api/v1/reports/{public_id}`.
+- **Off by default.** Every route is off unless `TAW_API_ENABLED=1`, and the
+  setting stays off in production until sign-in, Turnstile and rate limits
+  exist. With it off the routes answer 404. The OpenAPI page is turned off too.
+- **Who is asking.** Until Clerk is wired in, the caller names their account in
+  an `X-TAW-User` header. That is a stand-in for tests only.
+- **Who can read what.** A lookup is readable by its owner only; anyone else
+  gets the same 404 as for a lookup that doesn't exist. A report is readable by
+  any signed-in caller holding its public id, because it holds nothing about
+  who asked.
+
+**Fixtures** (`tests/fixtures/reports/`, `scripts/record_report_fixtures.py`).
+One address per case, recorded on 2026-11-20 with no Blockscout calls:
+- Tron through TronGrid: 206 and 29 requests
+- Bitcoin through mempool.space: 6 requests
+- Ethereum through Etherscan, which is for tests only: 47 and 42 requests
+- GoPlus: four calls from a laptop, outside the worker's ledger
+
+The labels, blacklist events and list dates were exported from production
+with a read-only script. The response bodies stay out of the repo; every
+record keeps its sha256. The golden files are `report.json` and `report.txt`
+per case.
+
 ## 2026-11-20 (afternoon): Burned funds: a global index of blacklist events
 
 **The problem.** Tether can destroy a frozen address's USDT
@@ -1155,8 +1259,11 @@ the live run on Railway.
 
 - Services connect as `postgres`, the owner. 0001 defines a restricted
   `taw_app` role that is not used yet.
-- Nothing yet records lookups in `lookup` or updates `lookup_count`. The
-  worker only fetches and stores observations.
+- The lookup API records lookups and the worker updates `lookup_count`, but
+  the API is off in production (`TAW_API_ENABLED`) until Clerk sign-in,
+  Turnstile and per-account rate limits exist. `X-TAW-User` is a test stand-in.
+- The recovery-scam warning and the IC3 checklist in every report are drafts
+  awaiting the owner's approval.
 - Etherscan's API Terms limit redistribution, archiving and retention. Decided
   2026-11-19: display only, no public API, and a purge script exists. Since
   then Etherscan is used for tests and cross-checks only.
