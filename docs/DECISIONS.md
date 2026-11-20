@@ -3,6 +3,108 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (later): Blockscout fixed; every check stored separately
+
+**Internal transfers: only the finished range (owner's choice, option 1).**
+Blockscout answers status "2" for any range with blocks it has not finished
+indexing. The adapter finds the finished range by binary search on that
+status, about 12 calls for each end. It caches the range per chain for an
+hour, reads internal transfers only inside it, and records the range on the
+snapshot (`internal_from_block`, `internal_to_block`, migration 0008).
+
+Nothing outside the range counts as checked. Native reconciliation does not
+run unless the range is the whole history. A page that still answers status
+"2" inside the range fails the lookup, and the lookup is retried.
+
+**Tokens come from Blockscout's REST list.** It carries the real log index. On
+the test wallet that is 32 for the first USDT transfer, the same as both
+transaction receipts. The per-transaction list holds every transfer in the
+transaction, so it is filtered to this address.
+
+**Two-list check.** Blockscout's Etherscan-style token list is still read. It
+must agree with the REST list, as a multiset of (tx, contract, from, to,
+amount), over the blocks both cover. If not, `token_lists_agree` fails and the
+snapshot is marked incomplete. The Etherscan adapter's equivalent check is
+`token_list_matches_logs`.
+
+**Every check is stored separately** in `address_snapshot.checks`, each with a
+status of passed, failed or not_run, a reason and its numbers:
+
+| Check | What it compares |
+|---|---|
+| `stablecoin_reconciliation` | Each freezable stablecoin's balance against in minus out. Marks incomplete if it fails. |
+| `other_token_reconciliation` | The same for other tokens. Informational only. |
+| `native_reconciliation` | The native balance against in minus out, minus fees, plus withdrawals. |
+| `tx_count` | The nonce against the number of transactions sent. |
+| `token_lists_agree` / `token_list_matches_logs` | The adapter's two token lists against each other. |
+
+Per-token numbers stay in `token_reconciliation`. `history_incomplete` is true
+when any check that marks incomplete has failed.
+
+**Native coin, Ethereum and Arbitrum.** The rule is balance = native and
+internal in − out − fees on every transaction sent (failed and zero-value ones
+included) + validator withdrawals. Ethereum withdrawals come from Etherscan's
+`txsBeaconWithdrawal` list, or from Blockscout's address summary
+(`has_beacon_chain_withdrawals`), reading the slow list only when that flag is
+set. It matched to the wei on the Ethereum test wallet and on an Arbitrum
+wallet. Optimism and Tron record not_run, with the reason: Optimism's L1 data
+fee is not read; Tron's staking and resource delegation are not parsed.
+
+**Transaction count (nonce).** The address's nonce at the snapshot block must
+equal the number of transactions it sent in the provider's list, failed ones
+included. A mismatch on a history that is not truncated marks the snapshot
+incomplete. Edge cases:
+
+- **Contracts are skipped.** A contract's nonce counts the contracts it
+  created, not transactions; under EIP-161 it even starts at 1.
+- **EIP-7702 accounts are skipped.** Their code is `0xef0100` plus a 20-byte
+  address. They are wallets, not contracts, so `is_contract` is false and the
+  delegate is recorded. But every authorization they sign raises the nonce
+  without a transaction from them.
+- **Not caught:** a wallet that signed an EIP-7702 authorization and later
+  cleared it has empty code again. Its nonce is then higher than its sent
+  count, so the check would fail falsely. Spotting it means reading type-4
+  transactions it did not send; not built.
+- **Etherscan can't read old nonces.** Its free plan keeps no state older than
+  about 128 blocks ("historical state ... is not available"), so an Etherscan
+  nonce at an older block is not_run. Blockscout reads archive state.
+- **Unverified:** transactions an L1 forces onto Arbitrum or Optimism (deposits
+  and retryable tickets) may raise a nonce without appearing in the list. No
+  test wallet had one.
+
+**Live cross-check, 2026-11-20: no mismatches.**
+
+| Address | Block | Transfers (both providers) | Native | Nonce |
+|---|---|---|---|---|
+| Ethereum `0xaab6…f637` | 26,452,607 | 49: 7 native, 1 internal, 41 token | Etherscan passed to the wei; Blockscout not_run (internal range starts at 23,397,898) | 22 = 22 |
+| Arbitrum `0x9be8…e377` | 525,767,251 | 62: 10 native, 52 token | Etherscan passed to the wei (fees 0.0000206094 ETH); Blockscout not_run | 26 = 26 |
+
+Both recordings are test fixtures; the cross-check is replayed in CI.
+
+**Blockscout on Arbitrum checks almost no internal transfers.** Its finished
+range came out as one block (524,324,867), because unfinished blocks are
+scattered through its Arbitrum index, not confined to one end. The adapter
+handles this honestly: one block is recorded and nothing else counts as
+checked. In practice, though, internal transfers on Arbitrum are unchecked
+until Blockscout's index improves or another source is added. A lookup also
+spends about 25 calls finding the range when the hourly cache is cold. This
+is open.
+
+**Found and fixed on the way:**
+
+- Etherscan writes zero as a bare `"0x"`, so a log at index 0 crashed the
+  lookup.
+- Blockscout returned HTTP 500 for every call for about two minutes during
+  testing; 500 is now retried.
+- Blockscout's per-transaction token list has no timestamp; the block's time
+  is used.
+- A log-index scare: Blockscout's first item for a transaction was another
+  transfer in the same batch payout. Both receipts confirm log 32 is ours.
+
+The `evm-blockscout` branch's merge condition is met: tokens come from the
+REST list, internal transfers follow the finished-range rule, and the live
+cross-check passes. The owner decides when to merge.
+
 ## 2026-11-20: reconciliation, for every chain
 
 **Every lookup checks that its transfers explain its token balances.** For
@@ -465,3 +567,5 @@ the live run on Railway.
 - Bitcoin source for the public site: self-host esplora or mempool, or read
   Blockstream's Explorer API terms.
 - BNB Smart Chain has no source with suitable terms; outside Phase 1.
+- Internal transfers on Arbitrum: Blockscout's finished range is one block
+  (2026-11-20). Another source, or wait for Blockscout's index.
