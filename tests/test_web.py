@@ -374,3 +374,17 @@ def test_www_goes_to_the_one_address(site):
     r = c.get("/reports/x?format=text")
     assert r.status_code == 301 and r.headers["location"] == "https://testserver/reports/x?format=text"
     assert TestClient(app, base_url=BASE, follow_redirects=False).get("/about").status_code == 200
+
+
+def test_ipv6_is_counted_by_its_64_block():
+    assert guard.connection_key("2001:db8:1:2:aaaa::1") == guard.connection_key("2001:db8:1:2:ffff::9") == \
+        "2001:db8:1:2::/64"
+    assert guard.connection_key("2001:db8:1:3::1") != guard.connection_key("2001:db8:1:2::1")
+    assert guard.connection_key("203.0.113.7") == "203.0.113.7"
+    assert guard.connection_key("::ffff:203.0.113.7") == "203.0.113.7"
+
+
+def test_the_policy_allows_clerks_inline_images_and_nothing_else_inline(browser):
+    csp = browser.get("/about").headers["content-security-policy"]
+    assert "img-src 'self' data: https://img.clerk.com" in csp
+    assert "script-src 'self' " in csp and "data:" not in csp.split("script-src")[1].split(";")[0]

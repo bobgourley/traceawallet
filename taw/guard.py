@@ -69,6 +69,21 @@ def client_ip(headers, peer: str | None) -> str | None:
     return peer
 
 
+def connection_key(ip: str | None) -> str | None:
+    """What the per-connection limit counts: an IPv4 address as it is, an IPv6 address
+    by its /64 network. A home connection usually gets a whole IPv6 block and a device
+    can pick a new address in it at will, so counting single IPv6 addresses would let
+    one connection reset its own limit."""
+    addr = _ip(ip)
+    if addr is None:
+        return ip
+    if addr.version == 4:
+        return str(addr)
+    if addr.ipv4_mapped:
+        return str(addr.ipv4_mapped)
+    return str(ipaddress.ip_network(f"{addr}/64", strict=False))
+
+
 def lookups_before_sign_in() -> bool:
     """Whether a lookup may start before sign-in (LOOKUP_BEFORE_SIGN_IN=1). Off while the
     site is invite-only: the form is shown to signed-in testers only."""

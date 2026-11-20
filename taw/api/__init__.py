@@ -108,7 +108,7 @@ def connection(request: Request) -> dict:
     from taw.auth import setting
     if not setting("HASH_SALT"):
         raise HTTPException(status_code=503, detail="The site is not open yet.")
-    return {"connection": guard.salted("ip", client_ip(request))[:16]}
+    return {"connection": guard.salted("ip", guard.connection_key(client_ip(request)))[:16]}
 
 
 @router.get("/me", dependencies=[Depends(ready)])
@@ -130,7 +130,7 @@ def create_lookup(body: LookupIn, request: Request, who: Identity | None = Depen
     check = guard.verify_turnstile(body.turnstile_token, ip)
     if not check.ok:
         raise HTTPException(status_code=400, detail="We could not confirm you are a person. Please try again.")
-    ip_hash = guard.salted("ip", ip)
+    ip_hash = guard.salted("ip", guard.connection_key(ip))
     hit = guard.check_limits(db, user_id=who.user_id if who else None, ip_hash=ip_hash)
     if hit:
         raise HTTPException(status_code=429, detail=guard.limit_message(hit))

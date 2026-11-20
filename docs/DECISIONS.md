@@ -3,6 +3,32 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (night): Live checks after the web deploy
+
+**Checked on the live site after merging web-interface (1243528):**
+- **Connection codes.** My laptop and the Railway worker got two different
+  codes from `/api/v1/connection`, and each network got the same code every
+  time. A forged `CF-Connecting-IP` sent through Cloudflare was refused by
+  Cloudflare (error 1000). Sent straight to the Railway domain, it was ignored,
+  and the code matched the real IPv4 address.
+- **Injected scripts.** None on any page, so Web Analytics, Rocket Loader and
+  Zaraz are off. Zaraz's script address also returns 404.
+- **Headers and redirects.** The security policy, HSTS and noindex headers
+  were all in place, and www redirected to traceawallet.com with a 301.
+- **Sign-in page.** In a real browser, Clerk's sign-in box appeared.
+
+**Fixed after the checks:**
+- **IPv6 is counted by its /64 block.** The laptop's IPv4 and IPv6 addresses
+  gave two codes, which is correct, but it showed that a device can pick a new
+  IPv6 address within its block at will. The per-connection limit and
+  `/api/v1/connection` now count an IPv6 address by its /64 network, and an
+  IPv4 address as itself.
+- **`img-src` allows `data:`.** Clerk draws its background pattern as an
+  inline `data:` image, which Clerk's published CSP list does not mention.
+  Scripts still may not come from `data:`.
+- **Empty site icon.** It stops the browser's request for a favicon, which
+  returned 404.
+
 ## 2026-11-20 (night): Sign-in first, Cloudflare IPs, the GoPlus logo
 
 **Sign-in before the form.** While the site is invite-only, a signed-out visitor

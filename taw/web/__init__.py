@@ -329,7 +329,7 @@ def content_security_policy() -> str:
         "default-src 'self'",
         f"script-src 'self'{clerk_src} https://challenges.cloudflare.com https://*.protect.clerk.com",
         f"connect-src 'self'{clerk_src} https://*.protect.clerk.com:*",
-        "img-src 'self' https://img.clerk.com",
+        "img-src 'self' data: https://img.clerk.com",    # Clerk draws its background pattern as a data: image
         "worker-src 'self' blob:",
         "style-src 'self' 'unsafe-inline'",          # Clerk's components style themselves at runtime
         "frame-src https://challenges.cloudflare.com https://*.protect.clerk.com",
