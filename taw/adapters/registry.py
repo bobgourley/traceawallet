@@ -106,3 +106,14 @@ def stablecoins_for(chain: str) -> tuple[str, ...]:
         from taw.adapters.chains.evm_etherscan import CHAINS
         return tuple(c for c, _ in CHAINS[chain].stablecoins)
     return ()
+
+
+def goplus_for(raw_store: RawStore, *, state_conn=None):
+    """GoPlus, metered in the goplus ledger when state_conn is given (the worker's)."""
+    from taw.adapters.labels.goplus import GoPlus
+
+    budget = None
+    if state_conn is not None:
+        from taw.budget import PostgresBudget
+        budget = PostgresBudget(state_conn, "worker", provider="goplus")
+    return GoPlus(raw_store, os.environ.get("GOPLUS_APP_KEY"), os.environ.get("GOPLUS_APP_SECRET"), budget=budget)

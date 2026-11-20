@@ -1,4 +1,4 @@
-"""Daily call budget for metered providers (Blockscout), kept in Postgres.
+"""Daily call budget for metered providers (Blockscout, GoPlus), kept in Postgres.
 
 Blockscout's free tier allows a number of credits a day (BLOCKSCOUT_DAILY_CREDITS,
 default 100,000), counted over all uses of our key, and resets at 00:00 UTC. Every
@@ -22,14 +22,33 @@ from __future__ import annotations
 import datetime as dt
 import os
 import sys
+from dataclasses import dataclass
 from typing import Protocol
 
 PROVIDER = "blockscout"
 SCRIPT_SHARE = 0.30
 
 
-def daily_allowance() -> int:
-    return int(os.environ.get("BLOCKSCOUT_DAILY_CREDITS", "100000"))
+@dataclass(frozen=True)
+class Provider:
+    name: str           # shown in messages
+    env: str            # setting that holds the daily allowance
+    default: int
+    unit: str           # what the allowance counts
+
+
+# GoPlus publishes its free plan in compute units (150 a minute, 30,000 a day) but
+# not what one address_security call costs, so its ledger counts calls against a
+# conservative cap until GoPlus says (DECISIONS.md, 2026-11-20 "Labels: GoPlus").
+PROVIDERS = {
+    "blockscout": Provider("Blockscout", "BLOCKSCOUT_DAILY_CREDITS", 100_000, "credits"),
+    "goplus": Provider("GoPlus", "GOPLUS_DAILY_CALLS", 1_000, "calls"),
+}
+
+
+def daily_allowance(provider: str = PROVIDER) -> int:
+    p = PROVIDERS[provider]
+    return int(os.environ.get(p.env, str(p.default)))
 
 
 def next_reset(now: dt.datetime | None = None) -> dt.datetime:
@@ -40,10 +59,10 @@ def next_reset(now: dt.datetime | None = None) -> dt.datetime:
 class BudgetExhausted(RuntimeError):
     """No calls left for this consumer today. `resets_at` says when to try again."""
 
-    def __init__(self, message: str, resets_at: dt.datetime, consumer: str):
+    def __init__(self, message: str, resets_at: dt.datetime, consumer: str, provider: str = "Blockscout"):
         super().__init__(message)
         self.resets_at, self.consumer = resets_at, consumer
-        self.provider = "Blockscout"
+        self.provider = provider
 
 
 class Budget(Protocol):
@@ -53,7 +72,7 @@ class Budget(Protocol):
 
 
 def check_allowance(consumer: str, credits: int, used: dict[str, int], remaining: int | None, allowance: int,
-                    resets_at: dt.datetime) -> None:
+                    resets_at: dt.datetime, provider: str = PROVIDER) -> None:
     """Raise BudgetExhausted if `consumer` may not spend `credits` more today.
 
     remaining is the provider's own count (None if not seen today; then the ledger
@@ -61,17 +80,20 @@ def check_allowance(consumer: str, credits: int, used: dict[str, int], remaining
     SCRIPT_SHARE of it, and never what is still reserved for the worker (the
     worker's 70% minus what the worker has used).
     """
+    p = PROVIDERS[provider]
     if remaining is None:
         remaining = allowance - sum(used.values())
     if remaining - credits < 0:
-        raise BudgetExhausted("Blockscout's daily allowance is used up; it resets at 00:00 UTC.", resets_at, consumer)
+        raise BudgetExhausted(f"{p.name}'s daily allowance is used up; it resets at 00:00 UTC.", resets_at, consumer,
+                              p.name)
     if consumer == "scripts":
         share = int(allowance * SCRIPT_SHARE)
         worker_reserve = max(0, allowance - share - used.get("worker", 0))
         if used.get("scripts", 0) + credits > share or remaining - credits < worker_reserve:
             raise BudgetExhausted(
-                f"Scripts have used their share of Blockscout's daily allowance ({SCRIPT_SHARE:.0%}, {share:,} "
-                "credits); the rest is kept for the production worker. It resets at 00:00 UTC.", resets_at, consumer)
+                f"Scripts have used their share of {p.name}'s daily allowance ({SCRIPT_SHARE:.0%}, {share:,} "
+                f"{p.unit}); the rest is kept for the production worker. It resets at 00:00 UTC.", resets_at,
+                consumer, p.name)
 
 
 class PostgresBudget:
@@ -83,7 +105,7 @@ class PostgresBudget:
         if consumer not in ("worker", "scripts"):
             raise ValueError(consumer)
         self.conn, self.consumer, self.provider = conn, consumer, provider
-        self.allowance = allowance or daily_allowance()
+        self.allowance = allowance or daily_allowance(provider)
         self._now = now
 
     def _today(self) -> dt.date:
@@ -104,7 +126,7 @@ class PostgresBudget:
 
     def before_call(self, credits: int) -> None:
         check_allowance(self.consumer, credits, self.used(), self.remaining(), self.allowance,
-                        next_reset(self._now()))
+                        next_reset(self._now()), self.provider)
 
     def after_call(self, credits: int, remaining: int | None) -> None:
         self.conn.execute(
