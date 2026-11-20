@@ -1,0 +1,381 @@
+{
+  "case": "wdpa-2-26-cv-00087-usdt",
+  "court": "United States District Court for the Western District of Pennsylvania",
+  "docket": "2:26-cv-00087",
+  "filed": "2026-01-15",
+  "caption": "United States of America v. 5,680,000 USDT Tokens Stored Within Virtual Currency Address 0x7f6Ed26BB1488D1b420E10D722ef8bDf7D845B31 That Are in the Custody or Control of the United States Marshals Service",
+  "links": [
+    "https://storage.courtlistener.com/recap/gov.uscourts.pawd.326700/gov.uscourts.pawd.326700.1.0.pdf"
+  ],
+  "network_note": "The complaint does not name the network. Its addresses are Ethereum-format with valid EIP-55 checksums; they are checked on Ethereum.",
+  "token_note": "The complaint names tokens (USDT, USDC), not contracts. The checker reads Tether's and Circle's Ethereum contracts.",
+  "document_sha256": "6f78d0a57233aae8d05214986f9743023b77f8d4d56821873ceace60c6ec2617",
+  "addresses": [
+    {
+      "address": "0x7f6Ed26BB1488D1b420E10D722ef8bDf7D845B31",
+      "chain": "eth",
+      "paragraphs": [
+        "caption",
+        "1",
+        "39"
+      ],
+      "complaint_says": "the address the 5,680,000 USDT was reissued to, controlled by the USMS"
+    },
+    {
+      "address": "0xC1B68434D0Ef9A78E7f62e3b9850B70B3d0174bf",
+      "chain": "eth",
+      "paragraphs": [
+        "1",
+        "18",
+        "20",
+        "31",
+        "33",
+        "39"
+      ],
+      "complaint_says": "\"Address 74bf\", which held the 5,680,000 USDT"
+    },
+    {
+      "address": "0xFA0a50Dc366E2F0a5381E4d4b5fEdE589Ab633A9",
+      "chain": "eth",
+      "paragraphs": [
+        "16",
+        "22"
+      ],
+      "complaint_says": "the address A.T.'s Coinbase transaction of 242,209.53 USDC went to",
+      "also_printed_as": "0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9 (all lower case, paragraph 16)"
+    },
+    {
+      "address": "0x5842b2E75D3566bD0D3F9F520E71c1f3b30B99a1",
+      "chain": "eth",
+      "paragraphs": [
+        "22",
+        "23",
+        "24"
+      ],
+      "complaint_says": "received 230,000 USDC from 0xFA0a..."
+    },
+    {
+      "address": "0x84Bf0c2B81538A81bF74c7312A0d9c8ba7DE9EA6",
+      "chain": "eth",
+      "paragraphs": [
+        "24",
+        "25"
+      ],
+      "complaint_says": "received 650,000 USDC from 0x5842..."
+    },
+    {
+      "address": "0x1f86f1d03Fa55Ba95ed66a5Fd511D8e9532763D9",
+      "chain": "eth",
+      "paragraphs": [
+        "25",
+        "26"
+      ],
+      "complaint_says": "received 650,000 USDC from 0x84Bf..."
+    },
+    {
+      "address": "0x696158c731eA6627064bBb1f8622707c73B3E4D3",
+      "chain": "eth",
+      "paragraphs": [
+        "26",
+        "27"
+      ],
+      "complaint_says": "received approximately 649,669 USDT from 0x1f86..."
+    },
+    {
+      "address": "0xa6Bd877115cb261d355A6D26007606f496dd416A",
+      "chain": "eth",
+      "paragraphs": [
+        "27",
+        "28"
+      ],
+      "complaint_says": "received 505,500 USDT from 0x6961..."
+    },
+    {
+      "address": "0xf17E04068dd253C172e3Ada593DB379d1Bc36947",
+      "chain": "eth",
+      "paragraphs": [
+        "28",
+        "29"
+      ],
+      "complaint_says": "received approximately 520,568 USDT from 0xa6Bd..."
+    },
+    {
+      "address": "0xe48b7069C06Cd32ad023F874E3089b757A7A7027",
+      "chain": "eth",
+      "paragraphs": [
+        "29",
+        "30"
+      ],
+      "complaint_says": "received 443,000 USDT in two transfers from 0xf17E..."
+    },
+    {
+      "address": "0x67d34102E9DCce008E121f34fd7d48D22349915d",
+      "chain": "eth",
+      "paragraphs": [
+        "30",
+        "31"
+      ],
+      "complaint_says": "received approximately 1,000,000 USDT from 0xe48b... and passed it to Address 74bf"
+    }
+  ],
+  "facts": [
+    {
+      "id": "F1",
+      "paragraph": "16",
+      "quote": "One of the images depicted a completed transaction from A.T.'s Coinbase account to virtual currency address 0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9 for 242,209.53 USDC, which was worth approximately $242,209.00. This was the previously described transaction that A.T. made at Lopez's direction on or about May 10, 2025.",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDC",
+        "to": "0xFA0a50Dc366E2F0a5381E4d4b5fEdE589Ab633A9",
+        "read": "to",
+        "amount": "242209.53",
+        "date": "2025-05-10"
+      }
+    },
+    {
+      "id": "F1b",
+      "paragraph": "22",
+      "quote": "On May 10, 2025, A.T. sent approximately 242,209 USDC from A.T.'s Coinbase wallet to virtual currency address 0xFA0a50Dc366E2F0a5381E4d4b5fEdE589Ab633A9",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDC",
+        "to": "0xFA0a50Dc366E2F0a5381E4d4b5fEdE589Ab633A9",
+        "read": "to",
+        "amount": "242209",
+        "approx": true,
+        "date": "2025-05-10"
+      }
+    },
+    {
+      "id": "F2",
+      "paragraph": "22",
+      "quote": "Less than one hour later, 230,000 USDC of those funds were transferred from the virtual currency address beginning \"0xFA0a...\" to private virtual currency address 0x5842b2E75D3566bD0D3F9F520E71c1f3b30B99a1",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDC",
+        "from": "0xFA0a50Dc366E2F0a5381E4d4b5fEdE589Ab633A9",
+        "to": "0x5842b2E75D3566bD0D3F9F520E71c1f3b30B99a1",
+        "read": "from",
+        "amount": "230000",
+        "after": "F1b",
+        "within_seconds": 3600
+      }
+    },
+    {
+      "id": "F3",
+      "paragraph": "24",
+      "quote": "Less than three hours later, the address beginning \"0x5842...\" withdrew 650,000 USDC of those fraudulent funds to private virtual currency address 0x84Bf0c2B81538A81bF74c7312A0d9c8ba7DE9EA6",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDC",
+        "from": "0x5842b2E75D3566bD0D3F9F520E71c1f3b30B99a1",
+        "to": "0x84Bf0c2B81538A81bF74c7312A0d9c8ba7DE9EA6",
+        "read": "from",
+        "amount": "650000",
+        "after": "F2",
+        "within_seconds": 14400
+      }
+    },
+    {
+      "id": "F4",
+      "paragraph": "25",
+      "quote": "Approximately 25 minutes later, the address beginning \"0x84Bf...\" transferred the 650,000 USDC of fraudulent funds to private virtual currency address 0x1f86f1d03Fa55Ba95ed66a5Fd511D8e9532763D9",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDC",
+        "from": "0x84Bf0c2B81538A81bF74c7312A0d9c8ba7DE9EA6",
+        "to": "0x1f86f1d03Fa55Ba95ed66a5Fd511D8e9532763D9",
+        "read": "from",
+        "amount": "650000",
+        "after": "F3",
+        "within_seconds": 3600
+      }
+    },
+    {
+      "id": "F5",
+      "paragraph": "26",
+      "quote": "650,000 USDC of fraudulent funds was converted into approximately 649,669 USDT and then transferred to private virtual currency address 0x696158c731eA6627064bBb1f8622707c73B3E4D3",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "from": "0x1f86f1d03Fa55Ba95ed66a5Fd511D8e9532763D9",
+        "to": "0x696158c731eA6627064bBb1f8622707c73B3E4D3",
+        "read": "from",
+        "amount": "649669",
+        "approx": true,
+        "after": "F4",
+        "within_seconds": 1800
+      }
+    },
+    {
+      "id": "F6",
+      "paragraph": "27",
+      "quote": "Approximately nine hours later, 505,500 USDT of those fraudulent funds were",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "from": "0x696158c731eA6627064bBb1f8622707c73B3E4D3",
+        "to": "0xa6Bd877115cb261d355A6D26007606f496dd416A",
+        "read": "from",
+        "amount": "505500",
+        "after": "F5",
+        "within_seconds": 43200
+      }
+    },
+    {
+      "id": "F7",
+      "paragraph": "28",
+      "quote": "contained approximately 15,068 USDT at the time it received the aforementioned deposit of 505,500 USDT of fraudulent funds.",
+      "check": {
+        "chain": "eth",
+        "kind": "token_balance_before",
+        "token": "USDT",
+        "address": "0xa6Bd877115cb261d355A6D26007606f496dd416A",
+        "before": "F6",
+        "amount": "15068",
+        "approx": true
+      }
+    },
+    {
+      "id": "F8",
+      "paragraph": "28",
+      "quote": "Approximately three minutes later, the entirety of the funds, approximately 520,568 USDT,",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "from": "0xa6Bd877115cb261d355A6D26007606f496dd416A",
+        "to": "0xf17E04068dd253C172e3Ada593DB379d1Bc36947",
+        "read": "from",
+        "amount": "520568",
+        "approx": true,
+        "after": "F6",
+        "within_seconds": 900
+      }
+    },
+    {
+      "id": "F9",
+      "paragraph": "29",
+      "quote": "Over the next 40 minutes, the address beginning \"0xf17E...\" transferred 443,000 USDT of those funds in two transfers to private virtual currency address 0xe48b7069C06Cd32ad023F874E3089b757A7A7027",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfers_total",
+        "token": "USDT",
+        "from": "0xf17E04068dd253C172e3Ada593DB379d1Bc36947",
+        "to": "0xe48b7069C06Cd32ad023F874E3089b757A7A7027",
+        "read": "from",
+        "amount": "443000",
+        "count": 2,
+        "after": "F8",
+        "within_seconds": 3600
+      }
+    },
+    {
+      "id": "F10",
+      "paragraph": "30",
+      "quote": "withdrew the approximately 1,000,000 USDT to private virtual currency address 0x67d34102E9DCce008E121f34fd7d48D22349915d",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "from": "0xe48b7069C06Cd32ad023F874E3089b757A7A7027",
+        "to": "0x67d34102E9DCce008E121f34fd7d48D22349915d",
+        "read": "from",
+        "amount": "1000000",
+        "approx": true,
+        "after": "F9",
+        "within_seconds": 86400
+      }
+    },
+    {
+      "id": "F11",
+      "paragraph": "31",
+      "quote": "Within five minutes of being deposited into the address beginning \"0x67d3...\", the 1,000,000 USDT was transferred to Address 74bf",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "from": "0x67d34102E9DCce008E121f34fd7d48D22349915d",
+        "to": "0xC1B68434D0Ef9A78E7f62e3b9850B70B3d0174bf",
+        "read": "from",
+        "amount": "1000000",
+        "approx": true,
+        "after": "F10",
+        "within_seconds": 600
+      }
+    },
+    {
+      "id": "F12",
+      "paragraph": "20",
+      "quote": "As of September 15, 2025, Address 74bf contained 5,680,000 USDT.",
+      "check": {
+        "chain": "eth",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "0xC1B68434D0Ef9A78E7f62e3b9850B70B3d0174bf",
+        "date": "2025-09-15",
+        "amount": "5680000"
+      }
+    },
+    {
+      "id": "F13",
+      "paragraph": "39",
+      "quote": "Therefore, on September 9, 2025, the Honorable Kezia O. L. Taylor, United States Magistrate Judge for the Western District of Pennsylvania, issued a warrant to seize all USDT held in Address 74bf. See Magistrate Number 25-1589. At that time, 5,680,000 USDT remained in Address 74bf.",
+      "check": {
+        "chain": "eth",
+        "kind": "token_balance_at",
+        "token": "USDT",
+        "address": "0xC1B68434D0Ef9A78E7f62e3b9850B70B3d0174bf",
+        "date": "2025-09-09",
+        "amount": "5680000"
+      }
+    },
+    {
+      "id": "F14",
+      "paragraph": "39",
+      "quote": "Tether complied with the warrant and burned the 5,680,000 USDT.",
+      "check": {
+        "chain": "eth",
+        "kind": "balance_now",
+        "token": "USDT",
+        "address": "0xC1B68434D0Ef9A78E7f62e3b9850B70B3d0174bf",
+        "amount": "0"
+      }
+    },
+    {
+      "id": "F15",
+      "paragraph": "39",
+      "quote": "On January 13, 2026, Tether reissued the 5,680,000 USDT to virtual currency address 0x7f6Ed26BB1488D1b420E10D722ef8bDf7D845B31 controlled by the USMS.",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "to": "0x7f6Ed26BB1488D1b420E10D722ef8bDf7D845B31",
+        "read": "to",
+        "amount": "5680000",
+        "date": "2026-01-13"
+      }
+    },
+    {
+      "id": "F16",
+      "paragraph": "33",
+      "quote": "Of that, 5,000,000 USDT was deposited into the address in the span of one week.",
+      "check": null,
+      "not_checkable_reason": "No dates are given for the week, so there is no window to check."
+    },
+    {
+      "id": "F17",
+      "paragraph": "18",
+      "quote": "Address 74bf contained cryptocurrency worth approximately $5,680,000.",
+      "check": null,
+      "not_checkable_reason": "A US-dollar value with no date: needs the price adapter and a date."
+    }
+  ]
+}

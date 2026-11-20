@@ -1,0 +1,429 @@
+{
+  "case": "edny-1-25-cv-05745-btc",
+  "court": "United States District Court for the Eastern District of New York",
+  "docket": "1:25-cv-05745",
+  "filed": "2025-10-14",
+  "caption": "United States of America v. Approximately 127,271 Bitcoin (\"BTC\") Previously Stored at the Virtual Currency Addresses Listed in Attachment A, and All Proceeds Traceable Thereto",
+  "links": [
+    "https://www.justice.gov/usao-edny/media/1416266/dl"
+  ],
+  "checked_addresses": [
+    "34MFtk9iMxYcUPZWXHfiGfqz4o7X3kpJbV",
+    "39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq",
+    "3BA3PEF4BMoy9y3kdMRUdMhL8Gp24vikhF"
+  ],
+  "checked_addresses_note": "Three Attachment A addresses with modest transaction counts (rows 15, 21 and 23: 15, 16 and 15 transactions on 2026-11-19). The others are listed but not checked.",
+  "document_sha256": "f6d6b3d23826baf35ee835fb6c4aee9deac546314e2e3e908c8d635dc9a677a6",
+  "addresses": [
+    {
+      "address": "3Pja5FPK1wFB9LkWWJai8XYL1qjbqqT9Ye",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 1; the paragraph 44 table lists 20,452.85228 BTC",
+      "attachment_a_row": 1
+    },
+    {
+      "address": "3FrM1He2ZDbsSKmYpEZQNGjFTLMgCZZkaf",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 2; the paragraph 44 table lists 14,111.92546835 BTC",
+      "attachment_a_row": 2
+    },
+    {
+      "address": "3B1u4PsuFzww1P8if5jYmitXxpMs2EMSqt",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 3; the paragraph 44 table lists 2,999.09118947 BTC",
+      "attachment_a_row": 3
+    },
+    {
+      "address": "3JJ8b7voMPSPChHazdHkrZMqxC7Cb4vNk2",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 4; the paragraph 44 table lists 1,000.08105870 BTC",
+      "attachment_a_row": 4
+    },
+    {
+      "address": "3PWNGS2357TnjRX7FpewqR3e3qsWwpFrJH",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 5; the paragraph 44 table lists 0.00736862 BTC",
+      "attachment_a_row": 5
+    },
+    {
+      "address": "34Jpa4Eu3ApoPVUKNTN2WeuXVVq1jzxgPi",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 6; the paragraph 44 table lists 14,139.260 BTC",
+      "attachment_a_row": 6
+    },
+    {
+      "address": "338uPVW8drux5gSemDS4gFLSGrSfAiEvpX",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 7; the paragraph 44 table lists 9,099.01146835 BTC",
+      "attachment_a_row": 7
+    },
+    {
+      "address": "3J4sTPyD1g6KvNUSJxjwLs4iaPeDPqxUZr",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 8; the paragraph 44 table lists 499.90936500 BTC",
+      "attachment_a_row": 8
+    },
+    {
+      "address": "33uEsaGLcF9H46Dvzx1kMnuMCQ13ndkAjV",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 9; the paragraph 44 table lists 3,000.09125022 BTC",
+      "attachment_a_row": 9
+    },
+    {
+      "address": "3KabDvdetZXDHNm9HXowLc9SppiSXKn7UU",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 10; the paragraph 44 table lists 9,500.99220072 BTC",
+      "attachment_a_row": 10
+    },
+    {
+      "address": "38Md7BghVmV7XUUT1Vt9CvVcc5ssMD6ojt",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 11; the paragraph 44 table lists 15,033.29416267 BTC",
+      "attachment_a_row": 11
+    },
+    {
+      "address": "3GaB3nRWA1PLc3XQkkbpVtFwYYZEuMxD4i",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 12; the paragraph 44 table lists 0.02415042 BTC",
+      "attachment_a_row": 12
+    },
+    {
+      "address": "32i6n2vXhjvJg1vniURFy7A5VK6eG6oDgg",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 13; the paragraph 44 table lists 3,000.09118974 BTC",
+      "attachment_a_row": 13
+    },
+    {
+      "address": "3HuUiXmKN3beQSoM97kWjK1fesWWJvKvaZ",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 14; the paragraph 44 table lists 4,500.00841044 BTC",
+      "attachment_a_row": 14
+    },
+    {
+      "address": "34MFtk9iMxYcUPZWXHfiGfqz4o7X3kpJbV",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 15; the paragraph 44 table lists 0.5084661 BTC",
+      "attachment_a_row": 15
+    },
+    {
+      "address": "3LjTXe31gepN8nW3AZyKpyD2QwbtmfjNwm",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 16; the paragraph 44 table lists 156.04996844 BTC",
+      "attachment_a_row": 16
+    },
+    {
+      "address": "3MHa8JJ3bu8j3x3iQHhqsrZvk1EjBQmC78",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 17; the paragraph 44 table lists 2,700.44863780 BTC",
+      "attachment_a_row": 17
+    },
+    {
+      "address": "3AWpzKtkHfWsiv9RGXKA3Z8951LefsUGXQ",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 18; the paragraph 44 table lists 10,500.04293955 BTC",
+      "attachment_a_row": 18
+    },
+    {
+      "address": "34KYo7VdVr5CJ7m4hYhH9RpwqXhbsTrw4T",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 19; the paragraph 44 table lists 4,500.00941044 BTC",
+      "attachment_a_row": 19
+    },
+    {
+      "address": "3DdFSGcXaP2rZ9CaL3tjnqRARvQ5K3VW4a",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 20; the paragraph 44 table lists 251.6000482 BTC",
+      "attachment_a_row": 20
+    },
+    {
+      "address": "39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 21; the paragraph 44 table lists 212.5930613 BTC",
+      "attachment_a_row": 21
+    },
+    {
+      "address": "3NmHmQte2rP8pS54U3B8LPYQKkpG1pFF69",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 22; the paragraph 44 table lists 8,611.07446862 BTC",
+      "attachment_a_row": 22
+    },
+    {
+      "address": "3BA3PEF4BMoy9y3kdMRUdMhL8Gp24vikhF",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 23; the paragraph 44 table lists 2.16989588 BTC",
+      "attachment_a_row": 23
+    },
+    {
+      "address": "389JrNcn8trYgYi2EtHi4X7bTCqtVbep86",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 24; the paragraph 44 table lists 1,500.01255361 BTC",
+      "attachment_a_row": 24
+    },
+    {
+      "address": "339khCuymVi4FKbW9hCHkH3CQwdopXiTvA",
+      "chain": "btc",
+      "paragraphs": [
+        "44",
+        "Attachment A"
+      ],
+      "complaint_says": "Attachment A row 25; the paragraph 44 table lists 1,500.00 BTC",
+      "attachment_a_row": 25
+    },
+    {
+      "address": "364XjdP6Jbpm945DW4M6EobXLEmJv964rC",
+      "chain": "btc",
+      "paragraphs": [
+        "52",
+        "55"
+      ],
+      "complaint_says": "\"the 364 Wallet\""
+    },
+    {
+      "address": "3QLeXx1J9Tp3TBnQyHrhVxne9KqkAS9JSR",
+      "chain": "btc",
+      "paragraphs": [
+        "55"
+      ],
+      "complaint_says": "\"the 3QL Wallet\""
+    },
+    {
+      "address": "32Df7gbuSG6g7caY3gxxxYabryv2eoD1n4",
+      "chain": "btc",
+      "paragraphs": [
+        "55"
+      ],
+      "complaint_says": "\"the 32D Wallet\""
+    },
+    {
+      "address": "3DEgB8cz63rNTcAYRatFSHhb1kUTwaoyRe",
+      "chain": "btc",
+      "paragraphs": [
+        "55"
+      ],
+      "complaint_says": "\"the 3DE Wallet\""
+    },
+    {
+      "address": "1FaUfrUhv37aqFAZ9ij595587wtnGWBFKS",
+      "chain": "btc",
+      "paragraphs": [
+        "56"
+      ],
+      "complaint_says": "one of four addresses associated with the same wallet that received BTC from Exchange-1"
+    },
+    {
+      "address": "13vGS7YsuHv166D5pGqJD1X8xS9ib2TrA1",
+      "chain": "btc",
+      "paragraphs": [
+        "56"
+      ],
+      "complaint_says": "one of four addresses associated with the same wallet that received BTC from Exchange-1"
+    },
+    {
+      "address": "18Uh5uHapoWqCJiZxoDnfGvPpzkDDeZgXo",
+      "chain": "btc",
+      "paragraphs": [
+        "56"
+      ],
+      "complaint_says": "one of four addresses associated with the same wallet that received BTC from Exchange-1"
+    },
+    {
+      "address": "19Pm9qTzQ3APKXnJLqdswd4HxpmqtPV3sy",
+      "chain": "btc",
+      "paragraphs": [
+        "56"
+      ],
+      "complaint_says": "one of four addresses associated with the same wallet that received BTC from Exchange-1"
+    }
+  ],
+  "facts": [
+    {
+      "id": "F1",
+      "paragraph": "44 n.7",
+      "quote": "34MFtk9iMxYcUPZWXHfiGfqz4o7X3kpJbV 0.5084661 BTC",
+      "check": {
+        "chain": "btc",
+        "kind": "btc_balance_in_month",
+        "address": "34MFtk9iMxYcUPZWXHfiGfqz4o7X3kpJbV",
+        "month": "2020-12",
+        "amount_btc": "0.5084661",
+        "context_quote": "This table identifies the addresses at which the Defendant Cryptocurrency was stored as of December 2020."
+      }
+    },
+    {
+      "id": "F2",
+      "paragraph": "44 n.7",
+      "quote": "39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq 212.5930613 BTC",
+      "check": {
+        "chain": "btc",
+        "kind": "btc_balance_in_month",
+        "address": "39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq",
+        "month": "2020-12",
+        "amount_btc": "212.5930613",
+        "context_quote": "This table identifies the addresses at which the Defendant Cryptocurrency was stored as of December 2020."
+      }
+    },
+    {
+      "id": "F3",
+      "paragraph": "44 n.7",
+      "quote": "3BA3PEF4BMoy9y3kdMRUdMhL8Gp24vikhF 2.16989588 BTC",
+      "check": {
+        "chain": "btc",
+        "kind": "btc_balance_in_month",
+        "address": "3BA3PEF4BMoy9y3kdMRUdMhL8Gp24vikhF",
+        "month": "2020-12",
+        "amount_btc": "2.16989588",
+        "context_quote": "This table identifies the addresses at which the Defendant Cryptocurrency was stored as of December 2020."
+      }
+    },
+    {
+      "id": "F4",
+      "paragraph": "58",
+      "quote": "The Defendant Cryptocurrency was subsequently transferred in its entirety to multiple additional addresses.",
+      "check": {
+        "chain": "btc",
+        "kind": "balance_now",
+        "address": "34MFtk9iMxYcUPZWXHfiGfqz4o7X3kpJbV",
+        "amount": "0"
+      }
+    },
+    {
+      "id": "F5",
+      "paragraph": "58",
+      "quote": "The Defendant Cryptocurrency was subsequently transferred in its entirety to multiple additional addresses.",
+      "check": {
+        "chain": "btc",
+        "kind": "balance_now",
+        "address": "39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq",
+        "amount": "0"
+      }
+    },
+    {
+      "id": "F6",
+      "paragraph": "58",
+      "quote": "The Defendant Cryptocurrency was subsequently transferred in its entirety to multiple additional addresses.",
+      "check": {
+        "chain": "btc",
+        "kind": "balance_now",
+        "address": "3BA3PEF4BMoy9y3kdMRUdMhL8Gp24vikhF",
+        "amount": "0"
+      }
+    },
+    {
+      "id": "F7",
+      "paragraph": "47(f)",
+      "quote": "Cluster Index-6 contained approximately 0.5084661 BTC",
+      "check": null,
+      "not_checkable_reason": "No date is given; the same figure as the paragraph 44 table, which F1 checks for December 2020."
+    },
+    {
+      "id": "F8",
+      "paragraph": "47(i)",
+      "quote": "Cluster Index-9 contained approximately 212.50 BTC",
+      "check": null,
+      "not_checkable_reason": "No date is given, and it differs from the paragraph 44 figure (212.5930613) checked in F2."
+    },
+    {
+      "id": "F9",
+      "paragraph": "47(k)",
+      "quote": "Cluster Index-11 contained approximately 2.1 7 BTC",
+      "check": null,
+      "not_checkable_reason": "No date is given; paragraph 44's 2.16989588 BTC is checked in F3. (\"2.1 7\" is how the complaint prints 2.17.)"
+    }
+  ]
+}

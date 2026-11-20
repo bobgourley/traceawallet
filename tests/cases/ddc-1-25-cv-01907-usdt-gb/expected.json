@@ -1,0 +1,233 @@
+{
+  "case": "ddc-1-25-cv-01907-usdt-gb",
+  "court": "United States District Court for the District of Columbia",
+  "docket": "1:25-cv-01907",
+  "filed": "2025-06-18",
+  "caption": "United States of America v. Approximately 225,364,961 USDT",
+  "links": [
+    "https://www.secretservice.gov/sites/default/files/reports/2025-06/Verified-Complaint-25-cv-1907.pdf",
+    "https://storage.courtlistener.com/recap/gov.uscourts.dcd.281742/gov.uscourts.dcd.281742.2.0.pdf"
+  ],
+  "case_study": "Victim G.B. (paragraphs 196 to 204), the only case study whose stated transfer runs between two fully printed addresses.",
+  "network_note": "The complaint prints every address in lower case (no EIP-55 checksum); each was compared with the page images. Checked on Ethereum.",
+  "token_note": "The complaint names USDT, not a contract. The checker reads Tether's Ethereum contract.",
+  "document_sha256": "2134aba63aa003b2574401bb7ba94c10fa54970e82131baa747cdba0ebc8ae0b",
+  "addresses": [
+    {
+      "address": "0xc7c8f8284c5360d0086a2f0a05bdd07afde23246",
+      "chain": "eth",
+      "paragraphs": [
+        "15"
+      ],
+      "complaint_says": "\"USDT Token Group A\", one of the subject virtual currency addresses"
+    },
+    {
+      "address": "0x564e11ace70bfe6c943a973f1289faa6e8a0fe16",
+      "chain": "eth",
+      "paragraphs": [
+        "15"
+      ],
+      "complaint_says": "\"USDT Token Group B\", one of the subject virtual currency addresses"
+    },
+    {
+      "address": "0xcab9a8391f765f6beda0b5bad434b10985bdaad0",
+      "chain": "eth",
+      "paragraphs": [
+        "15"
+      ],
+      "complaint_says": "\"USDT Token Group C\", one of the subject virtual currency addresses"
+    },
+    {
+      "address": "0x0b5453635e5325f5385ca1643c9e9eb173f9d5a8",
+      "chain": "eth",
+      "paragraphs": [
+        "15"
+      ],
+      "complaint_says": "\"USDT Token Group D\", one of the subject virtual currency addresses"
+    },
+    {
+      "address": "0xc76afbf0f69ae9be5d855239c50673252cf3f26b",
+      "chain": "eth",
+      "paragraphs": [
+        "15"
+      ],
+      "complaint_says": "\"USDT Token Group E\", one of the subject virtual currency addresses"
+    },
+    {
+      "address": "0x99ebaf3661065dc1e44feff4b80365678bdff6ce",
+      "chain": "eth",
+      "paragraphs": [
+        "15"
+      ],
+      "complaint_says": "\"USDT Token Group F\", one of the subject virtual currency addresses"
+    },
+    {
+      "address": "0x82e1d4ddd636857ebcf6a0e74b9b0929c158d7fb",
+      "chain": "eth",
+      "paragraphs": [
+        "15"
+      ],
+      "complaint_says": "\"USDT Token Group G\", one of the subject virtual currency addresses"
+    },
+    {
+      "address": "0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac",
+      "chain": "eth",
+      "paragraphs": [
+        "177",
+        "203",
+        "204"
+      ],
+      "complaint_says": "\"b9ac\", one of two consolidation addresses in Intermediary Group 2"
+    },
+    {
+      "address": "0xf60444fe54ff46ae29053a67e6b0fdd17b15a6b9",
+      "chain": "eth",
+      "paragraphs": [
+        "177"
+      ],
+      "complaint_says": "\"a6b9\", the other consolidation address in Intermediary Group 2"
+    },
+    {
+      "address": "0x414f61e4057ea79279e4970cfdad198ebe70092b",
+      "chain": "eth",
+      "paragraphs": [
+        "89 n.30"
+      ],
+      "complaint_says": "\"0x414f\", one of the 93 Initial Deposit Addresses, to which M.S. sent funds"
+    },
+    {
+      "address": "0x7f2de657ab21f269ea8e37eea1a9245af6d2e669",
+      "chain": "eth",
+      "paragraphs": [
+        "178-186"
+      ],
+      "complaint_says": "an address in the paragraphs on OKX deposit accounts and their withdrawals"
+    },
+    {
+      "address": "0x517adbbe7ebd0a2096f11fbaa5ed2988844a8d73",
+      "chain": "eth",
+      "paragraphs": [
+        "178-186"
+      ],
+      "complaint_says": "an address in the paragraphs on OKX deposit accounts and their withdrawals"
+    },
+    {
+      "address": "0x3d60b144585958fcf0887ec7f3e0fa9eaeacb82a",
+      "chain": "eth",
+      "paragraphs": [
+        "178-186"
+      ],
+      "complaint_says": "an address in the paragraphs on OKX deposit accounts and their withdrawals"
+    },
+    {
+      "address": "0x6f7b333af41dffe89c10820243327a71d1926b0f",
+      "chain": "eth",
+      "paragraphs": [
+        "178-186"
+      ],
+      "complaint_says": "an address in the paragraphs on OKX deposit accounts and their withdrawals"
+    },
+    {
+      "address": "0x732afda0d3e88611a2b2c8ffb0428486619f35a5",
+      "chain": "eth",
+      "paragraphs": [
+        "178-186"
+      ],
+      "complaint_says": "an address in the paragraphs on OKX deposit accounts and their withdrawals"
+    },
+    {
+      "address": "0xb7306f55e4832b3e687784784cd163519084c0dc",
+      "chain": "eth",
+      "paragraphs": [
+        "178-186"
+      ],
+      "complaint_says": "an address in the paragraphs on OKX deposit accounts and their withdrawals"
+    },
+    {
+      "address": "0xe8b4b6bee0f6b913b847a7b850cc02bbde30d506",
+      "chain": "eth",
+      "paragraphs": [
+        "178-186"
+      ],
+      "complaint_says": "an address in the paragraphs on OKX deposit accounts and their withdrawals"
+    },
+    {
+      "address": "0x029b12327a9b5b1964d3da841a376c9934d5bbf4",
+      "chain": "eth",
+      "paragraphs": [
+        "178-186"
+      ],
+      "complaint_says": "an address in the paragraphs on OKX deposit accounts and their withdrawals"
+    },
+    {
+      "address": "0x150f39c4fc18e05a138dd5d56e35400643bd7cc7",
+      "chain": "eth",
+      "paragraphs": [
+        "178-186"
+      ],
+      "complaint_says": "an address in the paragraphs on OKX deposit accounts and their withdrawals"
+    }
+  ],
+  "facts": [
+    {
+      "id": "F1",
+      "paragraph": "203",
+      "quote": "One of these addresses, ending in \"b9ac,\" then deposited approximately 4,529,900 USDT into USDT Token Group E",
+      "check": {
+        "chain": "eth",
+        "kind": "token_transfer",
+        "token": "USDT",
+        "from": "0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac",
+        "to": "0xc76afbf0f69ae9be5d855239c50673252cf3f26b",
+        "read": "to",
+        "amount": "4529900",
+        "approx": true
+      }
+    },
+    {
+      "id": "F2",
+      "paragraph": "15",
+      "quote": "0xc76afbf0f69ae9be5d855239c506732 52cf3f26b 2,137,276.136 USDT \"USDT Token Group E\"",
+      "check": {
+        "chain": "eth",
+        "kind": "token_balance_reached",
+        "token": "USDT",
+        "address": "0xc76afbf0f69ae9be5d855239c50673252cf3f26b",
+        "amount": "2137276.136"
+      }
+    },
+    {
+      "id": "F3",
+      "paragraph": "224",
+      "quote": "USDT Token Group E maintained a balance of approximately 2,137,276 USDT before the tokens were burned and reissued pursuant to their seizure.",
+      "check": {
+        "chain": "eth",
+        "kind": "balance_now",
+        "token": "USDT",
+        "address": "0xc76afbf0f69ae9be5d855239c50673252cf3f26b",
+        "amount": "0"
+      }
+    },
+    {
+      "id": "F4",
+      "paragraph": "172",
+      "quote": "On or around November 20, 2023, USSS requested that Tether voluntarily freeze approximately 225 million USDT at the SUBJECT VIRTUAL CURRENCY ADDRESSES",
+      "check": null,
+      "not_checkable_reason": "Freeze status needs the stablecoin freeze loader (not built yet)."
+    },
+    {
+      "id": "F5",
+      "paragraph": "198",
+      "quote": "G.B. sent approximately 37,566 USDT to an initial deposit address",
+      "check": null,
+      "not_checkable_reason": "The initial deposit address is not printed."
+    },
+    {
+      "id": "F6",
+      "paragraph": "204",
+      "quote": "also sent approximately 15,890,000 USDT to another address ending in \"2c91,\"",
+      "check": null,
+      "not_checkable_reason": "Only the last four characters of the receiving address are printed."
+    }
+  ]
+}
