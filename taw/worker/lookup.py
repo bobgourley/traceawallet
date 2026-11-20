@@ -55,6 +55,19 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
     )
 
 
+def allowance_reset(exc: BaseException):
+    """When a provider's daily allowance ran out: the time it resets (00:00 UTC, plus five
+    minutes' margin). None for any other failure."""
+    import datetime as dt
+    from taw.adapters.chains import evm_etherscan as es
+    from taw.budget import BudgetExhausted, next_reset
+    if isinstance(exc, BudgetExhausted):
+        return exc.resets_at + dt.timedelta(minutes=5)
+    if isinstance(exc, es.EtherscanDailyLimit):
+        return next_reset() + dt.timedelta(minutes=5)
+    return None
+
+
 def describe_failure(exc: BaseException) -> tuple[bool, str]:
     """(permanent, plain-language message). Permanent failures are not retried."""
     # Imported here so the worker starts even if one chain's module is broken.
@@ -72,8 +85,8 @@ def describe_failure(exc: BaseException) -> tuple[bool, str]:
         if isinstance(exc, es.EtherscanKeyRejected):
             return True, f"{who} rejected our API key. Not retried. Check {exc.key_env} in Railway."
         if isinstance(exc, es.EtherscanDailyLimit):
-            return True, (f"{who}'s daily call allowance for our key is used up. Not retried; "
-                          "queue the lookup again tomorrow.")
+            return False, (f"{who}'s daily allowance used up, resets at 00:00 UTC. The lookup is retried "
+                           "after the reset.")
         if isinstance(exc, es.EtherscanPaidEndpoint):
             return True, f"A request needs a paid {who} endpoint, which is a bug in our code: {exc}."
         if isinstance(exc, es.EtherscanRateLimited):

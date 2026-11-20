@@ -101,6 +101,16 @@ def retry_later(conn, job: Job, message: str) -> int:
     return wait
 
 
+def defer_until(conn, job: Job, when, message: str) -> None:
+    """Put the job back to run at `when` without counting this attempt (a provider's
+    daily allowance ran out: not the job's fault, and retrying sooner cannot help)."""
+    conn.execute(
+        "UPDATE job SET status = 'queued', run_after = %s, attempts = GREATEST(attempts - 1, 0),"
+        " last_error = %s, locked_by = NULL, locked_at = NULL WHERE id = %s",
+        (when, message, job.id),
+    )
+
+
 def mark_failed(conn, job_id: int, message: str) -> None:
     conn.execute("UPDATE job SET status = 'failed', last_error = %s, finished_at = now() WHERE id = %s",
                  (message, job_id))

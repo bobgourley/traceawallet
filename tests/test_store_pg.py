@@ -574,3 +574,62 @@ def test_btc_lookup_is_stored_and_idempotent(conns):
     second = once()
     assert (second.transfers_seen, second.transfers_new) == (154, 0)
     assert count(data, "SELECT count(*) FROM transfer WHERE chain = 'btc'") == 154
+
+
+# -- Blockscout's daily budget (0010) ------------------------------------------------------
+
+def test_budget_ledger_splits_worker_and_scripts(conns):
+    from taw.budget import BudgetExhausted, PostgresBudget
+    data, _ = conns
+    now = lambda: dt.datetime(2026, 11, 19, 12, tzinfo=dt.timezone.utc)   # noqa: E731
+    worker = PostgresBudget(data, "worker", allowance=1_000, now=now)
+    scripts = PostgresBudget(data, "scripts", allowance=1_000, now=now)
+    for _ in range(15):                                   # 300 credits: scripts' 30%
+        scripts.before_call(20)
+        scripts.after_call(20, None)
+    with pytest.raises(BudgetExhausted, match="kept for the production worker"):
+        scripts.before_call(20)
+    worker.before_call(20)
+    worker.after_call(20, 680)                            # the provider's own count is kept
+    assert worker.used() == {"worker": 20, "scripts": 300}
+    assert count(data, "SELECT calls FROM provider_budget WHERE consumer = 'scripts'") == 15
+    assert worker.remaining() == 680
+    tomorrow = PostgresBudget(data, "scripts", allowance=1_000,
+                              now=lambda: dt.datetime(2026, 11, 20, 0, 1, tzinfo=dt.timezone.utc))
+    assert tomorrow.used() == {} and tomorrow.remaining() is None    # yesterday's count is not today's
+    tomorrow.before_call(20)                              # a new day starts from nothing
+
+
+def test_range_store_round_trip(conns):
+    from taw.budget import PostgresRangeStore
+    data, _ = conns
+    ranges = PostgresRangeStore(data)
+    at = dt.datetime(2026, 11, 19, 12, tzinfo=dt.timezone.utc)
+    assert ranges.get("eth") is None
+    ranges.put("eth", 400, 1_000, at)
+    ranges.put("eth", 0, 1_050, at)
+    assert ranges.get("eth") == (0, 1_050, at)
+    ranges.drop("eth")
+    assert ranges.get("eth") is None
+    with pytest.raises(psycopg.errors.CheckViolation):
+        ranges.put("eth", 10, 5, at)
+
+
+def test_app_role_may_keep_the_budget(conns):
+    data, _ = conns
+    for table in ("provider_budget", "provider_status", "blockscout_internal_range"):
+        can = {p: count(data, "SELECT has_table_privilege('taw_app', %s, %s)", table, p)
+               for p in ("SELECT", "INSERT", "UPDATE")}
+        assert can == {"SELECT": True, "INSERT": True, "UPDATE": True}
+
+
+def test_deferred_job_keeps_its_attempts(conns):
+    data, _ = conns
+    job_id, _ = jobs.enqueue_lookup(data, "eth", EVM_ADDR)
+    job = jobs.claim(data, "w1")
+    assert job.attempts == 1
+    jobs.defer_until(data, job, dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=1), "used up")
+    assert jobs.claim(data, "w2") is None                 # not due until the reset
+    assert count(data, "SELECT attempts FROM job WHERE id = %s", job_id) == 0
+    data.execute("UPDATE job SET run_after = now() WHERE id = %s", (job_id,))
+    assert jobs.claim(data, "w2").attempts == 1           # the deferred try did not count

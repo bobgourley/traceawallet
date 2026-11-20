@@ -66,7 +66,9 @@ def normalize_address(chain: str, address: str) -> str:
     raise _unsupported(chain)
 
 
-def adapter_for(chain: str, raw_store: RawStore) -> ChainAdapter:
+def adapter_for(chain: str, raw_store: RawStore, *, state_conn=None) -> ChainAdapter:
+    """state_conn: an autocommit connection for the Blockscout budget ledger and range
+    store. The worker passes one; without it Blockscout calls are not metered."""
     if chain == "tron":
         from taw.adapters.chains.tron_trongrid import TronGridAdapter
 
@@ -87,7 +89,11 @@ def adapter_for(chain: str, raw_store: RawStore) -> ChainAdapter:
         key = os.environ.get("BLOCKSCOUT_API_KEY")
         if not key:
             raise MissingSetting("BLOCKSCOUT_API_KEY is not set on this service")
-        return BlockscoutAdapter(chain, raw_store, key)
+        budget = ranges = None
+        if state_conn is not None:
+            from taw.budget import PostgresBudget, PostgresRangeStore
+            budget, ranges = PostgresBudget(state_conn, "worker"), PostgresRangeStore(state_conn)
+        return BlockscoutAdapter(chain, raw_store, key, budget=budget, range_store=ranges)
     raise _unsupported(chain)
 
 

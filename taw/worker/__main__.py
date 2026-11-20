@@ -47,6 +47,13 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         outcome = lookup.run_lookup(job.payload, data_conn=data_conn, raw_store=raw_store_factory(),
                                     actor=actor, adapter_for=adapter_for, store_module=store_module)
     except Exception as exc:
+        resets_at = lookup.allowance_reset(exc)
+        if resets_at is not None:
+            message = (f"{getattr(exc, 'provider', 'The provider')}'s daily allowance used up, resets at 00:00 UTC. "
+                       f"The lookup will run again after {resets_at:%Y-%m-%d %H:%M} UTC; this attempt is not counted.")
+            jobs.defer_until(data_conn, job, resets_at, message)
+            log(f"job {job.id}: deferred to {resets_at:%Y-%m-%d %H:%M} UTC: {message}")
+            return "queued"
         permanent, message = lookup.describe_failure(exc)
         if permanent or job.attempts >= job.max_attempts:
             final = message if permanent else f"Failed after {job.attempts} attempts. Last error: {message}"
@@ -68,7 +75,8 @@ def run_once(s3_client=None) -> bool:
             return False
         handle(job, data_conn=data_conn,
                raw_store_factory=lambda: store.RecordingRawStore(raw_conn, ACTOR, s3_client=s3_client),
-               adapter_for=registry.adapter_for, log=lambda m: print(m, flush=True))
+               adapter_for=lambda chain, raw_store: registry.adapter_for(chain, raw_store, state_conn=raw_conn),
+               log=lambda m: print(m, flush=True))
         return True
 
 

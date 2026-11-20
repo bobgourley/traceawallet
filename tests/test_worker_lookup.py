@@ -303,7 +303,7 @@ def test_failure_messages_name_the_provider():
 
 @pytest.mark.parametrize("exc_name, permanent, words", [
     ("EtherscanKeyRejected", True, "rejected our API key"),
-    ("EtherscanDailyLimit", True, "daily call allowance"),
+    ("EtherscanDailyLimit", False, "daily allowance used up, resets at 00:00 UTC"),
     ("EtherscanRateLimited", False, "calling too fast"),
     ("EtherscanError", False, "Etherscan returned an error"),
 ])
@@ -355,3 +355,31 @@ def test_bad_btc_address_fails_at_once(tmp_path):
     status, conn, _ = run(tmp_path, job({"chain": "btc", "address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb"}),
                           replay_adapter_for(tmp_path))
     assert status == "failed" and "checksum mismatch" in conn.sql[-1][1][0]
+
+
+# -- a provider's daily allowance ran out ------------------------------------------------
+
+def _budget_exhausted():
+    from taw.budget import BudgetExhausted, next_reset
+    return BudgetExhausted("used up", next_reset(), "worker")
+
+
+def _blockscout_daily_limit():
+    from taw.adapters.chains import evm_etherscan as es
+
+    class Limit(es.EtherscanDailyLimit):
+        provider = "Blockscout"
+    return Limit("Out of credits", 402)
+
+
+@pytest.mark.parametrize("make_exc", [_budget_exhausted, _blockscout_daily_limit])
+def test_used_up_allowance_waits_for_the_reset_without_counting_an_attempt(tmp_path, make_exc):
+    from taw.budget import next_reset
+    status, conn, logs = run(tmp_path, job({"chain": "eth", "address": EVM_ADDR}, attempts=3, max_attempts=3),
+                             raising(make_exc()))
+    assert status == "queued" and conn.status_set() == ["queued"]
+    sql, (when, message, job_id) = conn.sql[-1]
+    assert "attempts = GREATEST(attempts - 1, 0)" in sql and job_id == 11
+    assert when == next_reset() + dt.timedelta(minutes=5)
+    assert message.startswith("Blockscout's daily allowance used up, resets at 00:00 UTC.")
+    assert "this attempt is not counted" in message
