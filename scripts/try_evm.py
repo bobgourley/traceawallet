@@ -1,6 +1,6 @@
 """Try an EVM adapter on one address. No database needed.
 
-    railway run --service traceawallet-worker .venv/bin/python scripts/try_evm.py 0x... [--chain eth]
+    railway ssh --service traceawallet-worker -- python scripts/try_evm.py 0x... [--chain eth]
         [--provider blockscout|etherscan]
 
 Blockscout is what the worker uses; Etherscan is for comparison only. Raw
@@ -21,6 +21,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from taw.adapters.base import LocalRawStore  # noqa: E402
 from taw.adapters.chains.evm_blockscout import BlockscoutAdapter  # noqa: E402
 from taw.adapters.chains.evm_etherscan import CHAINS, EtherscanAdapter  # noqa: E402
+from taw.budget import BudgetExhausted, script_budget_or_exit  # noqa: E402
 
 
 def fmt(amount: Decimal | None) -> str:
@@ -44,7 +45,11 @@ def main() -> int:
     key = os.environ.get(cls.key_env)
     info = CHAINS[args.chain]
     stable = dict(info.stablecoins)
-    adapter = cls(args.chain, LocalRawStore(args.raw_dir), key, at_block=args.at_block)
+    metered = {}
+    if cls is BlockscoutAdapter:
+        budget, ranges = script_budget_or_exit()
+        metered = {"budget": budget, "range_store": ranges}
+    adapter = cls(args.chain, LocalRawStore(args.raw_dir), key, at_block=args.at_block, **metered)
 
     def token_name(contract: str | None, symbol: str | None) -> str:
         if contract is None:
@@ -53,8 +58,11 @@ def main() -> int:
             return f"{stable[contract]} {contract}"
         return f"{symbol or '?'} {contract}"
 
-    snap = adapter.fetch_snapshot(args.address)
-    batch = adapter.fetch_transfers(snap.address, limit=args.limit)
+    try:
+        snap = adapter.fetch_snapshot(args.address)
+        batch = adapter.fetch_transfers(snap.address, limit=args.limit)
+    except BudgetExhausted as exc:
+        sys.exit(f"Stopped: {exc}")
     addr = snap.address
 
     print(f"Provider     {adapter.provider_name}")

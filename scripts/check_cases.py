@@ -1,11 +1,11 @@
 """Check the ground-truth cases in tests/cases/ against live chain data.
 
-    railway run --service traceawallet-worker .venv/bin/python scripts/check_cases.py [case-name ...]
+    railway ssh --service traceawallet-worker -- python scripts/check_cases.py [case-name ...]
 
 Each case's expected.json lists the facts its complaint states, each with the
 paragraph and the complaint's own words. A fact with a "check" is tested here
 through our adapters (Blockscout for EVM chains, mempool.space for Bitcoin) and
-reported as CONFIRMED, CONTRADICTED or NOT FOUND, with what the chain shows. A
+reported as CONFIRMED, DIFFERS or NOT FOUND, with what the chain shows. A
 fact without one says why it cannot be checked yet.
 
 Amounts: "approximately" allows 1%; any other amount must match to the precision
@@ -33,6 +33,7 @@ from taw.adapters.base import LocalRawStore  # noqa: E402
 from taw.adapters.chains import evm_etherscan as es  # noqa: E402
 from taw.adapters.chains.btc_esplora import BtcEsploraAdapter  # noqa: E402
 from taw.adapters.chains.evm_blockscout import BlockscoutAdapter  # noqa: E402
+from taw.budget import BudgetExhausted, script_budget_or_exit  # noqa: E402
 
 CASES = pathlib.Path(__file__).resolve().parent.parent / "tests" / "cases"
 TOKENS = {"eth": {"USDT": ("0xdac17f958d2ee523a2206206994597c13d831ec7", 6),
@@ -62,12 +63,21 @@ class Chains:
 
     def __init__(self, raw_root: pathlib.Path):
         self.raw_root, self.batches, self.adapters = raw_root, {}, {}
+        self._metered = None
+
+    def metered(self) -> dict:
+        """Blockscout's budget and range store, opened on first use, so a run that only
+        checks Bitcoin or Tron needs no database."""
+        if self._metered is None:
+            budget, ranges = script_budget_or_exit()
+            self._metered = {"budget": budget, "range_store": ranges}
+        return self._metered
 
     def evm(self, chain: str, address: str):
         key = (chain, address.lower())
         if key not in self.batches:
             adapter = BlockscoutAdapter(chain, LocalRawStore(self.raw_root / f"{chain}-{address.lower()}"),
-                                        os.environ["BLOCKSCOUT_API_KEY"])
+                                        os.environ["BLOCKSCOUT_API_KEY"], **self.metered())
             self.adapters[key] = adapter
             self.batches[key] = adapter.fetch_transfers(address)
         return self.adapters[key], self.batches[key]
@@ -110,7 +120,7 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
         out, _ = adapter._eth_call(contract, es.SEL_BALANCE_OF + es._pad(c["address"].lower())[2:], hex(block))
         actual = Decimal(int(out or "0", 16)).scaleb(-decimals)
         ok = close(actual, c["amount"], c.get("approx", False))
-        return ("CONFIRMED" if ok else "CONTRADICTED"), f"balance at block {block:,} (end of {c['date']} UTC): {actual} {c['token']}"
+        return ("CONFIRMED" if ok else "DIFFERS"), f"balance at block {block:,} (end of {c['date']} UTC): {actual} {c['token']}"
     if kind in ("token_transfer", "token_transfers_total"):
         contract, decimals = TOKENS[c["chain"]][c["token"]]
         # Read the side named first; if its history is truncated and the transfer is not in
@@ -155,7 +165,7 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
             return "NOT CHECKED", (f"history truncated at {len(batch.transfers):,} transfers for "
                                    f"{' and '.join(truncated)}; the transfer may be older than what was read")
         near = ", ".join(f"{t.amount()} at {t.block_time:%Y-%m-%d %H:%M}" for t in last_rows[:5]) or "none"
-        verdict = "CONTRADICTED" if last_rows and c.get("date") and not c.get("after") else "NOT FOUND"
+        verdict = "DIFFERS" if last_rows and c.get("date") and not c.get("after") else "NOT FOUND"
         return verdict, f"no matching transfer; transfers between those addresses in the window: {near}"
     if kind == "token_balance_before":
         contract, _ = TOKENS[c["chain"]][c["token"]]
@@ -169,7 +179,7 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
         running = sum((t.amount() if t.to_address == me else -t.amount())
                       for t in token_rows(batch, contract) if t.block_time < when and me in (t.from_address, t.to_address))
         ok = close(Decimal(running), c["amount"], c.get("approx", False))
-        return ("CONFIRMED" if ok else "CONTRADICTED"), f"balance just before {when:%Y-%m-%d %H:%M:%S} UTC: {running}"
+        return ("CONFIRMED" if ok else "DIFFERS"), f"balance just before {when:%Y-%m-%d %H:%M:%S} UTC: {running}"
     if kind == "token_balance_reached":
         contract, _ = TOKENS[c["chain"]][c["token"]]
         _, batch = chains.evm(c["chain"], c["address"])
@@ -183,19 +193,19 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
                 reached.append((t.block_time, running))
         if reached:
             return "CONFIRMED", f"transfers bring the balance to {reached[-1][1]} at {reached[-1][0]:%Y-%m-%d %H:%M} UTC"
-        return "CONTRADICTED", f"the transfer history never reaches {c['amount']}; it ends at {running}"
+        return "DIFFERS", f"the transfer history never reaches {c['amount']}; it ends at {running}"
     if kind == "balance_now":
         if c["chain"] == "btc":
             (adapter, snap), _ = chains.btc(c["address"])
             actual = snap.native_balance()
-            return ("CONFIRMED" if close(actual, c["amount"], False) else "CONTRADICTED"), \
+            return ("CONFIRMED" if close(actual, c["amount"], False) else "DIFFERS"), \
                 f"balance at height {snap.as_of_block:,}: {actual} BTC"
         contract, decimals = TOKENS[c["chain"]][c["token"]]
         adapter, _ = chains.evm(c["chain"], c["address"])
         out, _ = adapter._eth_call(contract, es.SEL_BALANCE_OF + es._pad(c["address"].lower())[2:],
                                    hex(adapter.head().number))
         actual = Decimal(int(out or "0", 16)).scaleb(-decimals)
-        return ("CONFIRMED" if close(actual, c["amount"], False) else "CONTRADICTED"), \
+        return ("CONFIRMED" if close(actual, c["amount"], False) else "DIFFERS"), \
             f"balance at block {adapter.head().number:,}: {actual} {c['token']}"
     if kind == "btc_balance_in_month":
         (adapter, _), batch = chains.btc(c["address"])
@@ -219,7 +229,7 @@ def check_fact(fact: dict, chains: Chains, found: dict) -> tuple[str, str]:
         held = {Decimal(v).scaleb(-8) for v in during + [at_start if at_start is not None else at_end, at_end]}
         target = Decimal(c["amount_btc"])
         ok = any(abs(v - target) <= tolerance(c["amount_btc"], c.get("approx", False)) for v in held)
-        return ("CONFIRMED" if ok else "CONTRADICTED"), (
+        return ("CONFIRMED" if ok else "DIFFERS"), (
             f"balance at the start of {c['month']}: {Decimal(at_start if at_start is not None else at_end).scaleb(-8)} "
             f"BTC, at the end: {Decimal(at_end).scaleb(-8)} BTC; balances held during the month: "
             f"{sorted(str(v) for v in held)}")
@@ -243,6 +253,8 @@ def main() -> int:
                 continue
             try:
                 verdict, detail = check_fact(fact, chains, found)
+            except BudgetExhausted as exc:
+                sys.exit(f"Stopped at {name} {fact['id']}: {exc}")
             except Exception as exc:                       # report and carry on with the other facts
                 verdict, detail = "ERROR", f"{type(exc).__name__}: {exc}"
             print(f"  {fact['id']:<4} ¶{fact['paragraph']:<6} {verdict:<17} {detail}")

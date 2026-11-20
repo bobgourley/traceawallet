@@ -1,6 +1,6 @@
 """Cross-check Blockscout against Etherscan for one address, at one block. No database.
 
-    railway run --service traceawallet-worker .venv/bin/python scripts/cross_check_evm.py 0x... [--chain eth]
+    railway ssh --service traceawallet-worker -- python scripts/cross_check_evm.py 0x... [--chain eth]
 
 Both adapters are pinned to the same block (Etherscan's head unless --at-block is
 given) and must report the same transfers, balances and first activity
@@ -22,6 +22,7 @@ from taw.adapters.chains.evm_blockscout import BlockscoutAdapter  # noqa: E402
 from taw.adapters.chains.evm_crosscheck import compare  # noqa: E402
 from taw.adapters.chains.evm_etherscan import EtherscanAdapter  # noqa: E402
 from taw.adapters.registry import stablecoins_for  # noqa: E402
+from taw.budget import BudgetExhausted, script_budget_or_exit  # noqa: E402
 from taw.reconcile import run_checks  # noqa: E402
 
 
@@ -43,15 +44,19 @@ def main() -> int:
         if not os.environ.get(name):
             print(f"{name} is not set", file=sys.stderr)
             return 2
+    budget, ranges = script_budget_or_exit()
     root = pathlib.Path(args.raw_dir)
     ether = EtherscanAdapter(args.chain, LocalRawStore(root / "cross-etherscan"), os.environ["ETHERSCAN_API_KEY"],
                              at_block=args.at_block)
     block = ether.head().number
     blocks = BlockscoutAdapter(args.chain, LocalRawStore(root / "cross-blockscout"),
-                               os.environ["BLOCKSCOUT_API_KEY"], at_block=block)
+                               os.environ["BLOCKSCOUT_API_KEY"], at_block=block, budget=budget, range_store=ranges)
 
     snap_e, batch_e = run(ether, args.address, args.limit)
-    snap_b, batch_b = run(blocks, args.address, args.limit)
+    try:
+        snap_b, batch_b = run(blocks, args.address, args.limit)
+    except BudgetExhausted as exc:
+        sys.exit(f"Stopped: {exc}")
     print(f"{args.chain} {snap_e.address} at block {block:,}")
     for name, adapter, snap, batch in (("Etherscan", ether, snap_e, batch_e), ("Blockscout", blocks, snap_b, batch_b)):
         kinds = {k: sum(1 for t in batch.transfers if t.kind == k) for k in ("native", "internal", "token")}
