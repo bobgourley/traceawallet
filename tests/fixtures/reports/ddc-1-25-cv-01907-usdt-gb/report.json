@@ -461,30 +461,62 @@
    "checked": true,
    "checks": [
     {
+     "details": {
+      "frozen_zero_no_destruction": 1,
+      "not_checkable": 0,
+      "not_reconciled": 0,
+      "reconciled": 1,
+      "reconciled_with_destruction": 0
+     },
      "marks_incomplete": true,
      "name": "stablecoin_reconciliation",
      "reason": "stablecoin 0xdac17f958d2ee523a2206206994597c13d831ec7 is frozen with a zero balance, transfers in minus out 2137276136000, and no destruction event was found (the index of destruction events was not available)",
      "status": "failed"
     },
     {
+     "details": {
+      "frozen_zero_no_destruction": 0,
+      "not_checkable": 0,
+      "not_reconciled": 10,
+      "reconciled": 9,
+      "reconciled_with_destruction": 0
+     },
      "marks_incomplete": false,
      "name": "other_token_reconciliation",
      "reason": "token 0x4f417aef88badd2cf04601683a0e205dd8f7d3b2 does not reconcile: balance 0, transfers in minus out -27000000000000; token 0x576806b46f1cf493fc83e064933a70375498c914 does not reconcile: balance 1000000, transfers in minus out -7000000000000; token 0x5e57bdcfcb48b45a5c5e5d42c7d006fc7ccb53fe does not reconcile: balance 1000000000, transfers in minus out -300000000; token 0x7db657deef2af2ea24bbe4c4be2a571955dfb88c does not reconcile: balance 0, transfers in minus out -6800000000000; token 0x7dd5f67a25afb9e73d4966b1ac578dabd9ccc986 does not reconcile: balance 1000000000, transfers in minus out -27000000000000; token 0xbac0b60eb1cf16dd9602d33f17a2ad5a4974412c does not reconcile: balance 0, transfers in minus out -10000000000000; token 0xe0c19090e28e6ba7c07dbc8d3def0e0cc59bfb56 does not reconcile: balance 1000000, transfers in minus out -66898193720000; token 0xf3950716947e5d4737794b8f977a0cd8dadc21c9 does not reconcile: balance 0, transfers in minus out -3000000000000; token 0xf50d846f812bb64df2d4eedde0c7c07a1abc782e does not reconcile: balance 0, transfers in minus out -4000000000000; token 0xfe3ba5a23354fb7aad38c3c4e445f0d3ae35e537 does not reconcile: balance 1000000, transfers in minus out -3000000000000",
      "status": "failed"
     },
     {
+     "details": {
+      "balance_raw": "49405781241343832",
+      "expected_raw": "49405781241343832",
+      "fees_raw": "10594218758656168",
+      "in_raw": "60000000000000000",
+      "out_raw": "0",
+      "transactions_sent": 13,
+      "withdrawals_raw": "0"
+     },
      "marks_incomplete": true,
      "name": "native_reconciliation",
      "reason": null,
      "status": "passed"
     },
     {
+     "details": {
+      "nonce": 13,
+      "transactions_sent": 13
+     },
      "marks_incomplete": true,
      "name": "tx_count",
      "reason": null,
      "status": "passed"
     },
     {
+     "details": {
+      "rows_without_log": 0,
+      "token_list_rows": 99,
+      "transfer_logs": 101
+     },
      "marks_incomplete": true,
      "name": "token_list_matches_logs",
      "reason": null,
@@ -1503,5 +1535,5 @@
    "list_matches": 0
   }
  },
- "sha256": "2c4745587d89f5132169b7e44e2467bf0b955fda10ccf034df342c135ef63e76"
+ "sha256": "8244ed976dfd4f90a6941446c7b0891db86c40f3fbb8367851a7e5f728697380"
 }

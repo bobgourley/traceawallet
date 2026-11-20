@@ -150,5 +150,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): 65125fd855da9b9d7ead0062315afb14bbea6c8c113f10922ec168137aaccf76
+Fingerprint (SHA-256): f7b5486631356b966ef9c0a0e73637cc77e6975c454f9c989e1a802be82b35db
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

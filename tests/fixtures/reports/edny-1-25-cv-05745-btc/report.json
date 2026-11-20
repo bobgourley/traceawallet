@@ -44,18 +44,38 @@
    "checked": true,
    "checks": [
     {
+     "details": {
+      "ours_sat": "0",
+      "provider_totals_sat": "0",
+      "received_sat": "62519753120",
+      "spent_sat": "62519753120",
+      "unspent_outputs_sat": "0"
+     },
      "marks_incomplete": true,
      "name": "native_reconciliation",
      "reason": null,
      "status": "passed"
     },
     {
+     "details": {
+      "above_snapshot_height_ignored": 0,
+      "provider_count": 16,
+      "transactions_stored": 16,
+      "unconfirmed_ignored": 0
+     },
      "marks_incomplete": true,
      "name": "tx_count",
      "reason": null,
      "status": "passed"
     },
     {
+     "details": {
+      "cap_per_transaction": 200,
+      "capped_transactions": [
+       "baf29e4cabe8314e8cbc7c64f889c62ee7918e08e6cdaa37e84f676533477c9b",
+       "d6bd19bf58a949fd3b622b8452e87f264414e2ca27f68be3cafd64c414c2a910"
+      ]
+     },
      "marks_incomplete": false,
      "name": "other_party_rows_capped",
      "reason": "2 transaction(s) had more than 200 inputs and outputs of other addresses; only the first 200 of those are stored",
@@ -521,5 +541,5 @@
    "list_matches": 0
   }
  },
- "sha256": "65125fd855da9b9d7ead0062315afb14bbea6c8c113f10922ec168137aaccf76"
+ "sha256": "f7b5486631356b966ef9c0a0e73637cc77e6975c454f9c989e1a802be82b35db"
 }

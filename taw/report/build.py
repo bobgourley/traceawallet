@@ -509,7 +509,7 @@ def _completeness(inp: ReportInput, c: Ctx, inbound, outbound) -> dict:
     before = None
     for ch in snap.get("checks") or []:
         checks.append({"name": ch["name"], "status": ch["status"], "reason": ch.get("reason"),
-                       "marks_incomplete": ch.get("marks_incomplete", True)})
+                       "marks_incomplete": ch.get("marks_incomplete", True), "details": ch.get("details") or {}})
         det = ch.get("details") or {}
         if ch["name"] == "tx_count" and "history_start_block" in det:
             before = {"history_start_block": det["history_start_block"],

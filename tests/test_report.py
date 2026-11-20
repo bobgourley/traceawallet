@@ -172,7 +172,8 @@ def test_what_is_not_read_is_said():
     assert "TRC-10 tokens and their balances are not read." in tron
     assert "TRX moved by smart contracts (internal transactions) is not read." in tron
     eth = render_text(built("wdpa-2-26-cv-00087-usdt")[1])
-    assert "Internal transfers (value moved by contract code):" in eth and "NFT transfers are not read." in eth
+    assert "Internal transfers (value moved by contract code) were read for every block" in eth
+    assert "NFT transfers are not read." in eth
     assert "the source listed the whole history" in eth
 
 

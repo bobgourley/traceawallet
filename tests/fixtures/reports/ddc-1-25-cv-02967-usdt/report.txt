@@ -135,7 +135,7 @@ What we did not read or could not check:
   - TRC-10 tokens and their balances are not read.
   - TRX moved by smart contracts (internal transactions) is not read.
   - First-hop addresses are matched against the lists above only. GoPlus and the token contracts are asked about this address alone.
-Detail: balances of tokens we don't recognise don't match their transfers (token THxYWbzAgzQgQaYi9G4mjeL1tq1hdrZe55 does not reconcile: balance 138138, transfers in minus out 276276). This does not affect the verdict.
+Detail: for 1 token we don't recognise, the balance doesn't match the transfers read. Such tokens can report any balance they like; the figures are in the report's data. This does not affect the verdict.
 
 == Prior lookups ==
 Not counted yet for this address.
@@ -190,5 +190,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): b1cb5dd137217ea27d75113da7ba21208458a794c010e55cb2254931f83cf09a
+Fingerprint (SHA-256): 3cf3b33e629ed5b8fe97c09451bced364e9fa797dda67a4bde3335f5ce14eda5
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

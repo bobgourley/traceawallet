@@ -121,24 +121,40 @@
    "checked": true,
    "checks": [
     {
+     "details": {
+      "frozen_zero_no_destruction": 0,
+      "not_checkable": 0,
+      "not_reconciled": 0,
+      "reconciled": 1,
+      "reconciled_with_destruction": 1
+     },
      "marks_incomplete": true,
      "name": "stablecoin_reconciliation",
      "reason": null,
      "status": "passed"
     },
     {
+     "details": {
+      "frozen_zero_no_destruction": 0,
+      "not_checkable": 0,
+      "not_reconciled": 1,
+      "reconciled": 1,
+      "reconciled_with_destruction": 0
+     },
      "marks_incomplete": false,
      "name": "other_token_reconciliation",
      "reason": "token THxYWbzAgzQgQaYi9G4mjeL1tq1hdrZe55 does not reconcile: balance 138138, transfers in minus out 276276",
      "status": "failed"
     },
     {
+     "details": {},
      "marks_incomplete": true,
      "name": "native_reconciliation",
      "reason": "TRX staking, unstaking and resource delegation are not parsed yet; they move the balance.",
      "status": "not_run"
     },
     {
+     "details": {},
      "marks_incomplete": true,
      "name": "tx_count",
      "reason": "Tron accounts have no transaction nonce.",
@@ -943,5 +959,5 @@
    "list_matches": 1
   }
  },
- "sha256": "b1cb5dd137217ea27d75113da7ba21208458a794c010e55cb2254931f83cf09a"
+ "sha256": "3cf3b33e629ed5b8fe97c09451bced364e9fa797dda67a4bde3335f5ce14eda5"
 }

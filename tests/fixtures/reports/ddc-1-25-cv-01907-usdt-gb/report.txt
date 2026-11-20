@@ -178,14 +178,14 @@ What we checked:
   - The native coin balance matches the transfers read: yes
   - The number of transactions sent matches the address's nonce: yes
   - Etherscan's token list matches the token transfer logs: yes
+  - Internal transfers (value moved by contract code) were read for every block up to the snapshot.
   - TUSD balance: matches the transfers read.
   - USDT balance: is zero while the address is frozen, and no destruction by the issuer was found.
 
 What we did not read or could not check:
   - NFT transfers are not read.
-  - Internal transfers (value moved by contract code): read for every block up to the snapshot.
   - First-hop addresses are matched against the lists above only. GoPlus and the token contracts are asked about this address alone.
-Detail: balances of tokens we don't recognise don't match their transfers (token 0x4f417aef88badd2cf04601683a0e205dd8f7d3b2 does not reconcile: balance 0, transfers in minus out -27000000000000; token 0x576806b46f1cf493fc83e064933a70375498c914 does not reconcile: balance 1000000, transfers in minus out -7000000000000; token 0x5e57bdcfcb48b45a5c5e5d42c7d006fc7ccb53fe does not reconcile: balance 1000000000, transfers in minus out -300000000; token 0x7db657deef2af2ea24bbe4c4be2a571955dfb88c does not reconcile: balance 0, transfers in minus out -6800000000000; token 0x7dd5f67a25afb9e73d4966b1ac578dabd9ccc986 does not reconcile: balance 1000000000, transfers in minus out -27000000000000; token 0xbac0b60eb1cf16dd9602d33f17a2ad5a4974412c does not reconcile: balance 0, transfers in minus out -10000000000000; token 0xe0c19090e28e6ba7c07dbc8d3def0e0cc59bfb56 does not reconcile: balance 1000000, transfers in minus out -66898193720000; token 0xf3950716947e5d4737794b8f977a0cd8dadc21c9 does not reconcile: balance 0, transfers in minus out -3000000000000; token 0xf50d846f812bb64df2d4eedde0c7c07a1abc782e does not reconcile: balance 0, transfers in minus out -4000000000000; token 0xfe3ba5a23354fb7aad38c3c4e445f0d3ae35e537 does not reconcile: balance 1000000, transfers in minus out -3000000000000). This does not affect the verdict.
+Detail: for 10 tokens we don't recognise, the balance doesn't match the transfers read. Such tokens can report any balance they like; the figures are in the report's data. This does not affect the verdict.
 
 == Prior lookups ==
 Not counted yet for this address.
@@ -239,5 +239,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): 2c4745587d89f5132169b7e44e2467bf0b955fda10ccf034df342c135ef63e76
+Fingerprint (SHA-256): 8244ed976dfd4f90a6941446c7b0891db86c40f3fbb8367851a7e5f728697380
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

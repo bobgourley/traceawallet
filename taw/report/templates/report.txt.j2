@@ -307,6 +307,9 @@ What we checked:
   - {{ CHECK_TITLES.get(ch.name, ch.name) }}: {{ "yes" if ch.status == "passed" else "no" }}{% if ch.status == "failed" and ch.reason %}. {{ ch.reason }}{% endif %}
 
 {% endfor %}
+{% if c.internal and c.internal.full %}
+  - Internal transfers (value moved by contract code) were read for every block up to the snapshot.
+{% endif %}
 {% for t in c.stablecoins %}
   - {{ t.symbol or t.contract }} balance: {{ RECON_WORDS.get(t.status, t.status) }}{% if t.destroyed %}, counting the issuer's destruction shown under "Freeze status"{% endif %}.
 {% endfor %}
@@ -318,8 +321,8 @@ What we did not read or could not check:
 {% for code in c.not_read %}
   - {{ NOT_READ_WORDS[code] }}
 {% endfor %}
-{% if c.internal %}
-  - Internal transfers (value moved by contract code): {% if c.internal.full %}read for every block up to the snapshot.{% elif c.internal.from_block is none %}not read.{% else %}read only for blocks {{ c.internal.from_block|num }} to {{ c.internal.to_block|num }}; outside that range none were read.{% endif %}
+{% if c.internal and not c.internal.full %}
+  - Internal transfers (value moved by contract code): {% if c.internal.from_block is none %}not read.{% else %}read only for blocks {{ c.internal.from_block|num }} to {{ c.internal.to_block|num }}; outside that range none were read.{% endif %}
 
 {% endif %}
 {% if c.before_history %}
@@ -327,7 +330,7 @@ What we did not read or could not check:
 {% endif %}
   - First-hop addresses are matched against the lists above only. GoPlus and the token contracts are asked about this address alone.
 {% for ch in c.checks if ch.name == "other_token_reconciliation" and ch.status == "failed" %}
-Detail: balances of tokens we don't recognise don't match their transfers ({{ ch.reason }}). This does not affect the verdict.
+Detail: for {{ plural(ch.details.not_reconciled, "token") }} we don't recognise, the balance doesn't match the transfers read. Such tokens can report any balance they like; the figures are in the report's data. This does not affect the verdict.
 {% endfor %}
 
 == Prior lookups ==
