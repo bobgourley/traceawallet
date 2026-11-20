@@ -3,6 +3,66 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (evening): regenesis, spam gaps, GoPlus, NBCTF
+
+**OP Mainnet's regenesis hides early transactions from every explorer.** On
+2021-11-11 Optimism restarted its chain history at block 0. It carried balances
+and nonces forward and dropped the earlier transactions. Explorers, Blockscout
+and Optimistic Etherscan alike, list nothing before it.
+
+The live Optimism wallet `0x5cb8…a33e` shows this. Its nonce was already 7 at
+block 0 and is 12 now. Both explorers list exactly the 5 transactions it sent
+since. Each later rise in the nonce matched a listed transaction: 7 → 10 in
+2022, 11 in June 2026, 12 in November 2026.
+
+The fix: the OP Mainnet chain settings record `history_start_block = 0`. The
+snapshot reads the nonce there, and `tx_count` compares the transactions sent
+since then with the provider's list. The earlier count is stored in the check's
+details as `transactions_before_history`, with the note "unavailable from any
+explorer". A report must say that this many transactions predate any record an
+investigator can see.
+
+**Blockscout's REST token list leaves out tokens it judges to be spam.** On the
+same wallet it left out a 100 "ASAFE-N" airdrop that its Etherscan-style token
+list and Optimistic Etherscan both show. Address-poisoning spam is common on
+victims' wallets, and investigators need to see it.
+
+The fix: when the two lists disagree, the transaction's receipt settles it.
+
+- A transfer only in the token list is stored with the receipt's log index.
+  The ASAFE-N transfer is now stored at log 67.
+- A transfer only in the REST list is kept if the receipt confirms it.
+- `token_lists_agree` fails, marking the snapshot incomplete, only for a gap
+  the receipt cannot settle. Its details count `filled_from_receipts` and
+  `unfilled`.
+- There is no reputation filtering anywhere: spam stays visible, labelled only
+  by what it is.
+
+Cost: one receipt call per disagreeing transaction. After both fixes the
+wallet's lookup reports `history_incomplete: false`, with every check
+explained.
+
+**GoPlus: never for Bitcoin; logo, wording and unmodified results.**
+
+- Never query or display GoPlus for a Bitcoin address. It answers every
+  Bitcoin address with all flags "0", which reads as clean but means "not
+  covered".
+- Wherever its results appear, show the GoPlus logo with "Powered by GoPlus"
+  (licence s.5; failing to show it lets GoPlus end the licence).
+- Show the results unmodified (s.5). A flag is still worded as GoPlus's claim
+  (design rule 9): "flagged by GoPlus", naming GoPlus's own listed sources
+  where it gives them.
+- Migration 0009 sets the source row's attribution to match.
+
+**NBCTF is out of Phase 1.** Its new site (matal.mod.gov.il) publishes no terms
+or licence, only placeholder text under an "all rights reserved" footer. Its
+robots.txt disallows crawling. Many of its listed "wallets" are 8 or 9-digit
+Binance account numbers, not addresses. Using it would mean reusing a
+government publication with no stated permission, scraped against the site's
+wishes, and matching data that is often not an address at all. The source row
+stays; migration 0009 adds this to its licence text. Revisit if NBCTF grants
+permission in writing.
+
 ## 2026-11-20 (later): Blockscout fixed; every check stored separately
 
 **Internal transfers: only the finished range (owner's choice, option 1).**
@@ -562,7 +622,8 @@ the live run on Railway.
   then Etherscan is used for tests and cross-checks only.
 - Blockscout's written reply to the 2026-11-19 email. Not needed for testers;
   required before a Phase 2 public API uses Blockscout data.
-- Written permission from DefiLlama and NBCTF before their data is shown, and
+- Written permission from DefiLlama before its data is shown (NBCTF is out of
+  Phase 1, 2026-11-20), and
   from GoPlus, TronGrid and Blockscout before any paid API.
 - Bitcoin source for the public site: self-host esplora or mempool, or read
   Blockstream's Explorer API terms.

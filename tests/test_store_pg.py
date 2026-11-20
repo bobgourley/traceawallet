@@ -529,3 +529,13 @@ def test_snapshot_without_reconciliation_stores_nulls_never_complete(conns):
                          " SELECT chain, address_id, as_of_block, as_of_time, native_balance_raw, native_decimals,"
                          " is_contract, tokens_truncated, transfer_count, transfers_truncated, source_id,"
                          " raw_response_id, false FROM address_snapshot WHERE id = %s", (saved.snapshot_id,))
+
+
+def test_goplus_display_rules_and_nbctf_out_of_phase1(conns):
+    data, _ = conns
+    attribution, license = data.execute("SELECT attribution, license FROM source WHERE slug = 'goplus'").fetchone()
+    assert attribution.startswith("Powered by GoPlus") and "flagged by GoPlus" in attribution
+    assert "never queried or shown for Bitcoin" in license
+    (nbctf,) = data.execute("SELECT license FROM source WHERE slug = 'nbctf'").fetchone()
+    assert "Out of Phase 1" in nbctf
+    assert count(data, "SELECT count(*) FROM event_log WHERE actor = 'migration:0009_goplus_nbctf'") == 2
