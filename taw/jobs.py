@@ -16,7 +16,10 @@ from taw.adapters.registry import normalize_address
 LOOKUP = "address_lookup"
 OFAC_REFRESH = "ofac_refresh"
 EXCHANGE_REFRESH = "exchange_refresh"
-DAILY = {OFAC_REFRESH: 23, EXCHANGE_REFRESH: 6}       # kind -> hour (UTC) it runs each day
+BLACKLIST_REFRESH = "blacklist_refresh"
+# kind -> hour (UTC) it runs each day. blacklist_refresh runs after Blockscout's
+# allowance resets at 00:00 UTC.
+DAILY = {OFAC_REFRESH: 23, EXCHANGE_REFRESH: 6, BLACKLIST_REFRESH: 1}
 RETRY_BASE_SECONDS = 30          # waits of 30 s, 2 min, 8 min, ... between attempts
 STALE_AFTER = "30 minutes"       # a 'running' job older than this lost its worker
 
@@ -114,6 +117,14 @@ def defer_until(conn, job: Job, when, message: str) -> None:
     )
 
 
+def later(seconds: int):
+    import datetime as dt
+    return dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=seconds)
+
+
+NO_HANDLER = "No handler for job kind"
+
+
 def mark_failed(conn, job_id: int, message: str) -> None:
     conn.execute("UPDATE job SET status = 'failed', last_error = %s, finished_at = now() WHERE id = %s",
                  (message, job_id))
@@ -122,7 +133,8 @@ def mark_failed(conn, job_id: int, message: str) -> None:
 def ensure_daily(conn, kind: str, *, now=None) -> bool:
     """Queue today's run of a daily job unless one was already queued for today.
     It runs at DAILY[kind]:00 UTC, or at once if no run of that kind ever finished.
-    Returns True when a job was queued."""
+    A run that an older worker failed for want of a handler (during a deploy) does
+    not count. Returns True when a job was queued."""
     import datetime as dt
     now = now or dt.datetime.now(dt.timezone.utc)
     at = dt.datetime.combine(now.date(), dt.time(DAILY[kind]), dt.timezone.utc)
@@ -130,7 +142,8 @@ def ensure_daily(conn, kind: str, *, now=None) -> bool:
     when = at if ever else now
     row = conn.execute(
         "INSERT INTO job (kind, dedupe_key, payload, run_after)"
-        " SELECT %s, %s, '{}'::jsonb, %s WHERE NOT EXISTS (SELECT 1 FROM job WHERE kind = %s AND dedupe_key = %s)"
+        " SELECT %s, %s, '{}'::jsonb, %s WHERE NOT EXISTS (SELECT 1 FROM job WHERE kind = %s AND dedupe_key = %s"
+        "   AND NOT (status = 'failed' AND last_error LIKE %s))"
         " ON CONFLICT (kind, dedupe_key) WHERE status IN ('queued', 'running') DO NOTHING RETURNING id",
-        (kind, f"{kind}:{now.date()}", when, kind, f"{kind}:{now.date()}")).fetchone()
+        (kind, f"{kind}:{now.date()}", when, kind, f"{kind}:{now.date()}", NO_HANDLER + "%")).fetchone()
     return row is not None

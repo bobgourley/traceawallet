@@ -1,4 +1,5 @@
-"""Daily list refreshes: OFAC's SDN list, and the exchange wallet lists."""
+"""Daily list refreshes: OFAC's SDN list, the exchange wallet lists, and the index of
+stablecoin blacklist events."""
 from __future__ import annotations
 
 import datetime as dt
@@ -47,4 +48,23 @@ def refresh_exchanges(*, data_conn, raw_store, actor: str, today: dt.date | None
         else:
             result = labels.load_publication(data_conn, actor, okx_pub)
             notes.append(f"OKX {month:%Y-%m}: {result.summary()}; {okx_pub.unmapped} row(s) skipped (not an address)")
+    return "; ".join(notes)
+
+
+def refresh_blacklists(*, data_conn, raw_store, actor: str) -> str:
+    """Bring the global index of stablecoin blacklist events up to the head, for every
+    contract already backfilled (scripts/backfill_blacklist.py does the first scan).
+    Ethereum through Blockscout (metered), Tron through TronGrid."""
+    from taw import blacklist
+    from taw.adapters import registry
+    notes = []
+    for chain in ("eth", "tron"):
+        try:
+            notes += blacklist.update(data_conn, actor,
+                                      lambda c: registry.adapter_for(c, raw_store, state_conn=data_conn), (chain,))
+        except Exception as exc:
+            from taw.budget import BudgetExhausted
+            if isinstance(exc, BudgetExhausted):
+                raise                          # the job is deferred to the reset
+            notes.append(f"{chain}: not done ({type(exc).__name__}: {exc})")
     return "; ".join(notes)

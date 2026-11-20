@@ -7,6 +7,7 @@ migration, and drops it afterwards. Never point this at production.
 import dataclasses
 import datetime as dt
 import io
+import json
 import os
 import pathlib
 import uuid
@@ -985,3 +986,112 @@ def test_a_file_load_is_audited_once_and_verifies(conns):
     data.execute("ALTER TABLE label ENABLE TRIGGER label_immutable")
     [(lid, ok, what)] = labels.verify_loads(data, load_id)
     assert not ok and "rows sha256" in what
+
+
+# -- the global index of blacklist events (0016) ----------------------------------------------------
+
+def blacklist_scan_result(raw_store, events):
+    from taw.adapters.labels import blacklist as bl
+    sha = raw_store.save("trongrid", "https://api.trongrid.io/v1/contracts/x/events", {"query": {"n": len(events)}},
+                         200, json.dumps([e[:3] for e in events]).encode())
+    usdt = bl.CONTRACTS[2]
+    out = []
+    for action, addr, block, amount in events:
+        name = {"freeze": "AddedBlackList", "unfreeze": "RemovedBlackList", "destroy": "DestroyedBlackFunds"}[action]
+        out.append(bl.BlacklistEvent("tron", "USDT", usdt.contract, action, name, addr, amount, block,
+                                     dt.datetime(2025, 1, 1, tzinfo=dt.timezone.utc) + dt.timedelta(seconds=block),
+                                     f"{block:064x}", 0, sha))
+    return usdt, bl.ScanResult(out, 1, [sha])
+
+
+TRON_FROZEN = "TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN"
+TRON_OTHER = "TL7me8SQkNmieVngj9sPQGG2PSMENASHug"
+
+
+def test_blacklist_scan_is_audited_once_and_verifies(conns):
+    from taw import blacklist
+    data, raw = conns
+    raw_store = store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test")
+    usdt, result = blacklist_scan_result(raw_store, [("freeze", TRON_FROZEN, 10, None), ("unfreeze", TRON_FROZEN, 20, None),
+                                                     ("freeze", TRON_FROZEN, 30, None),
+                                                     ("destroy", TRON_FROZEN, 40, 465_514_638_375),
+                                                     ("freeze", TRON_OTHER, 15, None)])
+    assert blacklist.coverage(data, "tron", usdt.contract) is None
+    t = dt.datetime(2026, 11, 20, tzinfo=dt.timezone.utc)
+    sid, n = blacklist.record_scan(data, ACTOR, usdt, 0, 100, t, result, "trongrid")
+    assert n == 5
+    cov = blacklist.coverage(data, "tron", usdt.contract)
+    assert (cov.from_block, cov.to_block, cov.to_time, cov.scans) == (0, 100, t, 1)
+    entry = data.execute("SELECT payload FROM event_log WHERE entity = 'blacklist_scan'").fetchone()[0]
+    assert entry["rows"] == 5 and entry["by_action"] == {"destroy": 1, "freeze": 3, "unfreeze": 1}
+    assert count(data, "SELECT count(*) FROM blacklist_event WHERE raw_response_id IS NULL") == 0
+    assert [ok for _, ok, _ in blacklist.verify_scans(data)] == [True]
+
+    # Scanning the same events again adds nothing and still logs the scan.
+    sid2, n2 = blacklist.record_scan(data, ACTOR, usdt, 101, 120, t, result, "trongrid")
+    assert n2 == 0 and blacklist.coverage(data, "tron", usdt.contract).to_block == 120
+
+    # The current freeze is the one after the release; a destruction is listed with its hash.
+    found = blacklist.freeze_since(data, "tron", usdt.contract, TRON_FROZEN, None)
+    assert found.event.block_number == 30 and found.covered_to_block == 120
+    assert blacklist.freeze_since(data, "tron", usdt.contract, TRON_FROZEN, 25).event is None    # released by then
+    [burn] = blacklist.destructions(data, "tron", usdt.contract, TRON_FROZEN, None)
+    assert (burn.amount_raw, burn.tx_hash) == (465_514_638_375, f"{40:064x}")
+    assert blacklist.destructions(data, "tron", usdt.contract, TRON_FROZEN, 39) == []
+
+    with pytest.raises(psycopg.Error):
+        data.execute("UPDATE blacklist_event SET amount_raw = 1 WHERE action = 'destroy'")
+
+    data.execute("ALTER TABLE blacklist_event DISABLE TRIGGER blacklist_event_immutable")
+    data.execute("UPDATE blacklist_event SET amount_raw = 1 WHERE action = 'destroy'")
+    data.execute("ALTER TABLE blacklist_event ENABLE TRIGGER blacklist_event_immutable")
+    assert [ok for _, ok, _ in blacklist.verify_scans(data)] == [False, True]
+
+
+def test_lookup_context_reads_destructions_and_coverage_from_the_index(conns):
+    from taw import blacklist
+    from taw.adapters.labels import freeze
+    from taw.worker.enrich import index_for, stablecoin_context
+    data, raw = conns
+    raw_store = store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test")
+    usdt, result = blacklist_scan_result(raw_store, [("freeze", TRON_FROZEN, 30, None),
+                                                     ("destroy", TRON_FROZEN, 40, 500)])
+    blacklist.record_scan(data, ACTOR, usdt, 0, 100, None, result, "trongrid")
+    tron_usdt = next(c for c in freeze.CONTRACTS if c.chain == "tron" and c.token == "USDT")
+    tron_usdc = next(c for c in freeze.CONTRACTS if c.chain == "tron" and c.token == "USDC")
+    checks = [freeze.FreezeCheck(tron_usdt, TRON_FROZEN, True, None, "s" * 64),
+              freeze.FreezeCheck(tron_usdc, TRON_FROZEN, False, None, "s" * 64)]
+    ctx = stablecoin_context(data, "tron", TRON_FROZEN, 100, checks)
+    assert ctx.frozen == {tron_usdt.contract: True, tron_usdc.contract: False}
+    assert ctx.index_to_block == {tron_usdt.contract: 100}            # USDC never scanned: no coverage claimed
+    assert [d["amount_raw"] for d in ctx.destructions[tron_usdt.contract]] == ["500"]
+    look = index_for(data)
+    assert look(tron_usdt, TRON_FROZEN, None).event.block_number == 30
+    assert look(tron_usdc, TRON_FROZEN, None).covered_to_block is None
+    eth_usdc = next(c for c in freeze.CONTRACTS if c.chain == "arbitrum" and c.token == "USDC")
+    assert look(eth_usdc, "0x" + "a" * 40, 5) is None                 # not an indexed contract
+
+
+def test_blacklist_refresh_skips_contracts_never_backfilled(conns):
+    from taw import blacklist
+
+    class NoCalls:
+        def __getattr__(self, name):
+            raise AssertionError(f"no call expected, got {name}")
+
+    data, _ = conns
+    assert blacklist.update(data, ACTOR, lambda chain: NoCalls(), ("eth", "tron")) == [
+        "eth USDT: not backfilled yet", "eth USDC: not backfilled yet",
+        "tron USDT: not backfilled yet", "tron USDC: not backfilled yet"]
+
+
+def test_a_daily_job_failed_by_an_old_worker_is_queued_again(conns):
+    data, _ = conns
+    now = dt.datetime(2026, 11, 20, 14, 20, tzinfo=dt.timezone.utc)
+    assert jobs.ensure_daily(data, jobs.EXCHANGE_REFRESH, now=now)
+    data.execute("UPDATE job SET status = 'failed', last_error = %s WHERE kind = %s",
+                 ("No handler for job kind 'exchange_refresh'.", jobs.EXCHANGE_REFRESH))
+    assert jobs.ensure_daily(data, jobs.EXCHANGE_REFRESH, now=now)          # queued again
+    assert not jobs.ensure_daily(data, jobs.EXCHANGE_REFRESH, now=now)      # but only once
+    data.execute("UPDATE job SET status = 'failed', last_error = 'TronGrid said no' WHERE status = 'queued'")
+    assert not jobs.ensure_daily(data, jobs.EXCHANGE_REFRESH, now=now)      # a real failure is not retried today

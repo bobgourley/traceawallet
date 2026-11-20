@@ -1,7 +1,10 @@
 """Worker loop. Claims one job at a time from the Postgres queue and runs it.
 
 Job kinds:
-  address_lookup   taw/worker/lookup.py
+  address_lookup     taw/worker/lookup.py
+  ofac_refresh       taw/worker/lists.py, daily
+  exchange_refresh   taw/worker/lists.py, daily
+  blacklist_refresh  taw/worker/lists.py, daily: the global index of stablecoin blacklist events
 
 A failing job is retried after a growing wait until max_attempts, then marked
 failed with a plain-language last_error. Some failures (a TronGrid 403, a bad
@@ -22,6 +25,7 @@ from taw.adapters.base import BucketRawStore
 from taw.worker import enrich, lists, lookup
 
 WORKER_ID = f"{socket.gethostname()}-{os.getpid()}"
+UNKNOWN_KIND_WAIT = 600          # seconds before a job of a kind this worker can't run is offered again
 ACTOR = f"worker:{WORKER_ID}"
 
 
@@ -39,11 +43,15 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
                                             "stopped partway through each time.")
         log(f"job {job.id}: failed, too many attempts")
         return "failed"
-    list_jobs = {jobs.OFAC_REFRESH: lists.refresh_ofac, jobs.EXCHANGE_REFRESH: lists.refresh_exchanges}
+    list_jobs = {jobs.OFAC_REFRESH: lists.refresh_ofac, jobs.EXCHANGE_REFRESH: lists.refresh_exchanges,
+                 jobs.BLACKLIST_REFRESH: lists.refresh_blacklists}
     if job.kind != jobs.LOOKUP and job.kind not in list_jobs:
-        jobs.mark_failed(data_conn, job.id, f"No handler for job kind {job.kind!r}.")
-        log(f"job {job.id}: no handler for {job.kind!r}")
-        return "failed"
+        # During a deploy the old worker can claim a job kind only the new code knows.
+        # Put it back for a newer worker instead of failing it.
+        jobs.defer_until(data_conn, job, jobs.later(UNKNOWN_KIND_WAIT),
+                         f"No handler for job kind {job.kind!r} in this worker; left for a newer one.")
+        log(f"job {job.id}: no handler for {job.kind!r}, deferred")
+        return "queued"
     try:
         if job.kind in list_jobs:
             outcome = lookup.Outcome(list_jobs[job.kind](data_conn=data_conn, raw_store=raw_store_factory(),
@@ -51,7 +59,7 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         else:
             outcome = lookup.run_lookup(job.payload, data_conn=data_conn, raw_store=raw_store_factory(),
                                         actor=actor, adapter_for=adapter_for, store_module=store_module,
-                                        enrich=enrich)
+                                        enrich=enrich, prepare=getattr(enrich, "prepare", None))
     except Exception as exc:
         resets_at = lookup.allowance_reset(exc)
         if resets_at is not None:

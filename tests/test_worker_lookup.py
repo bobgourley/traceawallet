@@ -189,9 +189,11 @@ def test_job_reclaimed_too_often_is_failed(tmp_path):
     assert status == "failed" and "stopped partway" in conn.sql[-1][1][0]
 
 
-def test_unknown_job_kind_fails(tmp_path):
+def test_unknown_job_kind_is_left_for_a_newer_worker(tmp_path):
+    # During a deploy the old worker can claim a kind only the new code knows.
     status, conn, _ = run(tmp_path, job({}, kind="list_refresh"), replay_adapter_for(tmp_path))
-    assert status == "failed" and "No handler" in conn.sql[-1][1][0]
+    assert status == "queued" and "No handler" in conn.sql[-1][1][1]
+    assert "attempts = GREATEST(attempts - 1, 0)" in conn.sql[-1][0]          # the attempt is not counted
 
 
 def test_missing_api_key_fails_at_once(monkeypatch, tmp_path):
