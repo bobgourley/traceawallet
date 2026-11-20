@@ -3,6 +3,31 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (morning): Labels: applying them
+
+**The looked-up address gets every source.** After each lookup the worker runs,
+in order: freeze status, GoPlus, prices, labels. The last step reads every
+current label on the address: OFAC, the exchange file, the stablecoin
+contracts and GoPlus.
+
+**Funders and first-hop destinations get only the local sources** (OFAC, the
+exchange file). Those are answered from our own tables and cost no API calls.
+GoPlus and the contracts are never asked about them. A GoPlus label that
+exists for a counterparty, because someone looked that address up earlier, is
+still not shown as part of this lookup.
+
+- Account chains (EVM, Tron): a funder sent to the address, and a destination
+  received from it. EVM matching ignores case; Tron's is exact.
+- Bitcoin: a funder is another input of a transaction that paid the address. A
+  destination is an output of a transaction that spent from it, worded
+  "outputs of transactions that spent from this address". The address's own
+  change is left out.
+
+Nothing new is stored: labels are already append-only rows with dates, so a
+report can rebuild what applied at the time of its lookup. The job log gives
+the counts, e.g. "labels: 2 on the address; 1 of 140 first-hop address(es)
+carry an OFAC or exchange label".
+
 ## 2026-11-20 (morning): Labels: GoPlus
 
 **What is asked.** `GET /api/v1/address_security/{address}?chain_id=` for the
