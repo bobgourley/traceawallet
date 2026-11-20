@@ -1,0 +1,262 @@
+{% set h = d.header %}
+{% set c = d.completeness %}
+TraceAWallet report
+{{ h.chain_name }} address {{ h.address }}
+
+As of block {{ h.as_of_block|num }} ({{ h.as_of_time|when }}). Labels and lists as they stood at {{ h.labels_as_of|when }}.
+Chain data: {{ h.chain_source.name }}.{% if h.chain_source.attribution and h.chain_source.attribution != h.chain_source.name %} {{ h.chain_source.attribution }}{% endif %}
+
+This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
+
+{% if not c.checked %}
+NOT CHECKED FOR COMPLETENESS. The completeness checks were not run on this snapshot, so it is not known whether the history below is complete.
+{% elif c.history_incomplete %}
+THE HISTORY MAY BE INCOMPLETE. What was read does not add up:
+{% for r in c.incomplete_reasons %}
+  - {{ r }}
+{% endfor %}
+Treat totals and lists below as partial.
+{% endif %}
+
+== Chains ==
+{% if h.evm_coverage %}
+This report covers {{ h.chain_name }} only. An address starting with 0x can exist on many chains; each chain checked gets its own report.
+Checked: {% for x in h.evm_coverage.checked %}{{ x.name }}{{ ", " if not loop.last }}{% endfor %}.
+Not checked:
+{% for x in h.evm_coverage.not_checked %}
+  - {{ x.name }}: {{ NOT_CHECKED_WORDS[x.reason] }}.
+{% endfor %}
+{% else %}
+This report covers {{ h.chain_name }}.
+{% endif %}
+{% if h.chain != "btc" %}
+The address is {{ "a contract" if h.is_contract else "not a contract (an ordinary account)" }}.
+{% endif %}
+
+== Holdings at block {{ h.as_of_block|num }} ==
+{% set hd = d.holdings %}
+{{ hd.native.symbol }}: {{ hd.native.amount|num }} ({{ hd.native.usd|usd }})
+{% for t in hd.tokens if t.recognised and t.amount_raw != "0" %}
+{{ t.asset or t.symbol }}: {{ t.amount|num }} ({{ t.usd|usd }}){% if t.freezable %}. Issued by {{ t.issuer }}, which can freeze it{% endif %}
+
+  contract {{ t.contract }}
+{% endfor %}
+{% if hd.unrecognised_count %}
+Also held: {{ plural(hd.unrecognised_count, "token") }} we don't recognise, listed under "Tokens we don't recognise" below.
+{% endif %}
+{% if hd.tokens_truncated %}
+The token list is incomplete: {% if h.chain == "tron" %}more than 50 tokens are held, and those past the first 50 have no name or decimals here{% else %}balances were read for the stablecoins and the most-moved tokens only{% endif %}.
+{% endif %}
+
+Share held in stablecoins the issuer can freeze: {% if hd.freezable.share_status == "computed" %}{{ hd.freezable.share_percent }}% of the US dollar value held.{% elif hd.freezable.share_status == "nothing_held" %}nothing of value is held.{% elif hd.freezable.share_status == "zero_value" %}the holdings have no dollar value.{% else %}can't be worked out, because there is no price for {{ hd.freezable.unpriced|join(", ") }}.{% endif %}
+
+{% if hd.freezable.held %}
+  Freezable stablecoins held: {% for f in hd.freezable.held %}{{ f.amount|num }} {{ f.token }} ({{ f.issuer }}){{ ", " if not loop.last }}{% endfor %}.
+{% endif %}
+
+Freeze status, read from the stablecoin contracts themselves:
+{% for f in hd.freeze %}
+{% if f.status == "frozen" %}
+  - {{ f.token }}: frozen by {{ f.issuer }}. The {{ f.token }} contract ({{ f.contract }}) reports {{ f.function }} = true for this address{% if f.block %}, read at block {{ f.block|num }}{% else %}, read at the chain's latest block when checked{% endif %}.
+{% if f.since %}
+    Frozen since {{ f.since|when }} (block {{ f.since_block|num }}, transaction {{ f.since_tx }}).
+{% else %}
+    Freeze date: {{ f.date_note or "not found" }}.
+{% endif %}
+{% elif f.status == "not_frozen" %}
+  - {{ f.token }}: not frozen. The contract ({{ f.contract }}) reports {{ f.function }} = false{% if f.block %} at block {{ f.block|num }}{% else %} at the chain's latest block when checked{% endif %}.
+{% elif f.status == "no_answer" %}
+  - {{ f.token }}: unknown. The contract ({{ f.contract }}) gave no answer.
+{% else %}
+  - {{ f.token }}: not checked for this report.
+{% endif %}
+{% for x in f.destructions %}
+    {{ f.issuer }} destroyed {{ x.amount|num }} {{ f.token }} held at this address on {{ x.time|when }} (block {{ x.block|num }}, transaction {{ x.tx_hash }}).
+{% endfor %}
+{% else %}
+  - No stablecoin on {{ h.chain_name }} is checked for freezes.
+{% endfor %}
+
+OFAC sanctions list: {% if hd.ofac.listed %}this address is on it.{% for l in hd.ofac.labels %} {{ l.label }} (list dated {{ l.source_date or "unknown" }}).{% endfor %}{% else %}this address is not on OFAC's SDN list{% if hd.ofac.list_date %} as published on {{ hd.ofac.list_date }}{% endif %}.{% endif %}
+
+
+== Activity ==
+{% set a = d.activity %}
+{% if a.first_activity %}
+First activity read: {{ a.first_activity|when }}. Last activity read: {{ a.last_activity|when }}.
+{% else %}
+No transfers were read for this address.
+{% endif %}
+{% if h.chain == "btc" %}
+Received counts outputs paying this address. Spent counts inputs it spent; one output of a spending transaction is usually change returning to the spender.
+{% endif %}
+{% for r in a.assets %}
+{{ r.asset or r.symbol }}{% if r.contract %} (contract {{ r.contract }}){% endif %}:
+{% if h.chain == "btc" %}
+  received: {{ plural(r["in"].count, "output") }}, {{ r["in"].total|num }}{% if r["in"].count %} ({{ r["in"].usd|usd }}){% endif %}
+
+  spent:    {{ plural(r.out.count, "input") }}, {{ r.out.total|num }}{% if r.out.count %} ({{ r.out.usd|usd }}){% endif %}
+
+{% else %}
+  in:  {{ plural(r["in"].count, "transfer") }}, {{ r["in"].total|num }}{% if r["in"].count %} ({{ r["in"].usd|usd }}){% endif %}
+
+  out: {{ plural(r.out.count, "transfer") }}, {{ r.out.total|num }}{% if r.out.count %} ({{ r.out.usd|usd }}){% endif %}
+
+{% endif %}
+{% endfor %}
+{% if a.unpriced_assets %}
+No price is available for: {{ a.unpriced_assets|join(", ") }}. Dollar figures for those are left out, never counted as zero.
+{% endif %}
+
+== First-hop {{ "destinations" if h.chain != "btc" else "outputs" }} ==
+{% set f = d.first_hop %}
+{% if h.chain == "btc" %}
+Outputs of transactions that spent from this address, to other addresses, largest first. Being an output does not mean the money was sent to that address on purpose: one output is often change to the spender's own new address.
+{% else %}
+Addresses this address sent to, largest first. Zero, tiny and unrecognised-token transfers are left out (see below).
+{% endif %}
+{% for r in f.destinations %}
+  {{ loop.index }}. {{ r.address }}
+     {{ r.total|num }} {{ r.asset or r.symbol }} in {{ plural(r.count, "transfer") }}, {{ r.first|day }} to {{ r.last|day }} ({{ r.usd|usd }})
+{% for l in r.labels %}
+     {{ l.label }} (source: {{ l.source_name }}, dated {{ l.source_date or "undated" }}; read {{ l.observed_at|day }})
+{% endfor %}
+{% if r.lookalikes %}
+     Begins and ends with the same characters as {{ r.lookalikes|join(", ") }}, also in this report. Check every character before copying either.
+{% endif %}
+{% else %}
+  None.
+{% endfor %}
+{% if f.destinations_more %}
+  ...and {{ plural(f.destinations_more, "more row") }} not shown.
+{% endif %}
+{% if h.chain == "btc" %}
+
+Returned to this address in its own spending transactions: {{ f.btc_returned.total|num }} BTC in {{ plural(f.btc_returned.count, "output") }} ({{ plural(f.btc_returned.transactions, "transaction") }}). These are shown apart from the outputs above.
+{% endif %}
+
+== Funders ==
+{% if h.chain == "btc" %}
+Other inputs of transactions that paid this address, largest first.
+{% else %}
+Addresses that sent to this address, largest first. Zero, tiny and unrecognised-token transfers are left out.
+{% endif %}
+{% for r in f.funders %}
+  {{ loop.index }}. {{ r.address }}
+     {{ r.total|num }} {{ r.asset or r.symbol }} in {{ plural(r.count, "transfer") }}, {{ r.first|day }} to {{ r.last|day }} ({{ r.usd|usd }})
+{% for l in r.labels %}
+     {{ l.label }} (source: {{ l.source_name }}, dated {{ l.source_date or "undated" }}; read {{ l.observed_at|day }})
+{% endfor %}
+{% if r.lookalikes %}
+     Begins and ends with the same characters as {{ r.lookalikes|join(", ") }}, also in this report. Check every character before copying either.
+{% endif %}
+{% else %}
+  None.
+{% endfor %}
+{% if f.funders_more %}
+  ...and {{ plural(f.funders_more, "more row") }} not shown.
+{% endif %}
+
+{% if f.first_funder %}
+First funder read: {{ f.first_funder.addresses|join(", ") or "unknown" }}, {{ f.first_funder.amount|num }} {{ f.first_funder.symbol }} on {{ f.first_funder.time|when }} (transaction {{ f.first_funder.tx_hash }}).
+{% for addr, ls in f.first_funder.labels.items() %}{% for l in ls %}
+  {{ addr }}: {{ l.label }} (source: {{ l.source_name }})
+{% endfor %}{% endfor %}
+{% if c.transfers.truncated %}
+  The history read is truncated, so this is the earliest transfer read, not necessarily the first one.
+{% endif %}
+{% endif %}
+{% if h.chain == "btc" %}
+Distinct other addresses among the inputs of transactions that paid this one: {{ f.distinct_senders|num }}.
+{% else %}
+Distinct addresses that sent to this one: {{ f.distinct_senders|num }}.
+{% endif %}
+
+== Set apart ==
+{% set s = d.set_apart %}
+Zero-value transfers: {{ s.zero.count|num }}. Transfers of a very small amount (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): {{ s.tiny.count|num }}.
+These are listed here rather than with the transfers above.
+{% for r in s.zero.rows + s.tiny.rows %}
+  {{ r.time|when }}  {{ "in from" if r.direction == "in" else "out to" }} {{ r.counterparty or "unknown" }}  {{ r.amount|num }} {{ r.symbol }}  tx {{ r.tx_hash }}
+{% if r.lookalikes %}
+      (begins and ends like {{ r.lookalikes|join(", ") }})
+{% endif %}
+{% endfor %}
+{% if s.zero.more or s.tiny.more %}
+  ...and {{ (s.zero.more + s.tiny.more)|num }} more not shown.
+{% endif %}
+
+Tokens we don't recognise: {{ plural(a.unrecognised_transfers, "transfer") }}. A token's name and symbol are chosen by whoever deployed its contract, so a token named USDT here need not be Tether's. Only the contract identifies a token.
+{% for r in a.unrecognised_tokens %}
+  "{{ r.symbol }}" contract {{ r.contract }}{% if r.odd_characters %} (name contains {{ r.odd_characters|join(", ") }}){% endif %}: {{ r["in"].count }} in, {{ r.out.count }} out
+{% endfor %}
+{% if a.unrecognised_more %}
+  ...and {{ plural(a.unrecognised_more, "more token") }} not shown.
+{% endif %}
+
+== Labels ==
+{% set lb = d.labels %}
+Every claim a source makes about this address, worded as that source's claim:
+{% for l in lb.address %}
+  - {{ l.label }}
+    source: {{ l.source_name }}; dated {{ l.source_date or "undated" }}; read {{ l.observed_at|day }}{% if l.claim_url %}; {{ l.claim_url }}{% endif %}
+
+{% else %}
+  - None of our sources makes a claim about this address.
+{% endfor %}
+GoPlus: {% if lb.goplus.status == "no_flags" %}GoPlus has no flags for this address.{% elif lb.goplus.status == "flags" %}flagged by GoPlus: {{ lb.goplus.flags|join(", ") }}{% if lb.goplus.data_source %} (data source named by GoPlus: {{ lb.goplus.data_source }}){% endif %}.{% elif lb.goplus.status == "never_asked_btc" %}not asked. GoPlus answers every Bitcoin address with no flags, so its answer would say nothing.{% else %}not asked about this address for this report.{% endif %}
+
+{% if lb.goplus.status in ("flags", "no_flags") %}
+  Powered by GoPlus.
+{% endif %}
+First-hop addresses are checked against OFAC's SDN list and the exchange wallet files only{% if lb.list_dates %} (lists as published: {% for k, v in lb.list_dates.items() %}{{ k }} {{ v }}{{ ", " if not loop.last }}{% endfor %}){% endif %}.
+
+== Completeness ==
+{% for ch in c.checks %}
+  - {{ CHECK_TITLES.get(ch.name, ch.name) }}: {{ STATUS_WORDS.get(ch.status, ch.status) }}{% if ch.reason %}. {{ ch.reason }}{% endif %}{% if not ch.marks_incomplete and ch.status == "failed" %} (does not mark the history incomplete){% endif %}
+
+{% else %}
+  - No completeness checks were stored for this snapshot.
+{% endfor %}
+{% for t in c.stablecoins %}
+  - {{ t.symbol or t.contract }} ({{ t.contract }}): the balance {{ RECON_WORDS.get(t.status, t.status) }}{% if t.destroyed %}, counting the issuer's destruction listed above{% endif %}.
+{% endfor %}
+Transfers read: {{ c.transfers.read|num }}{% if c.transfers.truncated %}, the newest only. Older history was not read{% else %}, the whole history the source listed{% endif %}{% if c.transfers.oldest_read %}; the oldest is from {{ c.transfers.oldest_read|when }}{% endif %}.
+{% if c.internal %}
+Internal transfers (value moved by contract code): {% if c.internal.full %}read for every block up to the snapshot.{% elif c.internal.from_block is none %}not read.{% else %}read only for blocks {{ c.internal.from_block|num }} to {{ c.internal.to_block|num }}. Outside that range none were read.{% endif %}
+
+{% endif %}
+{% if c.before_history %}
+{{ plural(c.before_history.transactions_before_history or 0, "transaction") }} this address sent before block {{ c.before_history.history_start_block|num }}, where this chain's listed history starts, are not listed by any explorer.
+{% endif %}
+{% for code in c.not_read %}
+{{ NOT_READ_WORDS[code] }}
+{% endfor %}
+
+== Prior lookups ==
+{% if prior_lookups is none %}
+Not counted yet for this address.
+{% else %}
+Accounts on TraceAWallet that have looked up this address: {{ prior_lookups }}.
+{% endif %}
+This count is read when the report is shown and is not part of the report's fingerprint.
+
+== Look further ==
+  {{ d.links.explorer.name }}: {{ d.links.explorer.url }}
+  Chainabuse: {{ d.links.chainabuse }}
+  Arkham: {{ d.links.arkham }}
+These sites are run by others. What they show is their own.
+
+== Sources ==
+{% for s in h.sources %}
+  - {{ s.name }}{% if s.attribution %}: {{ s.attribution }}{% endif %}
+
+{% endfor %}
+
+{{ FIXED_START.format(name="recovery scams") }}
+{% include "fixed/recovery_scam_warning.txt.j2" %}
+{{ FIXED_END }}
+
+{{ FIXED_START.format(name="IC3 checklist") }}
+{% include "fixed/ic3_checklist.txt.j2" %}
+{{ FIXED_END }}
