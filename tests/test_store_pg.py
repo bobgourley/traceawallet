@@ -353,14 +353,14 @@ def test_evm_lookup_is_stored_and_idempotent(conns):
     s3 = FakeS3()
     first, adapter = evm_lookup_once(data, raw, s3)
     assert (first.transfers_seen, first.transfers_new) == (49, 49)
-    assert count(data, "SELECT count(*) FROM raw_response") == adapter.request_count == 18
+    assert count(data, "SELECT count(*) FROM raw_response") == adapter.request_count == 20
     assert count(data, "SELECT count(*) FROM transfer WHERE chain = 'eth' AND kind = 'internal'"
                        " AND event_index >= 33554432") == 1                  # encoded trace position fits
     assert count(data, "SELECT count(*) FROM transfer t JOIN raw_response r ON r.id = t.raw_response_id"
                        " JOIN source s ON s.id = r.source_id WHERE s.slug = 'etherscan'") == 49
     assert count(data, "SELECT count(*) FROM raw_response WHERE request_url LIKE '%%apikey%%'"
                        " OR request_params::text LIKE '%%apikey%%'") == 0
-    assert count(data, "SELECT as_of_block FROM address_snapshot") == 26_451_986
+    assert count(data, "SELECT as_of_block FROM address_snapshot") == 26_452_607
 
     second, _ = evm_lookup_once(data, raw, s3)
     assert (second.transfers_seen, second.transfers_new) == (49, 0)
@@ -478,6 +478,41 @@ def test_reconciliation_is_stored_on_the_snapshot(conns):
     assert event["history_incomplete"] is False
     fresh = store.fresh_snapshot(data, "tron", ADDR)
     assert fresh.history_incomplete is False
+    (checks, lo, hi) = data.execute("SELECT checks, internal_from_block, internal_to_block FROM address_snapshot"
+                                    " WHERE id = %s", (saved.snapshot_id,)).fetchone()
+    assert [(c["name"], c["status"]) for c in checks] == [
+        ("stablecoin_reconciliation", "passed"), ("other_token_reconciliation", "not_run"),
+        ("native_reconciliation", "not_run"), ("tx_count", "not_run")]
+    assert (lo, hi) == (None, None)                            # Tron: internal transfers are not read
+
+
+def test_every_check_and_the_internal_range_are_stored(conns):
+    from taw.adapters.registry import stablecoins_for
+    from taw.reconcile import run_checks
+    data, raw = conns
+    _, adapter = evm_lookup_once(data, raw, FakeS3())
+    snap = adapter.fetch_snapshot(EVM_ADDR)                    # replayed again from the store's memo
+    batch = adapter.fetch_transfers(EVM_ADDR)
+    result = run_checks(snap, batch, stablecoins_for("eth"))
+    saved = store.save_lookup(data, ACTOR, snap, batch, recon=result)
+    checks, lo, hi, incomplete = data.execute(
+        "SELECT checks, internal_from_block, internal_to_block, history_incomplete FROM address_snapshot"
+        " WHERE id = %s", (saved.snapshot_id,)).fetchone()
+    assert {c["name"]: c["status"] for c in checks} == {
+        "stablecoin_reconciliation": "passed", "other_token_reconciliation": "not_run",
+        "native_reconciliation": "passed", "tx_count": "passed", "token_list_matches_logs": "passed"}
+    native = next(c for c in checks if c["name"] == "native_reconciliation")
+    assert native["details"]["expected_raw"] == native["details"]["balance_raw"] == "428974286563892"
+    assert (lo, hi, incomplete) == (0, 26_452_607, False)
+    with pytest.raises(psycopg.errors.CheckViolation):          # the range must sit inside the snapshot block
+        with data.transaction():
+            data.execute("INSERT INTO address_snapshot (chain, address_id, as_of_block, as_of_time,"
+                         " native_balance_raw, native_decimals, is_contract, tokens_truncated, transfer_count,"
+                         " transfers_truncated, source_id, raw_response_id, internal_from_block, internal_to_block)"
+                         " SELECT chain, address_id, as_of_block, as_of_time, native_balance_raw, native_decimals,"
+                         " is_contract, tokens_truncated, transfer_count, transfers_truncated, source_id,"
+                         " raw_response_id, 0, as_of_block + 1 FROM address_snapshot WHERE id = %s",
+                         (saved.snapshot_id,))
 
 
 def test_snapshot_without_reconciliation_stores_nulls_never_complete(conns):

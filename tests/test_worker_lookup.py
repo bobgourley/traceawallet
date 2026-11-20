@@ -235,7 +235,7 @@ def test_eth_lookup_saves_snapshot_and_transfers(tmp_path):
     http = EvmReplay(EVM_FIXTURES / "eth" / EVM_ADDR).client()
     status, conn, logs = run(tmp_path, job({"chain": "eth", "address": EVM_ADDR}), evm_adapter_for(http), fake)
     assert status == "done" and conn.status_set() == ["done"]
-    assert fake.snapshots == [("worker:test", 26_451_986)]
+    assert fake.snapshots == [("worker:test", 26_452_607)]
     assert len(fake.transfers) == 49 and "49 transfers (49 new)" in logs[-1]
 
 
@@ -319,11 +319,11 @@ def test_one_job_per_chain():
 
 def test_incomplete_history_is_named_in_the_job_message(tmp_path):
     from tests.evm_replay import FIXTURES as EVM_FIXTURES, Replay as EvmReplay
-    from tests.test_reconcile import InternalFromKnownGoodBlock
+    from tests.test_reconcile import LogsPathBlockscout
     clock = FakeClock()
 
     def factory(chain, raw_store):
-        return InternalFromKnownGoodBlock(chain, raw_store, "proapi_test_not_real", at_block=26_451_986,
+        return LogsPathBlockscout(chain, raw_store, "proapi_test_not_real", at_block=26_451_986,
                                           http=EvmReplay(EVM_FIXTURES / "blockscout-eth" / EVM_ADDR).client(),
                                           clock=clock.clock, sleep=clock.sleep)
     fake = FakeStore()

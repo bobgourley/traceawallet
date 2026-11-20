@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 from taw.adapters.base import AddressSnapshot, BucketRawStore, TransferBatch, TransferRecord
-from taw.reconcile import Reconciliation
+from taw.reconcile import Completeness
 
 FRESH_FOR = dt.timedelta(minutes=10)
 
@@ -171,7 +171,7 @@ def insert_transfers(conn, records: Sequence[TransferRecord], address_ids: Mappi
 
 
 def save_snapshot(conn, snap: AddressSnapshot, address_id: int, batch: TransferBatch,
-                  raw_ids: Mapping[str, int], recon: Reconciliation | None = None) -> int:
+                  raw_ids: Mapping[str, int], recon: Completeness | None = None) -> int:
     """Insert the snapshot row and link every response it was built from.
 
     The adapter lists the balance response first in raw_sha256; that one is
@@ -185,15 +185,19 @@ def save_snapshot(conn, snap: AddressSnapshot, address_id: int, batch: TransferB
         "INSERT INTO address_snapshot (chain, address_id, as_of_block, as_of_time, native_balance_raw,"
         " native_decimals, token_balances, is_contract, tokens_truncated, transfer_count,"
         " transfers_truncated, source_id, raw_response_id, token_reconciliation, history_incomplete,"
-        " incomplete_reasons)"
-        " VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s) RETURNING id",
+        " incomplete_reasons, checks, internal_from_block, internal_to_block)"
+        " VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s::jsonb, %s, %s)"
+        " RETURNING id",
         (snap.chain, address_id, snap.as_of_block, snap.as_of_time, snap.native_balance_raw,
          snap.native_decimals, json.dumps(tokens), snap.is_contract, snap.truncated,
          len(batch.transfers), batch.truncated, source_id(conn, snap.source_slug),
          raw_ids[snap.raw_sha256[0]],
-         json.dumps([c.as_json() for c in recon.checks]) if recon else None,
+         json.dumps([t.as_json() for t in recon.tokens]) if recon else None,
          recon.history_incomplete if recon else None,
-         list(recon.incomplete_reasons) if recon else None),
+         list(recon.incomplete_reasons) if recon else None,
+         json.dumps([c.as_json() for c in recon.checks]) if recon else None,
+         batch.internal_range[0] if batch.internal_range else None,
+         batch.internal_range[1] if batch.internal_range else None),
     ).fetchone()
     conn.execute(
         "INSERT INTO address_snapshot_response (snapshot_id, raw_response_id)"
@@ -270,7 +274,7 @@ def record_reused_lookup(conn, actor: str, chain: str, address: str, fresh: Fres
 
 
 def save_lookup(conn, actor: str, snap: AddressSnapshot, batch: TransferBatch,
-                recon: Reconciliation | None = None) -> LookupSaved:
+                recon: Completeness | None = None) -> LookupSaved:
     """Write one lookup's observations, its reconciliation and its lookup_completed
     event, in a single actor-tagged transaction: the log never records a lookup
     that did not land."""

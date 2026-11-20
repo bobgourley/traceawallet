@@ -13,7 +13,7 @@ import httpx
 import psycopg
 
 from taw import store
-from taw.reconcile import reconcile
+from taw.reconcile import run_checks
 from taw.adapters.base import RawIntegrityError, RawStore, SecretLeak
 from taw.adapters.chains.evm_address import InvalidEvmAddress
 from taw.adapters.chains.tron_address import InvalidTronAddress
@@ -43,7 +43,7 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
     adapter = adapter_for(chain, raw_store)
     snap = adapter.fetch_snapshot(address)
     batch = adapter.fetch_transfers(snap.address, limit=TRANSFER_LIMIT)
-    recon = reconcile(snap, batch, stablecoins_for(chain))
+    recon = run_checks(snap, batch, stablecoins_for(chain))
     saved = store_module.save_lookup(data_conn, actor, snap, batch, recon=recon)
     note = ", truncated at the limit" if batch.truncated else ""
     warning = ("; HISTORY MAY BE INCOMPLETE: " + "; ".join(recon.incomplete_reasons)) if recon.history_incomplete else ""
