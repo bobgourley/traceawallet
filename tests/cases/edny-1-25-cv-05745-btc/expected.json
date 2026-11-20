@@ -7,6 +7,19 @@
   "links": [
     "https://www.justice.gov/usao-edny/media/1416266/dl"
   ],
+  "label_checks": [
+    {
+      "source": "ofac-sdn",
+      "list": "OFAC SDN list (SDN.XML)",
+      "list_published": "2026-11-19",
+      "file_sha256": "95e53034408fc95df8bca939354b75611a849fca6d0ea142002da456abbc5802",
+      "checked_on": "2026-11-20",
+      "method": "taw/adapters/labels/ofac.py: every Digital Currency Address mapped to chains by format (1,082 on the list, 542 in Bitcoin formats)",
+      "addresses_checked": 33,
+      "addresses_listed": 0,
+      "result": "None of the 33 addresses printed in full in the complaint is on the SDN list published 2026-11-19."
+    }
+  ],
   "checked_addresses": [
     "34MFtk9iMxYcUPZWXHfiGfqz4o7X3kpJbV",
     "39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq",

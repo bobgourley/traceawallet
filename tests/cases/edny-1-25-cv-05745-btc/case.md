@@ -88,3 +88,11 @@ pattern and record it as found.
 Also tried and not matching: the largest balance each address ever held, the
 largest single output, and the fees counted in other ways (one fee, both fees,
 or each transaction's share).
+
+## OFAC SDN list
+
+All 33 addresses the complaint prints in full were checked against OFAC's SDN
+list published 2026-11-19 (SDN.XML, sha256 in `expected.json`), using the
+loader in `taw/adapters/labels/ofac.py`. None of them is on it. That is a
+statement about the list on that date only. It says nothing about who
+controls the addresses.
