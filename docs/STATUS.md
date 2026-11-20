@@ -79,7 +79,9 @@ What a job does:
 5. On failure it retries after 30 s, 2 min, 8 min, up to `max_attempts`, then marks the job failed
    with a plain-language `last_error`. A TronGrid 403, a bad address or a missing key fails the job
    at once. So does an EVM chain that Etherscan's free plan does not cover (BNB Smart Chain, OP
-   Mainnet, Base), a rejected Etherscan key, or a used-up daily allowance.
+   Mainnet, Base) or a rejected Etherscan key. A used-up Blockscout allowance puts the job back
+   to run at 00:05 UTC without counting the attempt. Scripts may use 30% of Blockscout's daily
+   allowance; the ledger is in `provider_budget` (DECISIONS.md, 2026-11-20 "Blockscout daily budget").
 
 ## Code
 

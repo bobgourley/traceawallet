@@ -3,6 +3,46 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (late night): Blockscout daily budget
+
+On 2026-11-20 our Blockscout key ran out of credits (HTTP 402, "Out of
+credits") during the ground-truth case checks. Production EVM lookups could not
+run until 00:00 UTC. Three changes make sure scripts can't do that to the
+worker again.
+
+**The finished-range search runs only when a lookup needs it.** It never ran on
+a timer. Before this change, though, each worker process kept the result for
+one hour in memory, so a busy day paid for a full binary search (about 13 to 25
+calls) per chain per hour, and again after every restart. The range now lives
+in `blockscout_internal_range` (0010), shared by every process and kept across
+restarts. For 24 hours the lower edge is reused and only the top is extended to
+the current head: one call when the newest blocks are finished. After 24 hours
+the next search starts from the stored edges: one call to see whether the range
+can now start at block 0, one more if it can't, then the top. A full search
+runs only if the old range no longer holds. A lookup that finds unfinished
+blocks inside the range drops it, so the next one searches afresh.
+
+Idle cost per day: 0 calls before, 0 after. Nothing runs without a lookup. On a
+day with lookups, the range now costs about 2 or 3 calls per chain per day,
+plus one call per lookup to extend the top.
+
+**A daily ledger in Postgres.** `provider_budget` counts calls and estimated
+credits per UTC day for two consumers, `worker` and `scripts`.
+`provider_status` keeps Blockscout's own `x-credits-remaining` count from the
+last reply, which wins over our estimate. The worker may use the whole
+allowance (BLOCKSCOUT_DAILY_CREDITS, default 100,000). Scripts (`try_evm`,
+`cross_check_evm`, `check_cases`) may use 30%, and never the part of the
+worker's 70% it hasn't used yet. A script stops with a message saying which
+limit it hit. Scripts refuse to run Blockscout calls at all without the ledger,
+so they now run with `railway ssh` on the worker rather than `railway run`.
+Credits per call are estimates: 20 for an ordinary call, 50 for REST.
+
+**Running out defers the job; it doesn't fail it.** When the budget or
+Blockscout says the allowance is used up, the job goes back in the queue to run
+at 00:05 UTC. Its `last_error` reads "Blockscout's daily allowance used up,
+resets at 00:00 UTC", and the attempt is not counted, so the job keeps all its
+retries.
+
 ## 2026-11-20 (night): Bitcoin through Esplora
 
 **mempool.space is primary and Blockstream is the cross-check, behind one
