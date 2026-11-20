@@ -6,6 +6,7 @@ Job kinds:
   exchange_refresh   taw/worker/lists.py, daily
   blacklist_refresh  taw/worker/lists.py, daily: the global index of stablecoin blacklist events
   lookup_match       taw/lookups.py: the victim's transaction, once the lookup's address jobs finish
+  lookup_retention   taw/worker/lists.py, daily: erase lookups older than LOOKUP_RETENTION_DAYS (365)
 
 After an address_lookup the worker builds the report for its snapshot (stored once
 per build, taw/report/store.py) and recounts lookup_count for the address. A
@@ -67,7 +68,7 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         log(f"job {job.id}: failed, too many attempts")
         return "failed"
     list_jobs = {jobs.OFAC_REFRESH: lists.refresh_ofac, jobs.EXCHANGE_REFRESH: lists.refresh_exchanges,
-                 jobs.BLACKLIST_REFRESH: lists.refresh_blacklists}
+                 jobs.BLACKLIST_REFRESH: lists.refresh_blacklists, jobs.RETENTION: lists.expire_lookups}
     if job.kind not in (jobs.LOOKUP, jobs.MATCH) and job.kind not in list_jobs:
         # During a deploy the old worker can claim a job kind only the new code knows.
         # Put it back for a newer worker instead of failing it.

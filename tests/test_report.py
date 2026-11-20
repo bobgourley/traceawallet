@@ -107,11 +107,11 @@ ASSESSMENT = re.compile(r"\b(scam\w*|fraud\w*|safe|safety|clean|suspicious|suspe
 @pytest.mark.parametrize("case", CASES)
 def test_no_assessment_words_outside_the_fixed_sections(case):
     _, data = built(case)
-    text = render_text(data, prior_lookups="2 to 5")
+    text = render_text(data, prior_lookups="1 to 4")
     body = outside_fixed_sections(text)
     assert not ASSESSMENT.findall(body), ASSESSMENT.findall(body)
     assert "recovery scams" in text and "ic3.gov" in text          # the fixed sections are there
-    assert text.count("(DRAFT, not yet approved)") == 2
+    assert "DRAFT" not in text and "== Reporting what happened ==" in text
 
 
 def test_the_template_itself_has_no_assessment_words():
@@ -241,14 +241,16 @@ def test_token_names_with_hidden_or_lookalike_characters_are_shown_plainly():
 
 def test_numbers_and_buckets():
     assert num("1234567.891") == "1,234,567.891" and num("0") == "0" and num("-1000") == "-1,000"
-    assert [bucket(n) for n in (None, 0, 1, 2, 5, 6, 20, 21)] == [None, "none", "1", "2 to 5", "2 to 5", "6 to 20",
-                                                                 "6 to 20", "more than 20"]
+    assert [bucket(n) for n in (None, 0, 1, 4, 5, 19, 20, 500)] == [None, "none", "1 to 4", "1 to 4", "5 to 19",
+                                                                   "5 to 19", "20 or more", "20 or more"]
 
 
 def test_prior_lookups_are_not_in_the_data():
     _, data = built("sdny-1-26-cv-08010-usdt")
     assert "prior" not in json.dumps(data)
-    assert "looked up this address: 2 to 5" in render_text(data, prior_lookups="2 to 5")
+    assert "Other accounts on TraceAWallet that have looked up this address: 1 to 4." in \
+        render_text(data, prior_lookups="1 to 4")
+    assert "No one else has looked up this address here yet." in render_text(data, prior_lookups="none")
 
 
 # -- the revisions of 2026-11-20 (evening) ------------------------------------------------------

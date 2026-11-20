@@ -315,7 +315,7 @@ def test_reports_as_text_through_the_api(browser, db_url):
     pid = got["chains"][0]["report"]["public_id"]
     text = browser.get(f"/api/v1/reports/{pid}?format=text", headers=bearer).text
     assert "Tether destroyed 465,514.638375 USDT" in text and f"Report id: {pid}" in text
-    assert "looked up this address here: 1" in text or "looked up this address: 1" in text
+    assert "No one else has looked up this address here yet." in text          # the viewer's own lookup is not counted
     assert browser.get(f"/api/v1/reports/{pid}").status_code == 401           # results only after sign-in
 
 
@@ -388,3 +388,57 @@ def test_the_policy_allows_clerks_inline_images_and_nothing_else_inline(browser)
     csp = browser.get("/about").headers["content-security-policy"]
     assert "img-src 'self' data: https://img.clerk.com" in csp
     assert "script-src 'self' " in csp and "data:" not in csp.split("script-src")[1].split(";")[0]
+
+
+
+# -- final pages, bands, retention -------------------------------------------------------------
+
+def test_other_accounts_are_banded_and_the_viewer_is_not_counted(browser, db_url):
+    addr = rf.CASES[KNWAN][1]
+    sign_in(browser)
+    lid = submit(browser, addr).headers["location"].rsplit("/", 1)[1]
+    with psycopg.connect(db_url, autocommit=True) as data, psycopg.connect(db_url, autocommit=True) as raw:
+        finish_jobs(data, {"tron": save_case(data, raw, KNWAN)})
+        lookups.refresh_count(data, "tron", addr)
+    me = {"Authorization": f"Bearer {token('user_tester', TESTER)}"}
+    them = {"Authorization": f"Bearer {token('user_second', OTHER_TESTER)}"}
+    pid = browser.get(f"/api/v1/lookups/{lid}", headers=me).json()["chains"][0]["report"]["public_id"]
+    assert browser.get(f"/api/v1/reports/{pid}", headers=me).json()["prior_lookups"] == "none"
+    assert browser.get(f"/api/v1/reports/{pid}", headers=them).json()["prior_lookups"] == "1 to 4"
+    with psycopg.connect(db_url, autocommit=True) as data:
+        for i in range(5):
+            lookups.create(data, "api", lookups.LookupRequest(address=addr), user_id=f"user_{i}")
+        lookups.refresh_count(data, "tron", addr)
+    assert browser.get(f"/api/v1/reports/{pid}", headers=me).json()["prior_lookups"] == "5 to 19"
+    text = browser.get(f"/api/v1/reports/{pid}?format=text", headers=me).text
+    assert "Other accounts on TraceAWallet that have looked up this address: 5 to 19." in text
+    assert not re.search(r"looked up this address: \d+\.", text)
+
+
+def test_lookups_are_erased_after_the_retention_period(browser, db_url):
+    sign_in(browser)
+    old = submit(browser, rf.CASES[KNWAN][1], amount="5").headers["location"].rsplit("/", 1)[1]
+    new = submit(browser, rf.CASES[KNWAN][1]).headers["location"].rsplit("/", 1)[1]
+    with psycopg.connect(db_url, autocommit=True) as c:
+        c.execute("ALTER TABLE lookup DISABLE TRIGGER lookup_guard")
+        c.execute("UPDATE lookup SET created_at = now() - interval '366 days' WHERE id = %s", (old,))
+        c.execute("ALTER TABLE lookup ENABLE TRIGGER lookup_guard")
+        assert lookups.expire(c, "worker:test") == 1
+        rows = dict(c.execute("SELECT id::text, redacted_at IS NOT NULL FROM lookup").fetchall())
+    assert rows == {old: True, new: False}
+    assert lookups.retention_days() == 365
+
+
+def test_pages_are_final_and_name_who_processes_data(browser):
+    sign_in(browser)
+    for path in ("/", "/about", "/privacy", "/terms", "/account"):
+        page = browser.get(path).text
+        assert "DRAFT" not in page, path
+        assert "contact@traceawallet.com" in page, path                  # the footer
+        assert not re.search(r"no (analytics|tracking|advertising)", page, re.I), path
+    privacy = browser.get("/privacy").text
+    for need in ("privacy@traceawallet.com", "Clerk", "Cloudflare", "Railway", "12 months",
+                 "The site's operator can access stored lookups in order to run the service"):
+        assert need in privacy, need
+    assert "<!--email_off-->" in privacy                                  # left alone by Cloudflare
+    assert "contact@traceawallet.com" in browser.get("/about").text.split("<footer")[0]

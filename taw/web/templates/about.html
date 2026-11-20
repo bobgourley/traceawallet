@@ -1,7 +1,9 @@
 {% extends "base.html" %}
-{% block title %}About · TraceAWallet{% endblock %}
+{% block title %}About · TraceAWallet
+<h2>Contact</h2>
+<p><!--email_off--><a href="mailto:contact@traceawallet.com">contact@traceawallet.com</a><!--/email_off--></p>
+{% endblock %}
 {% block main %}
-<p class="draft">DRAFT, not yet approved.</p>
 <h1>About TraceAWallet</h1>
 <p>TraceAWallet is a free tool for people who sent cryptocurrency to someone they now think deceived them, and for the people helping them. You enter the address you sent money to. We read public blockchain records and show what they say about it: what it holds, where money went next, where it came from, and whether a stablecoin issuer has frozen it.</p>
 
@@ -27,4 +29,7 @@
 
 <h2>Limits</h2>
 <p>Public records can be incomplete, and providers can be slow to index new activity. Every report says what was checked, what was not read, and whether the history it read adds up. A report is a snapshot at a stated block and time; it does not update by itself.</p>
+
+<h2>Contact</h2>
+<p><!--email_off--><a href="mailto:contact@traceawallet.com">contact@traceawallet.com</a><!--/email_off--></p>
 {% endblock %}

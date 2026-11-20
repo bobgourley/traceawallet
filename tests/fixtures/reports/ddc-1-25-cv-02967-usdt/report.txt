@@ -157,7 +157,7 @@ These sites are run by others. What they show is their own.
   - Tether USDT contract state: freeze status, read from the token contract
 
 <<< fixed section: recovery scams >>>
-== Watch out for recovery scams (DRAFT, not yet approved) ==
+== Watch out for recovery scams ==
 After a loss, people are often contacted by someone who says they can get the money back: a "recovery service", a "blockchain investigator", someone claiming to be a lawyer, or someone claiming to be from a government agency. Many of these are a second scam aimed at the same victim.
 
   - No one can reverse a confirmed blockchain transaction. Funds come back only when an exchange or issuer freezes them and a court or law enforcement acts.
@@ -171,7 +171,7 @@ If someone offers recovery, report that contact at ic3.gov as well.
 <<< end of fixed section >>>
 
 <<< fixed section: IC3 checklist >>>
-== Reporting what happened (DRAFT, not yet approved) ==
+== Reporting what happened ==
 Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
 
   [ ] First, tell the exchange or wallet provider you sent from, and your bank, if the money started in a bank account. Ask them to flag the transfer and record your report.
@@ -192,5 +192,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): 5f8c6c4e86e0c466c8af2b211b43438dd2002676622cc9f41013340ad8f7bd78
+Fingerprint (SHA-256): 7ed16658f11c4d3bc17f8d490075f7991b568339b148924448c926b01b1723c8
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

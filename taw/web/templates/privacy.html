@@ -1,25 +1,42 @@
 {% extends "base.html" %}
 {% block title %}Privacy · TraceAWallet{% endblock %}
 {% block main %}
-<p class="draft">DRAFT, not yet approved.</p>
 <h1>Privacy</h1>
+
 <h2>What we keep</h2>
 <ul>
-  <li>Your account: the email address you sign in with, held by our sign-in provider, Clerk.</li>
-  <li>Your lookups: the address you entered and any details you added, such as an amount, a date or a transaction ID. Only you can see these.</li>
-  <li>For limits and abuse prevention: your IP address and browser session, stored only as one-way scrambled codes (salted hashes), never in readable form.</li>
+  <li>Your account: the email address you sign in with. It is held by our sign-in provider, Clerk.</li>
+  <li>Your lookups: the address you entered, any details you added such as an amount, a date or a transaction ID, and when you made the lookup.</li>
+  <li>To apply limits and stop misuse: your IP address and browser session, stored only as one-way scrambled codes (salted hashes), never in readable form.</li>
 </ul>
-<h2>What other people can see</h2>
-<p>A report describes an address, not a person. It never shows who looked the address up or what they entered. A report can show a rough count of how many accounts have looked up the same address, in bands such as "2 to 5".</p>
-<h2>Cookies and services</h2>
+
+<h2>Who can see your lookups</h2>
+<p>On the site, only you can see your lookups and what you entered with them. The site's operator can access stored lookups in order to run the service.</p>
+<p>A report describes an address, not a person. It never shows who looked the address up or what they entered. A report can show a rough band of how many other accounts have looked up the same address, such as "1 to 4". It never shows an exact number, and it never counts your own account.</p>
+
+<h2>Companies that process data for the site</h2>
 <ul>
-  <li>One session cookie of our own, to keep the form secure and to attach a lookup to your account when you sign in.</li>
-  <li>Clerk's cookies, which keep you signed in.</li>
-  <li>Cloudflare Turnstile, which checks that the form is used by a person.</li>
+  <li><strong>Clerk</strong> runs sign-in and holds your account's email address.</li>
+  <li><strong>Cloudflare</strong> delivers the site and runs the check on the lookup form that confirms a person is using it. Every request to the site passes through Cloudflare, including your IP address.</li>
+  <li><strong>Railway</strong> hosts the site and its database. Every request to the site also passes through Railway.</li>
 </ul>
-<p>We use no analytics, advertising or tracking of any kind.</p>
+
+<h2>Cookies</h2>
+<ul>
+  <li>One session cookie of our own, which keeps the lookup form secure.</li>
+  <li>Clerk's cookies, which keep you signed in.</li>
+  <li>Cloudflare's check on the lookup form, which may set its own.</li>
+</ul>
+
+<h2>How long we keep things</h2>
+<ul>
+  <li>Lookups are kept for 12 months. After that they are erased automatically, the same way as when you delete one yourself.</li>
+  <li>Your account stays until you ask us to delete it.</li>
+</ul>
+
 <h2>Deleting</h2>
-<p>You can delete any lookup from <a href="/account">My lookups</a>. Deleting erases what you entered and the link to your account, and keeps only a record that a lookup of that address happened.</p>
+<p>You can delete any lookup from <a href="/account">My lookups</a>. Deleting erases what you entered and the link to your account, and keeps only a record that a lookup of that address happened. To delete your account, write to the address below.</p>
+
 <h2>Contact</h2>
-<p>[To be added.]</p>
+<p>For anything about privacy: <!--email_off--><a href="mailto:privacy@traceawallet.com">privacy@traceawallet.com</a><!--/email_off--></p>
 {% endblock %}

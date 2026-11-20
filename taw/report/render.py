@@ -3,11 +3,12 @@
 All report prose is in the templates; this module only adds number and time
 formatting and the wording tables for codes in the data. Two sections are fixed
 text, the same in every report: the recovery-scam warning and the IC3 filing
-checklist (templates/fixed/). They are drafts until the owner approves them, and
-they are the only place assessment words may appear (tests/test_report.py).
+checklist (templates/fixed/). They are the only place assessment words may appear
+(tests/test_report.py).
 
 Overlays are read when a report is shown and are not part of its hash: the
-bucketed count of prior lookups (from lookup_count only), the report's public id
+banded count of other accounts' lookups (lookup_count, less the viewer's own
+account; never an exact number), the report's public id
 and fingerprint, and, for the lookup's owner only, their matched transaction.
 
 Token names are written by whoever deployed the token. They are printed with dots
@@ -79,7 +80,7 @@ HISTORY_WORDS = {
 }
 SKIP_CHECKS = {("tron", "tx_count"), ("btc", "tx_count")}     # nothing to check on that chain
 PRIOR_BUCKETS = (
-    (0, 0, "none"), (1, 1, "1"), (2, 5, "2 to 5"), (6, 20, "6 to 20"), (21, None, "more than 20"),
+    (0, 0, "none"), (1, 4, "1 to 4"), (5, 19, "5 to 19"), (20, None, "20 or more"),
 )
 
 

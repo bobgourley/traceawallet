@@ -180,12 +180,12 @@ def _report_row(db, public_id: str):
         " WHERE r.public_id = %s", (public_id,)).fetchone()
 
 
-def _report_json(db, row) -> dict:
+def _report_json(db, row, viewer: str | None = None) -> dict:
     pid, chain, address, address_id, block, as_of, schema, template, sha, data, created = row
     return {"public_id": pid, "chain": chain, "address": address, "as_of_block": block,
             "as_of_time": as_of.astimezone(dt.timezone.utc).isoformat(), "schema_version": schema,
             "template_version": template, "sha256": sha.strip(), "created_at": created.isoformat(), "data": data,
-            "prior_lookups": bucket(lookups.prior_count(db, address_id))}
+            "prior_lookups": bucket(lookups.others_count(db, address_id, viewer))}
 
 
 @router.get("/lookups/{lookup_id}/report", dependencies=[Depends(ready)])
@@ -200,7 +200,7 @@ def read_lookup_report(lookup_id: str, chain: str | None = None, format: str = "
     if not ready_chains:
         raise HTTPException(status_code=404, detail="No report for that chain yet.")
     pick = ready_chains[0]
-    report = _report_json(db, _report_row(db, pick["report"]["public_id"]))
+    report = _report_json(db, _report_row(db, pick["report"]["public_id"]), who.user_id)
     match = found["match"]
     if match and pick["chain"] not in (match.get("matched_chain"), *(match.get("chains") or [])):
         match = None
@@ -215,7 +215,7 @@ def read_report(public_id: str, format: str = "json", who: Identity = Depends(me
     row = _report_row(db, _uuid(public_id))
     if row is None:
         raise HTTPException(status_code=404)
-    report = _report_json(db, row)
+    report = _report_json(db, row, who.user_id)
     if format == "text":
         return PlainTextResponse(render_text(report["data"], prior_lookups=report["prior_lookups"],
                                              public_id=report["public_id"], sha256=report["sha256"]))

@@ -8,4 +8,4 @@
   store.py      build, hash and store a report row (once per build)
 """
 SCHEMA_VERSION = 1
-TEMPLATE_VERSION = "2026-11-20.1"
+TEMPLATE_VERSION = "2026-11-20.2"

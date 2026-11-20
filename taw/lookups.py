@@ -197,6 +197,31 @@ def redact(conn, actor: str, lookup_id: str, user_id: str) -> bool:
     return True
 
 
+def retention_days() -> int:
+    """How long a lookup is kept before it is erased like a Delete (LOOKUP_RETENTION_DAYS,
+    default 365). The Privacy page states this period."""
+    import os
+    raw = (os.environ.get("LOOKUP_RETENTION_DAYS") or "").strip()
+    return int(raw) if raw.isdigit() and int(raw) > 0 else 365
+
+
+def expire(conn, actor: str, days: int | None = None) -> int:
+    """Erase every lookup older than the retention period with lookup_redact, then
+    recount who has looked up each address. Returns how many were erased."""
+    days = days or retention_days()
+    with store.actor_transaction(conn, actor):
+        rows = conn.execute(
+            "SELECT l.id::text, l.submitted_address, array_remove(array_agg(lj.chain), NULL) FROM lookup l"
+            " LEFT JOIN lookup_job lj ON lj.lookup_id = l.id WHERE l.redacted_at IS NULL"
+            " AND l.created_at < now() - make_interval(days => %s) GROUP BY l.id", (days,)).fetchall()
+        for lid, _, _ in rows:
+            conn.execute("SELECT lookup_redact(%s)", (lid,))
+        for _, address, chains in rows:
+            for chain in chains or []:
+                refresh_count(conn, chain, address)
+    return len(rows)
+
+
 def refresh_count(conn, chain: str, address: str) -> int | None:
     """Recompute lookup_count for one address on one chain: distinct signed-in accounts
     whose lookups covered it. Run by the worker; the report path reads only the result."""
@@ -212,6 +237,20 @@ def refresh_count(conn, chain: str, address: str) -> int | None:
         " ON CONFLICT (address_id) DO UPDATE SET account_count = EXCLUDED.account_count, updated_at = now()",
         (row[0], n))
     return n
+
+
+def others_count(conn, address_id: int, viewer: str | None) -> int | None:
+    """How many other signed-in accounts have looked up this address: lookup_count, less
+    the viewer's own account when it is among them. The only lookup rows read are the
+    viewer's own. None when no count has been written for the address."""
+    total = prior_count(conn, address_id)
+    if total is None or not viewer:
+        return total
+    mine = conn.execute(
+        "SELECT 1 FROM lookup l JOIN lookup_job lj ON lj.lookup_id = l.id JOIN address a ON a.id = %s"
+        " WHERE l.clerk_user_id = %s AND l.redacted_at IS NULL AND lj.chain = a.chain"
+        " AND l.submitted_address = a.address LIMIT 1", (address_id, viewer)).fetchone()
+    return max(0, total - (1 if mine else 0))
 
 
 def prior_count(conn, address_id: int) -> int | None:

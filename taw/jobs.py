@@ -21,9 +21,10 @@ OFAC_REFRESH = "ofac_refresh"
 EXCHANGE_REFRESH = "exchange_refresh"
 BLACKLIST_REFRESH = "blacklist_refresh"
 MATCH = "lookup_match"
+RETENTION = "lookup_retention"
 # kind -> hour (UTC) it runs each day. blacklist_refresh runs after Blockscout's
 # allowance resets at 00:00 UTC.
-DAILY = {OFAC_REFRESH: 23, EXCHANGE_REFRESH: 6, BLACKLIST_REFRESH: 1}
+DAILY = {OFAC_REFRESH: 23, EXCHANGE_REFRESH: 6, BLACKLIST_REFRESH: 1, RETENTION: 3}
 RETRY_BASE_SECONDS = 30          # waits of 30 s, 2 min, 8 min, ... between attempts
 STALE_AFTER = "30 minutes"       # a 'running' job older than this lost its worker
 

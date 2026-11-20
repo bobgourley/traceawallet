@@ -1,4 +1,4 @@
-// TraceAWallet: copy buttons, printing, and Clerk sign-in. No tracking of any kind.
+// TraceAWallet: copy buttons, printing, and Clerk sign-in.
 (function () {
   "use strict";
 

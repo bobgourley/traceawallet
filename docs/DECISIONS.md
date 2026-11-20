@@ -3,6 +3,39 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (night): Pages final, other accounts banded, lookups kept 12 months
+
+**No more drafts.** The owner had the DRAFT marks removed from the
+recovery-scam warning, the reporting checklist, About, Privacy and Terms, to
+review them live. The report template version is now 2026-11-20.2, because the
+wording of two section headings changed.
+
+**Privacy page.**
+- It describes only what the site collects today, with no promise either way
+  about analytics or tracking. The "no tracking" comment in app.js went too,
+  since that file is public.
+- The operator can access stored lookups to run the service.
+- Clerk, Cloudflare and Railway are named as the companies that process data
+  for the site.
+- The contact address is privacy@traceawallet.com. The general address,
+  contact@traceawallet.com, is in the footer and on About.
+- The addresses are wrapped in Cloudflare's `<!--email_off-->` markers. If
+  Email Address Obfuscation were on, it would rewrite them into something that
+  needs a script our security policy blocks.
+
+**Retention: 12 months.** A daily worker job, `lookup_retention` (03:00 UTC),
+erases every lookup older than `LOOKUP_RETENTION_DAYS` (default 365) with
+`lookup_redact`, exactly as the Delete button does, then recounts
+`lookup_count`. Accounts stay with Clerk until the owner deletes one on
+request.
+
+**Other accounts, banded.** The prior-lookup line counts only other accounts.
+It takes `lookup_count` and subtracts the viewer's own account when the viewer
+has a lookup of that address on that chain; those are the only lookup rows the
+report path reads. The bands are "none" ("No one else has looked up this
+address here yet."), "1 to 4", "5 to 19" and "20 or more". An exact number is
+never shown.
+
 ## 2026-11-20 (night): Live checks after the web deploy
 
 **Checked on the live site after merging web-interface (1243528):**

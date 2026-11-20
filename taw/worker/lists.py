@@ -13,6 +13,13 @@ def evm_chains(conn) -> list[str]:
     return [c for (c,) in conn.execute("SELECT id FROM chain WHERE family = 'evm' ORDER BY id").fetchall()]
 
 
+def expire_lookups(*, data_conn, raw_store, actor: str) -> str:
+    """Daily: erase lookups older than the retention period (taw/lookups.py)."""
+    from taw import lookups
+    n = lookups.expire(data_conn, actor)
+    return f"lookups older than {lookups.retention_days()} days erased: {n}"
+
+
 def refresh_ofac(*, data_conn, raw_store, actor: str, source=None) -> str:
     source = source or OfacSdn(raw_store, evm_chains(data_conn))
     pub = source.load()
