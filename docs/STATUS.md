@@ -248,7 +248,8 @@ Postgres, its volume and the bucket are in US East too. Check with
    its own daily ledger in calls.
 5. Applying labels (branch `apply-labels`): built. Every source on the looked-up address; OFAC and
    the exchange file on funders and first-hop destinations.
-6. Exchange wallet file: research done, list waiting for the owner before anything is loaded.
+6. Exchange wallets (branch `exchange-wallets`): OKX's monthly file (about 500,000 addresses) and
+   data/exchange_wallets.csv (HTX, and the 2022 lists of Bybit, KuCoin, Bitfinex, Crypto.com).
 7. Label loaders: OFAC SDN list, GoPlus (never for Bitcoin; logo and "Powered by GoPlus"),
    stablecoin freeze checks, the exchange wallet file.
 3. Transaction matching: find the victim's own transfer from what they entered.

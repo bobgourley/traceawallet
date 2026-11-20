@@ -3,6 +3,72 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (midday): Labels: exchange wallets
+
+**Which lists** (owner's choice, 2026-11-20). Only lists an exchange published
+itself:
+
+- OKX's current monthly file.
+- HTX's current list.
+- The 2022 lists of Bybit, KuCoin, Bitfinex and Crypto.com.
+
+Every label reads "listed by <exchange> as its wallet on <date>", the date
+being the one the exchange gives. Bybit's file gives only a month, so its
+labels say "on 2022-12 (month only; no day given)". HTX's file has no date; its
+date is that of HTX's commit (2026-11-10). None of these pages states terms for
+reuse, so resale stays false on both source rows (0014).
+
+**The five smaller lists** are in `data/exchange_wallets.csv`, 83 addresses,
+built by `scripts/build_exchange_wallets.py` from each exchange's own page or
+file. An address is in only when the exchange's own words put it on a chain we
+cover:
+
+- HTX's coin column: TRC20/TRX, ERC20/ETH, BTC.
+- Bybit's network suffix.
+- Bitfinex's label: BTC, Omni, ETH/ERC20, Tron.
+- Crypto.com's headings ("BTC:", "ETH, ERC20, and more:").
+- KuCoin's table has no network column. An `0x` row counts as Ethereum only
+  when its height equals KuCoin's ETH snapshot height (15,944,930); other `0x`
+  rows are left out. Tron- and Bitcoin-format rows are unambiguous.
+
+Every address passes its checksum. The exchange's own description of the row
+("BTC cold wallet", "USDT-TRON") is quoted in the label.
+
+**OKX** (`okx-por`). Each month the worker downloads OKX's file. November's is
+`por_csv_2026110100_V1.zip`: 111 MB, one 219 MB CSV, 686,224 rows. The zip is
+kept in the bucket as a raw response. Rows on ETH, ARBITRUM, OPTIMISM, TRON and
+BTC are loaded, deposit addresses included. The label quotes OKX's Type column
+as given ("Non Staking", "Native Staking"); nothing is inferred about who holds
+an address. November gives 498,873 labels:
+
+- Tron: 474,538
+- Ethereum: 17,385
+- Bitcoin: 6,727
+- Arbitrum: 119
+- OP Mainnet: 104
+
+Of these, 13 addresses appear under two types and get one label each. 6,561
+"Native ETH Staking" and "Eigenlayer Staking" rows hold 98-character validator
+keys, not addresses; they are counted and skipped. 180,485 rows are on networks
+we don't cover.
+
+**Monthly refresh without rewriting.** The `exchange_refresh` job runs daily
+at 06:00 UTC, and at once the first time:
+
+- `data/exchange_wallets.csv` is reloaded when its sha256 changes.
+- OKX's file for the current month is loaded once it exists. A month with no
+  file yet is not an error.
+
+OKX labels keep the date they were first listed. An address still in next
+month's file keeps its row untouched. A new one gets a row dated with the new
+month. One that is gone gets a `withdrawn` row. `label_load` records every
+month, so "still listed in the 2027-02-01 file" is known without touching the
+rows. Inserts go in chunks of 20,000.
+
+**Applying.** `okx-por` joins OFAC and `exchange-por` as a local source, so
+every funder and first-hop destination is matched against all three at no API
+cost.
+
 ## 2026-11-20 (morning): Labels: applying them
 
 **The looked-up address gets every source.** After each lookup the worker runs,
