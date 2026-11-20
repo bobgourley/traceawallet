@@ -3,6 +3,45 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (late evening): Report wording, first revision
+
+The owner's review of the first S.D.N.Y. report changed the templates. Most
+changes are wording; the data gained a summary, list-matching counts,
+first-hop entries grouped by address, lookalike groups, every zero and very
+small transfer, and a code for what each source was used for.
+
+- **Summary first.** It covers what is held, freezes with their dates, the
+  largest destination and its share of what left, list matches out of how many
+  checked, and whether the history read is complete.
+- **Freezes in plain words first.** The address can no longer send the token.
+  A freeze returns nothing to anyone; that takes legal process. The issuer can
+  release or destroy the funds. The contract detail goes on a second line.
+- **Sources say what they were used for.** No claim wording ("frozen by
+  Circle") and no internal notes. The required credits stay ("Powered by
+  Etherscan.io APIs", "Powered by GoPlus", Chainlink's disclaimer).
+- **Token names are untrusted text.** Each list of unrecognised names carries
+  the warning not to contact anyone named in them. Dots and "://" are broken
+  up ("bio[.]link") so no name can become a link.
+- **List matching states its limits.** The report says how many first-hop
+  addresses were checked, against which lists and of what date, and that no
+  match does not mean an address isn't an exchange's.
+- **Fingerprint.** The report's id and sha256 close the report. They come from
+  the stored row, outside the hashed data.
+- **The owner's matched transaction.** It shows in a private section of the
+  owner's view only (`GET /api/v1/lookups/{id}/report`). The stored report and
+  its hash never hold it.
+- **Fixed sections.** Still drafts. Agency names and addresses were checked on
+  the agencies' own pages on 2026-11-20:
+  - ic3.gov (FBI). Its Recovery Asset Team brochure says to contact your
+    financial institution "as soon as fraud is recognized".
+  - PSA240624, on fake lawyers who ask for fees and "back taxes".
+  - reportfraud.ftc.gov (FTC press release, 2020-10-22).
+  - econsumer.gov, named on ftc.gov as the site for international scam
+    reports.
+
+  No phone number is included. The only one found, the FTC's, came from a
+  2020 page.
+
 ## 2026-11-20 (evening): Reports, matching and the lookup API
 
 **A report is one snapshot.** One chain, one address, one snapshot, and the

@@ -509,53 +509,57 @@
    "destinations": [
     {
      "address": "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-     "asset": "USDC",
-     "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-     "count": 5,
-     "first": "2025-05-10T02:29:47Z",
-     "labels": [],
-     "last": "2025-07-28T01:31:11Z",
-     "lookalikes": [
-      "0x584271dd01f59acf382c3a50cef580c679de99a1",
-      "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
-      "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
-      "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+     "assets": [
+      {
+       "asset": "USDC",
+       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+       "count": 5,
+       "first": "2025-05-10T02:29:47Z",
+       "last": "2025-07-28T01:31:11Z",
+       "symbol": "USDC",
+       "total": "327189.01993",
+       "total_raw": "327189019930",
+       "usd": null
+      }
      ],
-     "symbol": "USDC",
-     "total": "327189.01993",
-     "total_raw": "327189019930",
-     "usd": null
+     "labels": [],
+     "lookalike_group": "A"
     },
     {
      "address": "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
-     "asset": "USDC",
-     "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-     "count": 2,
-     "first": "2025-04-12T03:15:23Z",
-     "labels": [],
-     "last": "2025-04-20T03:36:59Z",
-     "lookalikes": [
-      "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
-      "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
+     "assets": [
+      {
+       "asset": "USDC",
+       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+       "count": 2,
+       "first": "2025-04-12T03:15:23Z",
+       "last": "2025-04-20T03:36:59Z",
+       "symbol": "USDC",
+       "total": "24963.889229",
+       "total_raw": "24963889229",
+       "usd": null
+      }
      ],
-     "symbol": "USDC",
-     "total": "24963.889229",
-     "total_raw": "24963889229",
-     "usd": null
+     "labels": [],
+     "lookalike_group": "B"
     },
     {
      "address": "0x741093cba553d88f60c708f102eaa1fc1f06e217",
-     "asset": "ETH",
-     "contract": null,
-     "count": 1,
-     "first": "2025-07-25T01:25:35Z",
+     "assets": [
+      {
+       "asset": "ETH",
+       "contract": null,
+       "count": 1,
+       "first": "2025-07-25T01:25:35Z",
+       "last": "2025-07-25T01:25:35Z",
+       "symbol": "ETH",
+       "total": "0.000548913764598892",
+       "total_raw": "548913764598892",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2025-07-25T01:25:35Z",
-     "lookalikes": [],
-     "symbol": "ETH",
-     "total": "0.000548913764598892",
-     "total_raw": "548913764598892",
-     "usd": null
+     "lookalike_group": null
     }
    ],
    "destinations_more": 0,
@@ -576,31 +580,39 @@
    "funders": [
     {
      "address": "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43",
-     "asset": "USDC",
-     "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-     "count": 4,
-     "first": "2025-04-10T02:55:11Z",
+     "assets": [
+      {
+       "asset": "USDC",
+       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+       "count": 4,
+       "first": "2025-04-10T02:55:11Z",
+       "last": "2025-07-01T04:56:11Z",
+       "symbol": "USDC",
+       "total": "352152.857618",
+       "total_raw": "352152857618",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2025-07-01T04:56:11Z",
-     "lookalikes": [],
-     "symbol": "USDC",
-     "total": "352152.857618",
-     "total_raw": "352152857618",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "0xa4d4c94f77ec6a516eee65249f99523098e9548e",
-     "asset": "ETH",
-     "contract": null,
-     "count": 1,
-     "first": "2025-04-12T03:13:59Z",
+     "assets": [
+      {
+       "asset": "ETH",
+       "contract": null,
+       "count": 1,
+       "first": "2025-04-12T03:13:59Z",
+       "last": "2025-04-12T03:13:59Z",
+       "symbol": "ETH",
+       "total": "0.001",
+       "total_raw": "1000000000000000",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2025-04-12T03:13:59Z",
-     "lookalikes": [],
-     "symbol": "ETH",
-     "total": "0.001",
-     "total_raw": "1000000000000000",
-     "usd": null
+     "lookalike_group": null
     }
    ],
    "funders_more": 0
@@ -655,32 +667,28 @@
    "labels_as_of": "2026-11-20T18:41:39Z",
    "sources": [
     {
-     "attribution": "Powered by Etherscan.io APIs",
-     "kind": "chain_data",
      "name": "Etherscan API V2",
      "slug": "etherscan",
-     "url": "https://etherscan.io"
+     "url": "https://etherscan.io",
+     "used_for": "chain_data"
     },
     {
-     "attribution": "Powered by GoPlus (shown with the GoPlus logo; results unmodified); a flag reads \"flagged by GoPlus\"",
-     "kind": "label",
      "name": "GoPlus Security",
      "slug": "goplus",
-     "url": "https://gopluslabs.io"
+     "url": "https://gopluslabs.io",
+     "used_for": "goplus_flags"
     },
     {
-     "attribution": "frozen by Circle",
-     "kind": "onchain",
      "name": "Circle USDC contract state",
      "slug": "usdc-contract",
-     "url": "https://www.circle.com"
+     "url": "https://www.circle.com",
+     "used_for": "freeze_status"
     },
     {
-     "attribution": "frozen by Tether",
-     "kind": "onchain",
      "name": "Tether USDT contract state",
      "slug": "usdt-contract",
-     "url": "https://tether.to"
+     "url": "https://tether.to",
+     "used_for": "freeze_status"
     }
    ]
   },
@@ -963,20 +971,48 @@
     "url": "https://etherscan.io/address/0xfa0a50dc366e2f0a5381e4d4b5fede589ab633a9"
    }
   },
+  "lists": {
+   "destinations_checked": 18,
+   "funders_checked": 8,
+   "list_dates": {
+    "exchange-por": "2026-11-10",
+    "ofac-sdn": "2026-11-19",
+    "okx-por": "2026-11-01"
+   },
+   "matched": []
+  },
+  "lookalikes": [
+   {
+    "addresses": [
+     "0x584271dd01f59acf382c3a50cef580c679de99a1",
+     "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
+     "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
+     "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+     "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
+    ],
+    "group": "A"
+   },
+   {
+    "addresses": [
+     "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
+     "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
+     "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
+    ],
+    "group": "B"
+   }
+  ],
+  "prices_available": false,
   "set_apart": {
    "tiny": {
     "count": 7,
-    "more": 0,
     "rows": [
      {
       "amount": "0.000025815245451354",
       "contract": null,
       "counterparty": "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
       "direction": "in",
-      "lookalikes": [
-       "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
-       "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
-      ],
+      "lookalike_group": "B",
+      "recognised": true,
       "symbol": "ETH",
       "time": "2025-07-28T01:30:35Z",
       "tx_hash": "0x7c2bf72158d43b6e591d1bdda7c89273c835240e9701286d9771aec88ec64a8d"
@@ -986,12 +1022,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
       "direction": "in",
-      "lookalikes": [
-       "0x584271dd01f59acf382c3a50cef580c679de99a1",
-       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-07-13T12:38:23Z",
       "tx_hash": "0x957d2088f81d0e2ba08d975b8bc5a15df25cd8c3b367aa7f89bbd57637ab38f1"
@@ -1001,12 +1033,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
       "direction": "in",
-      "lookalikes": [
-       "0x584271dd01f59acf382c3a50cef580c679de99a1",
-       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-06-29T02:50:23Z",
       "tx_hash": "0x13073e4e58b3387d95e9e5e51000f41c233f35a78b68ce369e314ac61a827687"
@@ -1016,12 +1044,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0x584271dd01f59acf382c3a50cef580c679de99a1",
       "direction": "in",
-      "lookalikes": [
-       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
-       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-05-18T03:53:23Z",
       "tx_hash": "0x76ac6ea9a7c6816b855a0b47951d600aecbbefc955ee8ac376a822403e474141"
@@ -1031,10 +1055,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
       "direction": "in",
-      "lookalikes": [
-       "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
-       "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
-      ],
+      "lookalike_group": "B",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-04-20T04:07:59Z",
       "tx_hash": "0x153612645413989db736c868311ee852c83fa2c0597db741a47664671ba0893c"
@@ -1044,10 +1066,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0xb951fd8437f2b079fe0a8f946515b5928222ffa9",
       "direction": "in",
-      "lookalikes": [
-       "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
-       "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9"
-      ],
+      "lookalike_group": "B",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-04-20T04:05:11Z",
       "tx_hash": "0xa43f24c45bfa5903a688022e55af2e1a6859c68eb6961cb610f467d801033b7d"
@@ -1057,10 +1077,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
       "direction": "in",
-      "lookalikes": [
-       "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
-       "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
-      ],
+      "lookalike_group": "B",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-04-20T03:40:23Z",
       "tx_hash": "0x071c14191056280344963283b838d26ba76dae67032baab9301095023cad69fb"
@@ -1069,19 +1087,14 @@
    },
    "zero": {
     "count": 9,
-    "more": 0,
     "rows": [
      {
       "amount": "0",
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
       "direction": "out",
-      "lookalikes": [
-       "0x584271dd01f59acf382c3a50cef580c679de99a1",
-       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-07-28T01:33:11Z",
       "tx_hash": "0x4ed19f051bafa0eccfe945175872edac3025b12ff75ed33d53e60d1332d25ef7"
@@ -1091,12 +1104,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
       "direction": "out",
-      "lookalikes": [
-       "0x584271dd01f59acf382c3a50cef580c679de99a1",
-       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-07-11T23:31:47Z",
       "tx_hash": "0x0861ef6d3205b9c1e5bcf9649b4895e7b4e0f758b4e11c1a2d876247971d7d7b"
@@ -1106,7 +1115,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0xfa0ac3c12f1d55706fe78b8c1407edee2f5e33a9",
       "direction": "out",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-07-11T23:28:47Z",
       "tx_hash": "0x3296c4ed622df7081c7db12274c4fe50f6f51eae07cc1651f1ee269c51e219dc"
@@ -1116,12 +1126,8 @@
       "contract": "0xa5a687485a3f24c371a89142d11524853238e92c",
       "counterparty": "0x584271dd01f59acf382c3a50cef580c679de99a1",
       "direction": "out",
-      "lookalikes": [
-       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
-       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": false,
       "symbol": "USDC",
       "time": "2025-06-29T02:39:11Z",
       "tx_hash": "0xeb9df264678202b7509a2907f31ae3cff45852e5f9626fde65a112c9f4df9de1"
@@ -1131,12 +1137,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
       "direction": "out",
-      "lookalikes": [
-       "0x584271dd01f59acf382c3a50cef580c679de99a1",
-       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-06-29T02:38:47Z",
       "tx_hash": "0x6f5fcdddb3dfd5d573e39af42d5bcd87d6b6cbd61a936bb1f55a89ccefef84ee"
@@ -1146,12 +1148,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
       "direction": "out",
-      "lookalikes": [
-       "0x584271dd01f59acf382c3a50cef580c679de99a1",
-       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-05-18T03:55:23Z",
       "tx_hash": "0x4880ff56be81d60cda455a6c7441e27ff25f4cdecf1b1db32f9bacaed12d5e4b"
@@ -1161,12 +1159,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
       "direction": "out",
-      "lookalikes": [
-       "0x584271dd01f59acf382c3a50cef580c679de99a1",
-       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
-       "0x5842eaa23779d00bb3c68119ba2123d5096599a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-05-10T02:33:59Z",
       "tx_hash": "0x4b0cabf5efcbcf108d8678d8f8734dd7b4182c86088771ae061b7a954a1376a5"
@@ -1176,12 +1170,8 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0x5842eaa23779d00bb3c68119ba2123d5096599a1",
       "direction": "out",
-      "lookalikes": [
-       "0x584271dd01f59acf382c3a50cef580c679de99a1",
-       "0x58427f346bf4a2bea1adb3231a478c92aa4699a1",
-       "0x5842af293bb5e1e7c32df4320b45581b00ad99a1",
-       "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-05-10T02:33:23Z",
       "tx_hash": "0x9896f0c3f18dc3c44149c0fe94c9d1f6777d572959d12c13c06a62a4a9f246f6"
@@ -1191,17 +1181,36 @@
       "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       "counterparty": "0xb9517c7b88fa1c8636d9c47501d87b0824b5ffa9",
       "direction": "out",
-      "lookalikes": [
-       "0xb9518cd0a2259459e3c95d93a82d72778a05ffa9",
-       "0xb951fd8437f2b079fe0a8f946515b5928222ffa9"
-      ],
+      "lookalike_group": "B",
+      "recognised": true,
       "symbol": "USDC",
       "time": "2025-04-20T03:40:11Z",
       "tx_hash": "0xa39526c0d685a5a715478ec1a7cddc5d0049806bc6547f6cbb658773bd46b601"
      }
     ]
    }
+  },
+  "summary": {
+   "checked": 26,
+   "destroyed": [],
+   "frozen": [],
+   "held": [
+    {
+     "amount": "0.000012672133499994",
+     "freezable": false,
+     "name": "ETH"
+    }
+   ],
+   "history": "complete",
+   "largest_destination": {
+    "address": "0x5842b2e75d3566bd0d3f9f520e71c1f3b30b99a1",
+    "asset": "USDC",
+    "listed": false,
+    "share_percent": "84.5",
+    "total": "327189.01993"
+   },
+   "list_matches": 0
   }
  },
- "sha256": "7e289deda71d8a2d5842dae04dbe4537ba577f52c41b44c2040250fd67416744"
+ "sha256": "67e6028195709170f8e44b83e6f8dab2ad2fbc0f5d13f442e82ddf46aa729119"
 }

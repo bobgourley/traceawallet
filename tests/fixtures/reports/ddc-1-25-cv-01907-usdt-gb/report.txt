@@ -1,16 +1,19 @@
 TraceAWallet report
 Ethereum address 0xc76afbf0f69ae9be5d855239c50673252cf3f26b
 
-As of block 26,458,162 (2026-11-20 18:41 UTC). Labels and lists as they stood at 2026-11-20 18:42 UTC.
-Chain data: Etherscan API V2. Powered by Etherscan.io APIs
+As of block 26,458,162 (2026-11-20 18:41 UTC). Lists and labels as they stood at 2026-11-20 18:42 UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
 
-THE HISTORY MAY BE INCOMPLETE. What was read does not add up:
-  - stablecoin 0xdac17f958d2ee523a2206206994597c13d831ec7 is frozen with a zero balance, transfers in minus out 2137276136000, and no destruction event was found (the index of destruction events was not available)
-Treat totals and lists below as partial.
+== Summary ==
+Held: 0.049405781241343832 ETH.
+Frozen: Tether has frozen this address's USDT. The address can no longer send USDT.
+Largest destination: 0x87827295ae2bc684e2debd5de693fba7678310e1, 66,898,093.72 USDT, 54.5% of the USDT that left this address.
+Lists: none of the 43 first-hop addresses checked matched OFAC's list or the exchange wallet lists we hold.
+History read: may be incomplete. See "Is the history complete?"
+Prices: no price data was available for this report, so no US dollar values are shown.
 
 == Chains ==
-This report covers Ethereum only. An address starting with 0x can exist on many chains; each chain checked gets its own report.
+This report covers Ethereum only. An address starting with 0x can exist on many chains, and each chain checked gets its own report.
 Checked: Ethereum, Arbitrum One, OP Mainnet.
 Not checked:
   - BNB Smart Chain: no data source we may use for a public site covers this chain yet.
@@ -19,157 +22,170 @@ Not checked:
 The address is not a contract (an ordinary account).
 
 == Holdings at block 26,458,162 ==
-ETH: 0.049405781241343832 (no price available)
-Also held: 15 tokens we don't recognise, listed under "Tokens we don't recognise" below.
+ETH: 0.049405781241343832
+Also held: 15 tokens we don't recognise (see "Tokens we don't recognise").
 
-Share held in stablecoins the issuer can freeze: can't be worked out, because there is no price for ETH.
-
-Freeze status, read from the stablecoin contracts themselves:
-  - USDT: frozen by Tether. The USDT contract (0xdac17f958d2ee523a2206206994597c13d831ec7) reports isBlackListed = true for this address, read at block 26,458,162.
-    Freeze date: not read: the index of this contract's freeze events is not available.
-  - USDC: not frozen. The contract (0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48) reports isBlacklisted = false at block 26,458,162.
+Freeze status:
+  USDT: frozen by Tether. This address can no longer send USDT. A freeze does not return money to anyone; that takes legal process. Tether can later release the frozen USDT or destroy it.
+    Detail: the USDT contract 0xdac17f958d2ee523a2206206994597c13d831ec7 reports isBlackListed = true at block 26,458,162; freeze date: not read: the index of this contract's freeze events is not available.
+  USDC: not frozen.
+    Detail: the USDC contract 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48 reports isBlacklisted = false at block 26,458,162.
 
 OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026-11-19.
 
 == Activity ==
 First activity read: 2023-08-02 05:35 UTC. Last activity read: 2026-11-10 04:22 UTC.
 USDT (contract 0xdac17f958d2ee523a2206206994597c13d831ec7):
-  in:  35 transfers, 124,835,469.856 (no price available)
-  out: 33 transfers, 122,698,193.72 (no price available)
+  in:  35 transfers, 124,835,469.856
+  out: 33 transfers, 122,698,193.72
 ETH:
-  in:  2 transfers, 0.06 (no price available)
+  in:  2 transfers, 0.06
   out: 0 transfers, 0
-No price is available for: ETH, USDT. Dollar figures for those are left out, never counted as zero.
 
-== First-hop destinations ==
-Addresses this address sent to, largest first. Zero, tiny and unrecognised-token transfers are left out (see below).
-  1. 0x87827295ae2bc684e2debd5de693fba7678310e1
-     66,898,093.72 USDT in 1 transfer, 2023-08-14 to 2023-08-14 (no price available)
-     Begins and ends with the same characters as 0x8782c7e3d78b6fef7eb8a042dd7f57df69d610e1, 0x87880175d5d295679cd1e05269190150f18310e1, also in this report. Check every character before copying either.
-  2. 0x8776fca9e80d4678939b81ff3230b600891880ec
-     23,800,000 USDT in 4 transfers, 2023-09-15 to 2023-09-17 (no price available)
-     Begins and ends with the same characters as 0x8776cadf253e9b139145628682e3893ae45c80ec, 0x877e4201f98b783e1592553a8747d3a7871880ec, also in this report. Check every character before copying either.
-  3. 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac
-     14,000,000 USDT in 3 transfers, 2023-08-15 to 2023-08-18 (no price available)
-     Begins and ends with the same characters as 0x0c092f265cf07d4189fa112dfcc618356502b9ac, 0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac, also in this report. Check every character before copying either.
-  4. 0x095ed0ade83fbac513e45e77d8d69122c68256ce
-     10,000,000 USDT in 2 transfers, 2023-09-15 to 2023-09-15 (no price available)
-     Begins and ends with the same characters as 0x095eedd8fea8b1e390871a52610098a902d656ce, also in this report. Check every character before copying either.
-  5. 0x587669ccd6d8c54f8d24ce4a6c915a0e9262711f
-     8,000,000 USDT in 2 transfers, 2023-09-19 to 2023-09-19 (no price available)
-     Begins and ends with the same characters as 0x58769e553a79ad44f16e569397e028f5a2dc711f, 0x587c77253f1c61843edbf16d056680bb939c711f, also in this report. Check every character before copying either.
-  6. 0x564e11ace70bfe6c943a973f1289faa6e8a0fe16
-     100 USDT in 1 transfer, 2023-08-14 to 2023-08-14 (no price available)
-     Begins and ends with the same characters as 0x564af59d83cf38e66a50bc43aa3c6e7e52a0fe16, 0x564e9cba9daabde7c35e150b96ee13269a9dfe16, also in this report. Check every character before copying either.
+== Where funds went next ==
+Addresses this address sent to, largest first. Zero, very small and unrecognised-token transfers are left out.
+  1. 0x87827295ae2bc684e2debd5de693fba7678310e1  [lookalike group A]
+     66,898,093.72 USDT in 1 transfer on 2023-08-14
+  2. 0x8776fca9e80d4678939b81ff3230b600891880ec  [lookalike group B]
+     23,800,000 USDT in 4 transfers from 2023-09-15 to 2023-09-17
+  3. 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac  [lookalike group C]
+     14,000,000 USDT in 3 transfers from 2023-08-15 to 2023-08-18
+  4. 0x095ed0ade83fbac513e45e77d8d69122c68256ce  [lookalike group D]
+     10,000,000 USDT in 2 transfers on 2023-09-15
+  5. 0x587669ccd6d8c54f8d24ce4a6c915a0e9262711f  [lookalike group E]
+     8,000,000 USDT in 2 transfers on 2023-09-19
+  6. 0x564e11ace70bfe6c943a973f1289faa6e8a0fe16  [lookalike group F]
+     100 USDT in 1 transfer on 2023-08-14
 
-== Funders ==
-Addresses that sent to this address, largest first. Zero, tiny and unrecognised-token transfers are left out.
-  1. 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac
-     100,678,359.89 USDT in 18 transfers, 2023-08-03 to 2023-08-21 (no price available)
-     Begins and ends with the same characters as 0x0c092f265cf07d4189fa112dfcc618356502b9ac, 0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac, also in this report. Check every character before copying either.
+== Where funds came from ==
+Addresses that sent to this address, largest first. Zero, very small and unrecognised-token transfers are left out.
+  1. 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac  [lookalike group C]
+     100,678,359.89 USDT in 18 transfers from 2023-08-03 to 2023-08-21
+     0.01 ETH in 1 transfer on 2023-08-02
   2. 0x0aee7de3f50f4348f5385e397c6d790bcb031b76
-     9,000,000 USDT in 4 transfers, 2023-09-01 to 2023-09-03 (no price available)
-  3. 0x8776fca9e80d4678939b81ff3230b600891880ec
-     7,337,833.91 USDT in 2 transfers, 2023-08-02 to 2023-09-09 (no price available)
-     Begins and ends with the same characters as 0x8776cadf253e9b139145628682e3893ae45c80ec, 0x877e4201f98b783e1592553a8747d3a7871880ec, also in this report. Check every character before copying either.
-  4. 0x095ed0ade83fbac513e45e77d8d69122c68256ce
-     5,000,000 USDT in 2 transfers, 2023-09-17 to 2023-09-17 (no price available)
-     Begins and ends with the same characters as 0x095eedd8fea8b1e390871a52610098a902d656ce, also in this report. Check every character before copying either.
+     9,000,000 USDT in 4 transfers from 2023-09-01 to 2023-09-03
+  3. 0x8776fca9e80d4678939b81ff3230b600891880ec  [lookalike group B]
+     7,337,833.91 USDT in 2 transfers from 2023-08-02 to 2023-09-09
+  4. 0x095ed0ade83fbac513e45e77d8d69122c68256ce  [lookalike group D]
+     5,000,000 USDT in 2 transfers on 2023-09-17
   5. 0xe826f2d414cd6255e408b58eb3edb52746830c83
-     1,497,000 USDT in 6 transfers, 2023-10-12 to 2023-10-15 (no price available)
-  6. 0x587669ccd6d8c54f8d24ce4a6c915a0e9262711f
-     1,322,276.056 USDT in 3 transfers, 2023-08-30 to 2023-09-09 (no price available)
-     Begins and ends with the same characters as 0x58769e553a79ad44f16e569397e028f5a2dc711f, 0x587c77253f1c61843edbf16d056680bb939c711f, also in this report. Check every character before copying either.
+     1,497,000 USDT in 6 transfers from 2023-10-12 to 2023-10-15
+  6. 0x587669ccd6d8c54f8d24ce4a6c915a0e9262711f  [lookalike group E]
+     1,322,276.056 USDT in 3 transfers from 2023-08-30 to 2023-09-09
   7. 0xd7c0757765c092c91b4498f59a5b511f91f15a07
-     0.05 ETH in 1 transfer, 2023-09-19 to 2023-09-19 (no price available)
-  8. 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac
-     0.01 ETH in 1 transfer, 2023-08-02 to 2023-08-02 (no price available)
-     Begins and ends with the same characters as 0x0c092f265cf07d4189fa112dfcc618356502b9ac, 0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac, also in this report. Check every character before copying either.
+     0.05 ETH in 1 transfer on 2023-09-19
 
-First funder read: 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac, 0.01 ETH on 2023-08-02 05:35 UTC (transaction 0xec7c963b581fa80d47218e63fa73ad077934b406dcabc36e12ae9a13e25edba0).
+First funder read: 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac, 0.01 ETH on 2023-08-02 05:35 UTC.
+  transaction 0xec7c963b581fa80d47218e63fa73ad077934b406dcabc36e12ae9a13e25edba0
 Distinct addresses that sent to this one: 18.
 
-== Set apart ==
-Zero-value transfers: 20. Transfers of a very small amount (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 0.
-These are listed here rather than with the transfers above.
-  2023-09-19 07:18 UTC  out to 0x587c77253f1c61843edbf16d056680bb939c711f  0 USDT  tx 0x320154994e0ed0378d9cdec2a343ef433949e07c4ca8b9f44314138ea6d0a06b
-      (begins and ends like 0x587669ccd6d8c54f8d24ce4a6c915a0e9262711f, 0x58769e553a79ad44f16e569397e028f5a2dc711f)
-  2023-09-19 07:17 UTC  out to 0x58769e553a79ad44f16e569397e028f5a2dc711f  0 USDT  tx 0x6a945089692f5edaf09a97f400359c533848db7f7c233d8a0c5324fb28193ead
-      (begins and ends like 0x587669ccd6d8c54f8d24ce4a6c915a0e9262711f, 0x587c77253f1c61843edbf16d056680bb939c711f)
-  2023-09-17 07:38 UTC  out to 0x877e4201f98b783e1592553a8747d3a7871880ec  0 USDT  tx 0x45bbcb34154a20823a18563633b8813532adfacffb1fa60514279680158b04f5
-      (begins and ends like 0x8776cadf253e9b139145628682e3893ae45c80ec, 0x8776fca9e80d4678939b81ff3230b600891880ec)
-  2023-09-17 07:37 UTC  out to 0x8776cadf253e9b139145628682e3893ae45c80ec  0 USDT  tx 0x0c1a06d2e426fd140e75612578cfb6a0e0ef30e5e94ab6482f096cd99d29e821
-      (begins and ends like 0x8776fca9e80d4678939b81ff3230b600891880ec, 0x877e4201f98b783e1592553a8747d3a7871880ec)
-  2023-09-15 07:29 UTC  out to 0x877e4201f98b783e1592553a8747d3a7871880ec  0 USDT  tx 0x6024c129b64c3234d54be931d485fa52e428d5ac6af4ae7d62f666bc3ef3d09f
-      (begins and ends like 0x8776cadf253e9b139145628682e3893ae45c80ec, 0x8776fca9e80d4678939b81ff3230b600891880ec)
-  2023-09-15 07:29 UTC  out to 0x877e4201f98b783e1592553a8747d3a7871880ec  0 USDT  tx 0x6024c129b64c3234d54be931d485fa52e428d5ac6af4ae7d62f666bc3ef3d09f
-      (begins and ends like 0x8776cadf253e9b139145628682e3893ae45c80ec, 0x8776fca9e80d4678939b81ff3230b600891880ec)
-  2023-09-15 07:25 UTC  out to 0x095eedd8fea8b1e390871a52610098a902d656ce  0 USDT  tx 0xa276943eb8eb9b72a95a175b0a84c5de6500ae89e3b89165a71096d386a114ad
-      (begins and ends like 0x095ed0ade83fbac513e45e77d8d69122c68256ce)
-  2023-09-15 07:25 UTC  out to 0x8776cadf253e9b139145628682e3893ae45c80ec  0 USDT  tx 0xbe62c89276af9afff1aa7f8b0f0a8f2b4c9f512de876ff9d30c435ff3577e290
-      (begins and ends like 0x8776fca9e80d4678939b81ff3230b600891880ec, 0x877e4201f98b783e1592553a8747d3a7871880ec)
-  2023-08-18 09:05 UTC  out to 0x0c092f265cf07d4189fa112dfcc618356502b9ac  0 USDT  tx 0xbd5993575e3b69d989cb0f0d04b8913df133b9714e14b167384638ad7540fe21
-      (begins and ends like 0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac, 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac)
-  2023-08-18 09:03 UTC  out to 0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac  0 USDT  tx 0x5e73cb61856841c4bca9590d855ddbbd2a04c4e96eaf45927bf344c3d39ad7ae
-      (begins and ends like 0x0c092f265cf07d4189fa112dfcc618356502b9ac, 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac)
-  2023-08-18 09:03 UTC  out to 0x0c092f265cf07d4189fa112dfcc618356502b9ac  0 USDT  tx 0x8fba7ac91d83e16c92638888ce37674f086ea9cf3d075ae4e735346a8bcf263d
-      (begins and ends like 0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac, 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac)
-  2023-08-18 04:54 UTC  out to 0x0c092f265cf07d4189fa112dfcc618356502b9ac  0 USDT  tx 0x79e398f660715dc56a39917a6cde5e6bd2afde7ed7d00cb271255634f70f8ab2
-      (begins and ends like 0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac, 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac)
-  2023-08-18 04:54 UTC  out to 0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac  0 USDT  tx 0x149d85e8b96d85ecc557f4c6c85c00426f5853d65d364ebfd864b72927c71bb2
-      (begins and ends like 0x0c092f265cf07d4189fa112dfcc618356502b9ac, 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac)
-  2023-08-15 08:35 UTC  out to 0x0c092f265cf07d4189fa112dfcc618356502b9ac  0 USDT  tx 0xffdca40abb12620b12de61d4b5646a4d90ad9daf80d34601bfa1bb02b678d471
-      (begins and ends like 0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac, 0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac)
-  2023-08-14 07:54 UTC  out to 0x564e9cba9daabde7c35e150b96ee13269a9dfe16  0 USDT  tx 0x9586a0fa9159c4225ba15baa965bad5c63adccf1d854f0d437368a4fde1e85e1
-      (begins and ends like 0x564af59d83cf38e66a50bc43aa3c6e7e52a0fe16, 0x564e11ace70bfe6c943a973f1289faa6e8a0fe16)
-  2023-08-14 07:52 UTC  out to 0x564af59d83cf38e66a50bc43aa3c6e7e52a0fe16  0 USDT  tx 0xdcdb965badeb6ccb1bbe2312a8e5e0e24adf482e5393e6e300dcc01ae016bbe5
-      (begins and ends like 0x564e11ace70bfe6c943a973f1289faa6e8a0fe16, 0x564e9cba9daabde7c35e150b96ee13269a9dfe16)
-  2023-08-14 06:37 UTC  out to 0x8782c7e3d78b6fef7eb8a042dd7f57df69d610e1  0 USDT  tx 0x8a029d60305415edb610f315ca37080a5f4a66453eed8148eb254247c450ea4f
-      (begins and ends like 0x87827295ae2bc684e2debd5de693fba7678310e1, 0x87880175d5d295679cd1e05269190150f18310e1)
-  2023-08-14 06:34 UTC  out to 0x87880175d5d295679cd1e05269190150f18310e1  0 USDT  tx 0x08592e1efbc14cd21690f14f964b44b4cdd51b3b1e230726e14cc66fc2d9056e
-      (begins and ends like 0x87827295ae2bc684e2debd5de693fba7678310e1, 0x8782c7e3d78b6fef7eb8a042dd7f57df69d610e1)
-  2023-08-14 05:27 UTC  out to 0x8782c7e3d78b6fef7eb8a042dd7f57df69d610e1  0 USDT  tx 0x64d9915fb150d758af3de5e5aab4642de3555a27c32e248849ffab33a028a25b
-      (begins and ends like 0x87827295ae2bc684e2debd5de693fba7678310e1, 0x87880175d5d295679cd1e05269190150f18310e1)
-  2023-08-14 05:18 UTC  out to 0x564e9cba9daabde7c35e150b96ee13269a9dfe16  0 USDT  tx 0xa162d1963ada0ef378a6a5a2b4dee3ec707c25cf990281e82cb26672f35b79ff
-      (begins and ends like 0x564af59d83cf38e66a50bc43aa3c6e7e52a0fe16, 0x564e11ace70bfe6c943a973f1289faa6e8a0fe16)
+== Lookalike addresses ==
+Some addresses in this report begin and end with the same characters. Wallets often show addresses shortened, so these are easy to mix up. Check every character before copying one.
+  Group A:
+    0x87827295ae2bc684e2debd5de693fba7678310e1
+    0x8782c7e3d78b6fef7eb8a042dd7f57df69d610e1
+    0x87880175d5d295679cd1e05269190150f18310e1
+  Group B:
+    0x8776cadf253e9b139145628682e3893ae45c80ec
+    0x8776fca9e80d4678939b81ff3230b600891880ec
+    0x877e4201f98b783e1592553a8747d3a7871880ec
+  Group C:
+    0x0c092f265cf07d4189fa112dfcc618356502b9ac
+    0x0c095a07f9bea7328dbfd9b5dda4f8831da0b9ac
+    0x0c0996d0c3af2892a7a8fc621eb7347ec9b6b9ac
+  Group D:
+    0x095ed0ade83fbac513e45e77d8d69122c68256ce
+    0x095eedd8fea8b1e390871a52610098a902d656ce
+  Group E:
+    0x587669ccd6d8c54f8d24ce4a6c915a0e9262711f
+    0x58769e553a79ad44f16e569397e028f5a2dc711f
+    0x587c77253f1c61843edbf16d056680bb939c711f
+  Group F:
+    0x564af59d83cf38e66a50bc43aa3c6e7e52a0fe16
+    0x564e11ace70bfe6c943a973f1289faa6e8a0fe16
+    0x564e9cba9daabde7c35e150b96ee13269a9dfe16
 
-Tokens we don't recognise: 33 transfers. A token's name and symbol are chosen by whoever deployed its contract, so a token named USDT here need not be Tether's. Only the contract identifies a token.
-  "USDT" contract 0x7dd5f67a25afb9e73d4966b1ac578dabd9ccc986: 0 in, 5 out
-  "UЅDТ" contract 0x4f417aef88badd2cf04601683a0e205dd8f7d3b2 (name contains U+0405, U+0422): 0 in, 4 out
-  "ꓴSᎠ ꓔ܂" contract 0x5e57bdcfcb48b45a5c5e5d42c7d006fc7ccb53fe (name contains U+A4F4, U+13A0, U+202F, U+A4D4, U+0702): 0 in, 3 out
-  "DIXT" contract 0x43e6228b5bf22eab754486082ca91fdd8585521a: 2 in, 0 out
-  "UЅDТ" contract 0x7db657deef2af2ea24bbe4c4be2a571955dfb88c (name contains U+0405, U+0422): 0 in, 2 out
-  "USDT" contract 0xbac0b60eb1cf16dd9602d33f17a2ad5a4974412c: 0 in, 2 out
-  "USDT" contract 0xe0c19090e28e6ba7c07dbc8d3def0e0cc59bfb56: 0 in, 2 out
-  "TUSD" contract 0x0000000000085d4780b73119b644ae5ecd22b376: 1 in, 0 out
-  "HEX" contract 0x2b591e99afe9f32eaa6214f7b7629768c40eeb39: 1 in, 0 out
-  "USDT" contract 0x576806b46f1cf493fc83e064933a70375498c914: 0 in, 1 out
-  "HQG" contract 0x57b9d10157f66d8c00a815b5e289a152dedbe7ed: 1 in, 0 out
-  "yRise" contract 0x6051c1354ccc51b4d561e43b02735deae64768b8: 1 in, 0 out
-  "USDT解冻TG : usdtbtcb" contract 0x6af9b9f049062df14e3df99e042653b656666666 (name contains U+89E3, U+51BB): 1 in, 0 out
-  "Visit https://get-usdc.net to claim rewards" contract 0x7fba205673fa64ea3d2b0ad3b4daf1f7ce94ac6f: 1 in, 0 out
-  "YFTE" contract 0x94f31ac896c9823d81cf9c2c93feceed4923218f: 1 in, 0 out
+== List matches ==
+Checked: 25 destinations and 18 funders, every first-hop address read, against:
+  - our file of the wallets Bitfinex, Bybit, Crypto.com, HTX and KuCoin publish, as published on 2026-11-10
+  - OFAC's SDN sanctions list, as published on 2026-11-19
+  - OKX's published list of its wallets, as published on 2026-11-01
+Matched: 0.
+The exchange lists cover only the exchanges named. An address that matches nothing may still belong to an exchange, or to anyone else.
+
+== Zero and very small transfers ==
+Zero-value transfers: 20. Very small transfers (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 0.
+The newest 5:
+  2023-09-19 07:18 UTC  out to 0x587c77253f1c61843edbf16d056680bb939c711f  0 USDT  [lookalike group E]
+      transaction 0x320154994e0ed0378d9cdec2a343ef433949e07c4ca8b9f44314138ea6d0a06b
+  2023-09-19 07:17 UTC  out to 0x58769e553a79ad44f16e569397e028f5a2dc711f  0 USDT  [lookalike group E]
+      transaction 0x6a945089692f5edaf09a97f400359c533848db7f7c233d8a0c5324fb28193ead
+  2023-09-17 07:38 UTC  out to 0x877e4201f98b783e1592553a8747d3a7871880ec  0 USDT  [lookalike group B]
+      transaction 0x45bbcb34154a20823a18563633b8813532adfacffb1fa60514279680158b04f5
+  2023-09-17 07:37 UTC  out to 0x8776cadf253e9b139145628682e3893ae45c80ec  0 USDT  [lookalike group B]
+      transaction 0x0c1a06d2e426fd140e75612578cfb6a0e0ef30e5e94ab6482f096cd99d29e821
+  2023-09-15 07:29 UTC  out to 0x877e4201f98b783e1592553a8747d3a7871880ec  0 USDT  [lookalike group B]
+      transaction 0x6024c129b64c3234d54be931d485fa52e428d5ac6af4ae7d62f666bc3ef3d09f
+The full list of 20 is in the report's data.
+
+== Tokens we don't recognise ==
+33 transfers. A token is identified only by its contract, so a token named USDT here need not be Tether's.
+Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
+  "USDT": 0 in, 5 out
+      contract 0x7dd5f67a25afb9e73d4966b1ac578dabd9ccc986
+  "UЅDТ" (contains U+0405, U+0422): 0 in, 4 out
+      contract 0x4f417aef88badd2cf04601683a0e205dd8f7d3b2
+  "ꓴSᎠ ꓔ܂" (contains U+A4F4, U+13A0, U+202F, U+A4D4, U+0702): 0 in, 3 out
+      contract 0x5e57bdcfcb48b45a5c5e5d42c7d006fc7ccb53fe
+  "DIXT": 2 in, 0 out
+      contract 0x43e6228b5bf22eab754486082ca91fdd8585521a
+  "UЅDТ" (contains U+0405, U+0422): 0 in, 2 out
+      contract 0x7db657deef2af2ea24bbe4c4be2a571955dfb88c
+  "USDT": 0 in, 2 out
+      contract 0xbac0b60eb1cf16dd9602d33f17a2ad5a4974412c
+  "USDT": 0 in, 2 out
+      contract 0xe0c19090e28e6ba7c07dbc8d3def0e0cc59bfb56
+  "TUSD": 1 in, 0 out
+      contract 0x0000000000085d4780b73119b644ae5ecd22b376
+  "HEX": 1 in, 0 out
+      contract 0x2b591e99afe9f32eaa6214f7b7629768c40eeb39
+  "USDT": 0 in, 1 out
+      contract 0x576806b46f1cf493fc83e064933a70375498c914
+  "HQG": 1 in, 0 out
+      contract 0x57b9d10157f66d8c00a815b5e289a152dedbe7ed
+  "yRise": 1 in, 0 out
+      contract 0x6051c1354ccc51b4d561e43b02735deae64768b8
+  "USDT解冻TG : usdtbtcb" (contains U+89E3, U+51BB): 1 in, 0 out
+      contract 0x6af9b9f049062df14e3df99e042653b656666666
+  "Visit https[://]get-usdc[.]net to claim rewards": 1 in, 0 out
+      contract 0x7fba205673fa64ea3d2b0ad3b4daf1f7ce94ac6f
+  "YFTE": 1 in, 0 out
+      contract 0x94f31ac896c9823d81cf9c2c93feceed4923218f
   ...and 5 more tokens not shown.
 
-== Labels ==
-Every claim a source makes about this address, worded as that source's claim:
+== Claims about this address ==
   - frozen by Tether: the USDT contract on Ethereum (0xdac17f958d2ee523a2206206994597c13d831ec7) reports isBlackListed = true for this address
     source: Tether USDT contract state; dated undated; read 2026-11-20
-GoPlus: GoPlus has no flags for this address.
-  Powered by GoPlus.
-First-hop addresses are checked against OFAC's SDN list and the exchange wallet files only (lists as published: exchange-por 2026-11-10, ofac-sdn 2026-11-19, okx-por 2026-11-01).
+GoPlus: GoPlus has no flags for this address. Powered by GoPlus.
 
-== Completeness ==
-  - Stablecoin balances match the transfers read: did not pass. stablecoin 0xdac17f958d2ee523a2206206994597c13d831ec7 is frozen with a zero balance, transfers in minus out 2137276136000, and no destruction event was found (the index of destruction events was not available)
-  - Other token balances match the transfers read (for information only): did not pass. token 0x4f417aef88badd2cf04601683a0e205dd8f7d3b2 does not reconcile: balance 0, transfers in minus out -27000000000000; token 0x576806b46f1cf493fc83e064933a70375498c914 does not reconcile: balance 1000000, transfers in minus out -7000000000000; token 0x5e57bdcfcb48b45a5c5e5d42c7d006fc7ccb53fe does not reconcile: balance 1000000000, transfers in minus out -300000000; token 0x7db657deef2af2ea24bbe4c4be2a571955dfb88c does not reconcile: balance 0, transfers in minus out -6800000000000; token 0x7dd5f67a25afb9e73d4966b1ac578dabd9ccc986 does not reconcile: balance 1000000000, transfers in minus out -27000000000000; token 0xbac0b60eb1cf16dd9602d33f17a2ad5a4974412c does not reconcile: balance 0, transfers in minus out -10000000000000; token 0xe0c19090e28e6ba7c07dbc8d3def0e0cc59bfb56 does not reconcile: balance 1000000, transfers in minus out -66898193720000; token 0xf3950716947e5d4737794b8f977a0cd8dadc21c9 does not reconcile: balance 0, transfers in minus out -3000000000000; token 0xf50d846f812bb64df2d4eedde0c7c07a1abc782e does not reconcile: balance 0, transfers in minus out -4000000000000; token 0xfe3ba5a23354fb7aad38c3c4e445f0d3ae35e537 does not reconcile: balance 1000000, transfers in minus out -3000000000000 (does not mark the history incomplete)
-  - The native coin balance matches the transfers read: passed
-  - The number of transactions sent matches the address's nonce: passed
-  - Etherscan's token list matches the token transfer logs: passed
-  - TUSD (0x0000000000085d4780b73119b644ae5ecd22b376): the balance matches the transfers read.
-  - USDT (0xdac17f958d2ee523a2206206994597c13d831ec7): the balance is zero while the address is frozen, and no destruction by the issuer was found.
-Transfers read: 103, the whole history the source listed; the oldest is from 2023-08-02 05:35 UTC.
-Internal transfers (value moved by contract code): read for every block up to the snapshot.
-NFT transfers are not read.
+== Is the history complete? ==
+The history may be incomplete. What was read does not add up:
+  - stablecoin 0xdac17f958d2ee523a2206206994597c13d831ec7 is frozen with a zero balance, transfers in minus out 2137276136000, and no destruction event was found (the index of destruction events was not available)
+Treat totals and lists in this report as partial.
+
+What we checked:
+  - Stablecoin balances match the transfers read: no. stablecoin 0xdac17f958d2ee523a2206206994597c13d831ec7 is frozen with a zero balance, transfers in minus out 2137276136000, and no destruction event was found (the index of destruction events was not available)
+  - The native coin balance matches the transfers read: yes
+  - The number of transactions sent matches the address's nonce: yes
+  - Etherscan's token list matches the token transfer logs: yes
+  - TUSD balance: matches the transfers read.
+  - USDT balance: is zero while the address is frozen, and no destruction by the issuer was found.
+
+What we did not read or could not check:
+  - NFT transfers are not read.
+  - Internal transfers (value moved by contract code): read for every block up to the snapshot.
+  - First-hop addresses are matched against the lists above only. GoPlus and the token contracts are asked about this address alone.
+Detail: balances of tokens we don't recognise don't match their transfers (token 0x4f417aef88badd2cf04601683a0e205dd8f7d3b2 does not reconcile: balance 0, transfers in minus out -27000000000000; token 0x576806b46f1cf493fc83e064933a70375498c914 does not reconcile: balance 1000000, transfers in minus out -7000000000000; token 0x5e57bdcfcb48b45a5c5e5d42c7d006fc7ccb53fe does not reconcile: balance 1000000000, transfers in minus out -300000000; token 0x7db657deef2af2ea24bbe4c4be2a571955dfb88c does not reconcile: balance 0, transfers in minus out -6800000000000; token 0x7dd5f67a25afb9e73d4966b1ac578dabd9ccc986 does not reconcile: balance 1000000000, transfers in minus out -27000000000000; token 0xbac0b60eb1cf16dd9602d33f17a2ad5a4974412c does not reconcile: balance 0, transfers in minus out -10000000000000; token 0xe0c19090e28e6ba7c07dbc8d3def0e0cc59bfb56 does not reconcile: balance 1000000, transfers in minus out -66898193720000; token 0xf3950716947e5d4737794b8f977a0cd8dadc21c9 does not reconcile: balance 0, transfers in minus out -3000000000000; token 0xf50d846f812bb64df2d4eedde0c7c07a1abc782e does not reconcile: balance 0, transfers in minus out -4000000000000; token 0xfe3ba5a23354fb7aad38c3c4e445f0d3ae35e537 does not reconcile: balance 1000000, transfers in minus out -3000000000000). This does not affect the verdict.
 
 == Prior lookups ==
 Not counted yet for this address.
@@ -182,27 +198,35 @@ This count is read when the report is shown and is not part of the report's fing
 These sites are run by others. What they show is their own.
 
 == Sources ==
-  - Etherscan API V2: Powered by Etherscan.io APIs
-  - GoPlus Security: Powered by GoPlus (shown with the GoPlus logo; results unmodified); a flag reads "flagged by GoPlus"
-  - Circle USDC contract state: frozen by Circle
-  - Tether USDT contract state: frozen by Tether
+  - Etherscan API V2: balances and transfers (Powered by Etherscan.io APIs)
+  - GoPlus Security: address flags (Powered by GoPlus)
+  - Circle USDC contract state: freeze status, read from the token contract
+  - Tether USDT contract state: freeze status, read from the token contract
 
 <<< fixed section: recovery scams >>>
 == Watch out for recovery scams (DRAFT, not yet approved) ==
-After a loss, people are often contacted by someone who says they can get the money back: a "recovery service", a "blockchain investigator", a lawyer, or someone claiming to be from a government agency. Many of these are a second scam aimed at the same victim.
+After a loss, people are often contacted by someone who says they can get the money back: a "recovery service", a "blockchain investigator", someone claiming to be a lawyer, or someone claiming to be from a government agency. Many of these are a second scam aimed at the same victim.
 
   - No one can reverse a confirmed blockchain transaction. Funds come back only when an exchange or issuer freezes them and a court or law enforcement acts.
-  - Law enforcement agencies do not charge fees to recover funds, and they do not ask for payment in crypto, gift cards or wire transfers.
+  - Law enforcement does not charge victims a fee, and does not ask for payment in crypto, gift cards or wire transfers.
+  - Tokens or messages sent to an address that advertise "unfreezing" or recovery are the same scheme. Do not contact the names, handles or websites in them.
+  - If a platform says you must pay a fee or a tax before you can withdraw your money, that request is part of the scam. Do not send more money: paying does not release anything.
   - Be wary of anyone who contacts you first, asks for an upfront fee, asks for your wallet's recovery phrase or private key, or asks you to install remote-access software.
   - TraceAWallet will never contact you to offer recovery, and never asks for payment.
 
-If someone offers recovery, report the contact at ic3.gov as well.
+If someone offers recovery, report that contact at ic3.gov as well.
 <<< end of fixed section >>>
 
 <<< fixed section: IC3 checklist >>>
-== Filing with the FBI's IC3 (DRAFT, not yet approved) ==
-The FBI's Internet Crime Complaint Center takes reports at ic3.gov. Gather these before you start:
+== Reporting what happened (DRAFT, not yet approved) ==
+Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
 
+  [ ] First, tell the exchange or wallet provider you sent from. Ask them to flag the transfer and record your report.
+  [ ] File with the FBI's Internet Crime Complaint Center (IC3) at ic3.gov.
+  [ ] In the US, also report to the Federal Trade Commission at reportfraud.ftc.gov.
+  [ ] Outside the US, report to your national police or fraud reporting centre, and at econsumer.gov, which consumer protection agencies in many countries use for cross-border scams.
+
+Gather these for the report:
   [ ] Each payment you made: the date, the amount, the asset (for example USDT on Tron) and the transaction hash
   [ ] The address you sent from, and the address you sent to (this report's address: 0xc76afbf0f69ae9be5d855239c50673252cf3f26b on Ethereum)
   [ ] The exchange or wallet app you sent from, and your account details there
@@ -210,8 +234,10 @@ The FBI's Internet Crime Complaint Center takes reports at ic3.gov. Gather these
   [ ] Messages, screenshots and any documents they sent you
   [ ] The platform or app you were told to use, with its web address
 
-After filing:
-  [ ] Keep the complaint ID IC3 gives you
-  [ ] Tell the exchange or wallet provider you sent from, and give them the IC3 complaint ID
-  [ ] Consider a report to your local police as well
+Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 <<< end of fixed section >>>
+
+== Report fingerprint ==
+Report id: assigned when the report is stored
+Fingerprint (SHA-256): 2c4745587d89f5132169b7e44e2467bf0b955fda10ccf034df342c135ef63e76
+The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

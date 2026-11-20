@@ -46,7 +46,21 @@ def test_golden_report(case):
     folder = rf.FIXTURES / case
     golden(folder / "report.json", json.dumps({"sha256": digest(inp, data), "data": data}, indent=1,
                                               sort_keys=True, ensure_ascii=False) + "\n")
-    golden(folder / "report.txt", render_text(data))
+    golden(folder / "report.txt", render_text(data, sha256=digest(inp, data)))
+
+
+def test_golden_case3_with_the_victims_match():
+    """The owner's view of the case 3 report: the matched transaction in its private
+    section. The match is an overlay, so the report's data and hash don't change."""
+    from taw.matching import match_fetched
+    inp, data = built("wdpa-2-26-cv-00087-usdt")
+    snap, batch, chain = rf.chain_parts("wdpa-2-26-cv-00087-usdt")
+    match = match_fetched("eth", snap.address, rf.fetch_from(chain["transactions"][0]), batch.transfers)
+    text = render_text(data, sha256=digest(inp, data), match={**match, "chains": ["eth"]})
+    golden(rf.FIXTURES / "wdpa-2-26-cv-00087-usdt" / "report_with_match.txt", text)
+    assert "== Your transaction (private) ==" in text and "242,209.413589 USDC" in text
+    assert "This does not show that they were your funds" in text
+    assert digest(inp, data) == digest(inp, build(inp))
 
 
 # -- the hash -------------------------------------------------------------------------------------
@@ -114,18 +128,23 @@ def test_goplus_silence_is_not_called_clean():
 
 def test_freeze_date_transaction_and_destruction():
     text = render_text(built("ddc-1-25-cv-02967-usdt")[1])
-    assert ("Frozen since 2024-11-04 18:55 UTC (block 66,699,054, transaction "
-            "a3e73759098f09f7547b30286fd6f87570a1f9288487702375b65a41420f6642)") in text
-    assert ("Tether destroyed 465,514.638375 USDT held at this address on 2025-04-01 01:34 UTC (block 70,939,306, "
-            "transaction d5cbc559c41e460159b793649b8c5f40eba583f4c50d62252b2ba11399060145)") in text
-    assert "counting the issuer's destruction listed above" in text
+    assert ("USDT: frozen by Tether since 2024-11-04 18:55 UTC. This address can no longer send USDT. A freeze does "
+            "not return money to anyone; that takes legal process. Tether can later release the frozen USDT or "
+            "destroy it.") in text
+    assert ("frozen in block 66,699,054, transaction "
+            "a3e73759098f09f7547b30286fd6f87570a1f9288487702375b65a41420f6642") in text
+    assert "Tether destroyed 465,514.638375 USDT held at this address on 2025-04-01 01:34 UTC." in text
+    assert ("Detail: block 70,939,306, transaction "
+            "d5cbc559c41e460159b793649b8c5f40eba583f4c50d62252b2ba11399060145") in text
+    assert "Destroyed: Tether destroyed 465,514.638375 USDT held at this address on 2025-04-01." in text
+    assert "counting the issuer's destruction shown under" in text
 
 
 def test_a_frozen_address_with_no_destruction_found_says_the_history_may_be_incomplete():
     _, data = built("ddc-1-25-cv-01907-usdt-gb")
     text = render_text(data)
     assert data["completeness"]["history_incomplete"] is True
-    assert "THE HISTORY MAY BE INCOMPLETE" in text
+    assert "History read: may be incomplete." in text and "The history may be incomplete." in text
     assert "the index of destruction events was not available" in text
 
 
@@ -142,7 +161,7 @@ def test_bitcoin_wording():
     text = render_text(data)
     assert "Outputs of transactions that spent from this address" in text
     assert "Returned to this address in its own spending transactions" in text
-    assert "== First-hop outputs ==" in text and "== First-hop destinations ==" not in text
+    assert "== Where funds went next ==" in text and "== Where funds came from ==" in text
     returned = data["first_hop"]["btc_returned"]
     assert all(r["address"] != data["header"]["address"] for r in data["first_hop"]["destinations"])
     assert returned["count"] >= 0
@@ -154,14 +173,15 @@ def test_what_is_not_read_is_said():
     assert "TRX moved by smart contracts (internal transactions) is not read." in tron
     eth = render_text(built("wdpa-2-26-cv-00087-usdt")[1])
     assert "Internal transfers (value moved by contract code):" in eth and "NFT transfers are not read." in eth
-    assert "Transfers read: " in eth
+    assert "the source listed the whole history" in eth
 
 
 def test_no_price_is_never_zero():
     _, data = built("sdny-1-26-cv-08010-usdt")
     assert data["holdings"]["native"]["usd"] is None
     assert data["holdings"]["freezable"]["share_status"] == "missing_prices"
-    assert "no price available" in render_text(data)
+    text = render_text(data)
+    assert text.count("no price data was available") == 1 and "no price available" not in text
 
 
 def test_a_price_gives_dollar_figures():
@@ -195,7 +215,11 @@ def test_tiny_zero_and_unrecognised_transfers_are_set_apart():
 def test_lookalike_addresses_are_pointed_out():
     _, data = built("sdny-1-26-cv-08010-usdt")
     rows = {r["address"]: r for r in data["first_hop"]["funders"] + data["first_hop"]["destinations"]}
-    assert "TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq" in rows["TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq"]["lookalikes"]
+    assert rows["TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq"]["lookalike_group"] == rows[
+        "TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq"]["lookalike_group"] == "A"
+    group = next(g for g in data["lookalikes"] if g["group"] == "A")
+    text = render_text(data)
+    assert text.count("Group A:") == 1 and "[lookalike group A]" in text
     assert lookalike_groups(["0xAbcd1111", "0xabef2222"], "eth") == {}
     a, b, c = "0xab00" + "0" * 32 + "1111", "0xAB99" + "f" * 32 + "1111", "0xab12" + "3" * 32 + "4567"
     assert lookalike_groups([a, b, c], "eth") == {a: [b], b: [a]}
@@ -219,3 +243,87 @@ def test_prior_lookups_are_not_in_the_data():
     _, data = built("sdny-1-26-cv-08010-usdt")
     assert "prior" not in json.dumps(data)
     assert "looked up this address: 2 to 5" in render_text(data, prior_lookups="2 to 5")
+
+
+# -- the revisions of 2026-11-20 (evening) ------------------------------------------------------
+
+def test_sources_say_what_each_was_used_for_and_print_no_claim_wording():
+    text = render_text(built("sdny-1-26-cv-08010-usdt")[1])
+    sources = text.split("== Sources ==")[1].split("<<<")[0]
+    assert "  - TronGrid: balances and transfers" in sources
+    assert "  - Tether USDT contract state: freeze status, read from the token contract" in sources
+    assert "frozen by" not in sources and "logo" not in text and "results unmodified" not in text
+
+
+def test_token_names_carry_the_warning_and_never_form_a_link():
+    from taw.report.render import defang
+    assert defang("Swap your Voucher on bio.link/shibax") == "Swap your Voucher on bio[.]link/shibax"
+    assert defang("https://x.io") == "https[://]x[.]io"
+    text = render_text(built("wdpa-2-26-cv-00087-usdt")[1])
+    warning = ("Token names are chosen by their creators and are often advertisements. Do not contact anyone named "
+               "in a token or message sent to this address.")
+    assert warning in text
+    assert not re.search(r"\b[a-z0-9-]+\.(link|com|io|xyz|org|net)\b", text.split("== Tokens we don't recognise ==")[1]
+                         .split("==")[0], re.I)
+
+
+def test_summary_from_the_data():
+    _, data = built("sdny-1-26-cv-08010-usdt")
+    sm = data["summary"]
+    assert sm["frozen"] == [{"token": "USDT", "issuer": "Tether", "since": "2025-07-26T10:52:15+00:00"}]
+    assert sm["largest_destination"]["address"] == "TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq"
+    assert sm["largest_destination"]["share_percent"] == "84.8"
+    assert (sm["history"], sm["list_matches"], sm["checked"]) == ("complete", 0, 193)
+    text = render_text(data)
+    assert text.index("== Summary ==") < text.index("== Chains ==")
+    assert "Frozen: Tether has frozen this address's USDT since 2025-07-26." in text
+
+
+def test_list_matching_counts_and_its_limits():
+    _, data = built("ddc-1-25-cv-02967-usdt")
+    assert len(data["lists"]["matched"]) == 1
+    assert data["lists"]["matched"][0]["address"] == "TM1zzNDZD2DPASbKcgdVoTYhfmYgtfwx9R"
+    text = render_text(data)
+    assert "Matched: 1." in text and "listed by OKX as its wallet" in text
+    assert "The exchange lists cover only the exchanges named. An address that matches nothing may still belong" in text
+    assert "1 first-hop address matched" in text
+
+
+def test_destinations_are_grouped_by_address_and_one_transfer_has_one_date():
+    _, data = built("sdny-1-26-cv-08010-usdt")
+    top = data["first_hop"]["destinations"][0]
+    assert [a["asset"] for a in top["assets"]] == ["USDT", "TRX"]
+    text = render_text(data)
+    assert "19,999,900 USDT in 1 transfer on 2025-07-04" in text
+    assert "in 44 transfers from 2025-03-29 to 2025-06-26" in text
+
+
+def test_small_transfers_show_five_rows_and_keep_the_rest_in_the_data():
+    _, data = built("sdny-1-26-cv-08010-usdt")
+    assert len(data["set_apart"]["zero"]["rows"]) + len(data["set_apart"]["tiny"]["rows"]) == 287
+    section = render_text(data).split("== Zero and very small transfers ==")[1].split("\n== ")[0]
+    assert section.count("transaction ") == 5 and "The full list of 287 is in the report's data." in section
+
+
+def test_completeness_leads_with_a_verdict_and_skips_what_does_not_apply():
+    text = render_text(built("sdny-1-26-cv-08010-usdt")[1])
+    part = text.split("== Is the history complete? ==")[1].split("== Prior lookups ==")[0]
+    assert part.strip().startswith("Complete as far as we can check")
+    assert "nonce" not in part
+    assert part.index("What we checked:") < part.index("What we did not read or could not check:") < part.index("Detail:")
+
+
+def test_the_fingerprint_and_id_close_the_report():
+    inp, data = built("sdny-1-26-cv-08010-usdt")
+    text = render_text(data, public_id="00000000-0000-0000-0000-000000000001", sha256=digest(inp, data))
+    tail = text.split("== Report fingerprint ==")[1]
+    assert "00000000-0000-0000-0000-000000000001" in tail and digest(inp, data) in tail
+
+
+def test_fixed_sections_say_what_was_asked():
+    text = render_text(built("sdny-1-26-cv-08010-usdt")[1])
+    assert "someone claiming to be a lawyer" in text and '"unfreezing"' in text
+    assert "pay a fee or a tax before you can withdraw" in text and "Do not send more money" in text
+    checklist = text.split("<<< fixed section: IC3 checklist >>>")[1]
+    assert checklist.index("tell the exchange or wallet provider you sent from") < checklist.index("ic3.gov")
+    assert "reportfraud.ftc.gov" in checklist and "Outside the US" in checklist and "Report promptly" in checklist

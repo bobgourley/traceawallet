@@ -6,8 +6,13 @@ text, the same in every report: the recovery-scam warning and the IC3 filing
 checklist (templates/fixed/). They are drafts until the owner approves them, and
 they are the only place assessment words may appear (tests/test_report.py).
 
-The overlay holds what is read when a report is shown and is not part of its
-hash: the bucketed count of prior lookups (from lookup_count only).
+Overlays are read when a report is shown and are not part of its hash: the
+bucketed count of prior lookups (from lookup_count only), the report's public id
+and fingerprint, and, for the lookup's owner only, their matched transaction.
+
+Token names are written by whoever deployed the token. They are printed with dots
+and "://" broken up ("bio[.]link"), so no reader or later web page turns one into
+a link.
 """
 from __future__ import annotations
 
@@ -47,6 +52,32 @@ RECON_WORDS = {
     "not_checkable": "could not be checked",
     "frozen_zero_no_destruction": "is zero while the address is frozen, and no destruction by the issuer was found",
 }
+USED_FOR_WORDS = {
+    "chain_data": "balances and transfers",
+    "freeze_status": "freeze status, read from the token contract",
+    "goplus_flags": "address flags",
+    "sanctions_list": "sanctions list matching",
+    "exchange_list": "exchange wallet matching",
+    "prices": "US dollar prices",
+}
+# Credits a source's terms require next to its data (not label wording).
+CREDITS = {
+    "etherscan": "Powered by Etherscan.io APIs",
+    "goplus": "Powered by GoPlus",
+    "chainlink": "approximate, not an exchange price; not affiliated with or endorsed by Chainlink",
+}
+LIST_NAMES = {
+    "ofac-sdn": "OFAC's SDN sanctions list",
+    "okx-por": "OKX's published list of its wallets",
+    "exchange-por": "our file of the wallets Bitfinex, Bybit, Crypto.com, HTX and KuCoin publish",
+}
+HISTORY_WORDS = {
+    "complete": "complete as far as we can check",
+    "truncated": "partial: only the newest transfers were read",
+    "incomplete": "may be incomplete",
+    "not_checked": "not checked",
+}
+SKIP_CHECKS = {("tron", "tx_count"), ("btc", "tx_count")}     # nothing to check on that chain
 PRIOR_BUCKETS = (
     (0, 0, "none"), (1, 1, "1"), (2, 5, "2 to 5"), (6, 20, "6 to 20"), (21, None, "more than 20"),
 )
@@ -95,20 +126,36 @@ def usd(value) -> str:
     return "no price available" if value is None else f"about ${num(value)}"
 
 
+def defang(name) -> str:
+    """A token name, made safe to print: no link can be formed from it."""
+    if name is None:
+        return "(no name)"
+    return str(name).replace("://", "[://]").replace(".", "[.]")
+
+
+def when_span(first, last) -> str:
+    return f"on {day(first)}" if day(first) == day(last) else f"from {day(first)} to {day(last)}"
+
+
 def _env() -> Environment:
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)), undefined=StrictUndefined, trim_blocks=True,
                       lstrip_blocks=True, keep_trailing_newline=True, autoescape=False)
-    env.filters.update(num=num, when=when, day=day, usd=usd)
+    env.filters.update(num=num, when=when, day=day, usd=usd, defang=defang)
+    env.globals.update(when_span=when_span, USED_FOR_WORDS=USED_FOR_WORDS, CREDITS=CREDITS, LIST_NAMES=LIST_NAMES,
+                       HISTORY_WORDS=HISTORY_WORDS, SKIP_CHECKS=SKIP_CHECKS)
     env.globals.update(plural=plural, CHECK_TITLES=CHECK_TITLES, STATUS_WORDS=STATUS_WORDS,
                        NOT_CHECKED_WORDS=NOT_CHECKED_WORDS, NOT_READ_WORDS=NOT_READ_WORDS, RECON_WORDS=RECON_WORDS,
                        FIXED_START=FIXED_START, FIXED_END=FIXED_END)
     return env
 
 
-def render_text(data: dict, *, prior_lookups: str | None = None) -> str:
+def render_text(data: dict, *, prior_lookups: str | None = None, public_id: str | None = None,
+                sha256: str | None = None, match: dict | None = None) -> str:
     """The whole report as plain text. prior_lookups: a bucket label, or None when the
-    count has not been written for this address."""
-    text = _env().get_template("report.txt.j2").render(d=data, prior_lookups=prior_lookups)
+    count has not been written for this address. match: the lookup's private match
+    result, shown to its owner only; never stored in the report."""
+    text = _env().get_template("report.txt.j2").render(d=data, prior_lookups=prior_lookups, public_id=public_id,
+                                                       sha256=sha256, match=match)
     lines = [ln.rstrip() for ln in text.splitlines()]
     out: list[str] = []
     for ln in lines:                                   # no runs of blank lines

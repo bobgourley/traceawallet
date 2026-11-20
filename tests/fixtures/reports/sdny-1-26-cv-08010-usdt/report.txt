@@ -1,203 +1,189 @@
 TraceAWallet report
 Tron address TGuqbYqJ4m1J8dKWB3NVnsuXtgXCQkgdyf
 
-As of block 88,175,337 (2026-11-20 18:41 UTC). Labels and lists as they stood at 2026-11-20 18:42 UTC.
-Chain data: TronGrid.
+As of block 88,175,337 (2026-11-20 18:41 UTC). Lists and labels as they stood at 2026-11-20 18:42 UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
+
+== Summary ==
+Held: 228.177395 TRX, 12,756,824.22084 USDT.
+Frozen: Tether has frozen this address's USDT since 2025-07-26. The address can no longer send USDT.
+Largest destination: TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, 499,892,838.406849 USDT, 84.8% of the USDT that left this address.
+Lists: none of the 193 first-hop addresses checked matched OFAC's list or the exchange wallet lists we hold.
+History read: complete as far as we can check. See "Is the history complete?"
+Prices: no price data was available for this report, so no US dollar values are shown.
 
 == Chains ==
 This report covers Tron.
 The address is not a contract (an ordinary account).
 
 == Holdings at block 88,175,337 ==
-TRX: 228.177395 (no price available)
-USDT: 12,756,824.22084 (no price available). Issued by Tether, which can freeze it
+TRX: 228.177395
+USDT: 12,756,824.22084. Issued by Tether, which can freeze it.
   contract TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
-Also held: 5 tokens we don't recognise, listed under "Tokens we don't recognise" below.
+Also held: 5 tokens we don't recognise (see "Tokens we don't recognise").
 
-Share held in stablecoins the issuer can freeze: can't be worked out, because there is no price for TRX, USDT.
-  Freezable stablecoins held: 12,756,824.22084 USDT (Tether).
-
-Freeze status, read from the stablecoin contracts themselves:
-  - USDT: frozen by Tether. The USDT contract (TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t) reports isBlackListed = true for this address, read at the chain's latest block when checked.
-    Frozen since 2025-07-26 10:52 UTC (block 74,289,511, transaction 5ad88ed4d8d52bb95b3494cf7bdc1a80be6453e7207dd4b40fc01f5a86eb885e).
-  - USDC: not frozen. The contract (TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8) reports isBlacklisted = false at the chain's latest block when checked.
+Freeze status:
+  USDT: frozen by Tether since 2025-07-26 10:52 UTC. This address can no longer send USDT. A freeze does not return money to anyone; that takes legal process. Tether can later release the frozen USDT or destroy it.
+    Detail: the USDT contract TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t reports isBlackListed = true at the chain's latest block when checked; frozen in block 74,289,511, transaction 5ad88ed4d8d52bb95b3494cf7bdc1a80be6453e7207dd4b40fc01f5a86eb885e.
+  USDC: not frozen.
+    Detail: the USDC contract TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8 reports isBlacklisted = false at the chain's latest block when checked.
 
 OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026-11-19.
 
 == Activity ==
 First activity read: 2025-03-26 04:23 UTC. Last activity read: 2026-10-06 19:04 UTC.
 USDT (contract TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t):
-  in:  105 transfers, 602,509,669.627689 (no price available)
-  out: 75 transfers, 589,752,845.406849 (no price available)
+  in:  105 transfers, 602,509,669.627689
+  out: 75 transfers, 589,752,845.406849
 TRX:
-  in:  260 transfers, 3,001.213134 (no price available)
-  out: 11 transfers, 2,825.126209 (no price available)
-No price is available for: TRX, USDT. Dollar figures for those are left out, never counted as zero.
+  in:  260 transfers, 3,001.213134
+  out: 11 transfers, 2,825.126209
 
-== First-hop destinations ==
-Addresses this address sent to, largest first. Zero, tiny and unrecognised-token transfers are left out (see below).
-  1. TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq
-     499,892,838.406849 USDT in 44 transfers, 2025-03-29 to 2025-06-26 (no price available)
-     Begins and ends with the same characters as TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq, also in this report. Check every character before copying either.
+== Where funds went next ==
+Addresses this address sent to, largest first. Zero, very small and unrecognised-token transfers are left out.
+  1. TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq  [lookalike group A]
+     499,892,838.406849 USDT in 44 transfers from 2025-03-29 to 2025-06-26
+     1,727.126209 TRX in 9 transfers from 2025-04-16 to 2025-06-26
   2. TJ8kbzmPzJrQNoqC7EzxCYbty1fKoRvC7b
-     19,999,900 USDT in 1 transfer, 2025-07-04 to 2025-07-04 (no price available)
+     19,999,900 USDT in 1 transfer on 2025-07-04
   3. TPeyRFreaikX67Gpa4E5beH7P6yN3T7xVk
-     16,399,990 USDT in 1 transfer, 2025-07-16 to 2025-07-16 (no price available)
+     16,399,990 USDT in 1 transfer on 2025-07-16
   4. TAiBbuugWgwvMg18TeRoneMNJjaSbWoVMJ
-     16,000,000 USDT in 2 transfers, 2025-07-02 to 2025-07-02 (no price available)
+     16,000,000 USDT in 2 transfers on 2025-07-02
   5. TPNggJic9f9TbBmmQtjHWgKMpvPBv5oz66
-     15,999,890 USDT in 2 transfers, 2025-07-08 to 2025-07-11 (no price available)
+     15,999,890 USDT in 2 transfers from 2025-07-08 to 2025-07-11
   6. TNLLnHgYWYepJh5gNfdnE7ox2HqizvZDRE
-     14,499,990 USDT in 1 transfer, 2025-07-25 to 2025-07-25 (no price available)
+     14,499,990 USDT in 1 transfer on 2025-07-25
   7. TFKpM13pLSCmeWRP9cs6TdHoBSmXB9pE3E
-     5,000,000 USDT in 1 transfer, 2025-07-21 to 2025-07-21 (no price available)
-  8. TL34x6JY55TTksamArx1mVrBWtrrvnuQRu
-     1,959,417 USDT in 2 transfers, 2025-07-21 to 2025-07-21 (no price available)
-     Begins and ends with the same characters as TL341aZzEu72Jxc8E1mWawust2bTinuQRu, also in this report. Check every character before copying either.
+     5,000,000 USDT in 1 transfer on 2025-07-21
+  8. TL34x6JY55TTksamArx1mVrBWtrrvnuQRu  [lookalike group B]
+     1,959,417 USDT in 2 transfers on 2025-07-21
   9. TFCoX3B94qLAdxmdY3wPrZDRKNC4N2FwcX
-     400 USDT in 1 transfer, 2025-05-15 to 2025-05-15 (no price available)
+     400 USDT in 1 transfer on 2025-05-15
   10. TPwezUWpEGmFBENNWJHwXHRG1D2NCEEt5s
-     300 USDT in 1 transfer, 2025-05-15 to 2025-05-15 (no price available)
+     300 USDT in 1 transfer on 2025-05-15
   11. TXoxsXC56G725aezKb9bex3A7NVd6zuu1j
-     120 USDT in 3 transfers, 2025-06-04 to 2025-06-15 (no price available)
-  12. TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq
-     1,727.126209 TRX in 9 transfers, 2025-04-16 to 2025-06-26 (no price available)
-     Begins and ends with the same characters as TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq, also in this report. Check every character before copying either.
-  13. TBJT9BP7cM5yYne9kTdf2HNu9mX1WpRQpt
-     1,098 TRX in 2 transfers, 2025-05-15 to 2025-07-14 (no price available)
+     120 USDT in 3 transfers from 2025-06-04 to 2025-06-15
+  12. TBJT9BP7cM5yYne9kTdf2HNu9mX1WpRQpt
+     1,098 TRX in 2 transfers from 2025-05-15 to 2025-07-14
 
-== Funders ==
-Addresses that sent to this address, largest first. Zero, tiny and unrecognised-token transfers are left out.
+== Where funds came from ==
+Addresses that sent to this address, largest first. Zero, very small and unrecognised-token transfers are left out.
   1. TW6g1dufLjZy5MrPJGhzZQKTf5JU1Lurfu
-     425,850,000 USDT in 36 transfers, 2025-03-26 to 2025-05-14 (no price available)
+     425,850,000 USDT in 36 transfers from 2025-03-26 to 2025-05-14
+     1,500 TRX in 3 transfers from 2025-03-26 to 2025-05-06
   2. TUqC47Wr6TJ3XtJXMmCcfi35TXXNobbRyW
-     115,556,000 USDT in 11 transfers, 2025-05-27 to 2025-07-11 (no price available)
+     115,556,000 USDT in 11 transfers from 2025-05-27 to 2025-07-11
   3. TMBT3W8VWnuy3HCsRKhjEEMvctAxAFuNSb
-     39,980,000 USDT in 4 transfers, 2025-07-08 to 2025-07-17 (no price available)
+     39,980,000 USDT in 4 transfers from 2025-07-08 to 2025-07-17
   4. THWAtpyqfNJr3p1cUWxRhct5QfHFt7RLyu
-     9,703,431.01 USDT in 3 transfers, 2025-06-11 to 2025-06-12 (no price available)
+     9,703,431.01 USDT in 3 transfers from 2025-06-11 to 2025-06-12
   5. TDmNSEKAFrJiMM2F4B7Zs1czYNG8kxXPrN
-     6,550,000 USDT in 4 transfers, 2025-06-12 to 2025-06-18 (no price available)
+     6,550,000 USDT in 4 transfers from 2025-06-12 to 2025-06-18
   6. THuG2rMqvWP9mh2sdbKSkFyfqWYcmWgsGY
-     4,370,000 USDT in 2 transfers, 2025-06-09 to 2025-06-09 (no price available)
+     4,370,000 USDT in 2 transfers on 2025-06-09
   7. TARJoa457KKFrgRxWyjye5Y3eszfijnLAC
-     499,490 USDT in 1 transfer, 2025-05-27 to 2025-05-27 (no price available)
+     499,490 USDT in 1 transfer on 2025-05-27
   8. TBJT9BP7cM5yYne9kTdf2HNu9mX1WpRQpt
-     700 USDT in 1 transfer, 2025-05-15 to 2025-05-15 (no price available)
-  9. TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq
-     12.450002 USDT in 2 transfers, 2025-05-06 to 2025-05-08 (no price available)
-     Begins and ends with the same characters as TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq, also in this report. Check every character before copying either.
-  10. TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq
-     9.105514 USDT in 5 transfers, 2025-05-13 to 2025-05-30 (no price available)
-     Begins and ends with the same characters as TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq, also in this report. Check every character before copying either.
-  11. TL341aZzEu72Jxc8E1mWawust2bTinuQRu
-     3.470851 USDT in 2 transfers, 2025-07-21 to 2025-07-21 (no price available)
-     Begins and ends with the same characters as TL34x6JY55TTksamArx1mVrBWtrrvnuQRu, also in this report. Check every character before copying either.
+     700 USDT in 1 transfer on 2025-05-15
+  9. TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq  [lookalike group A]
+     12.450002 USDT in 2 transfers from 2025-05-06 to 2025-05-08
+  10. TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq  [lookalike group A]
+     9.105514 USDT in 5 transfers from 2025-05-13 to 2025-05-30
+  11. TL341aZzEu72Jxc8E1mWawust2bTinuQRu  [lookalike group B]
+     3.470851 USDT in 2 transfers on 2025-07-21
   12. TEQEtuM5aDwX1B8sbingUHmQCHPm6zuu1j
-     3.01 USDT in 3 transfers, 2025-06-04 to 2025-06-15 (no price available)
-  13. TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq
-     3.000009 USDT in 1 transfer, 2025-05-20 to 2025-05-20 (no price available)
-     Begins and ends with the same characters as TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, also in this report. Check every character before copying either.
+     3.01 USDT in 3 transfers from 2025-06-04 to 2025-06-15
+  13. TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq  [lookalike group A]
+     3.000009 USDT in 1 transfer on 2025-05-20
   14. TX2VdGj9QsJpDqErMLNLQdYX36PH6zuu1j
-     3 USDT in 3 transfers, 2025-06-15 to 2025-06-15 (no price available)
+     3 USDT in 3 transfers on 2025-06-15
   15. TN6NUMxTNJ9pfsn2rs2Rt7xApuQXoRvC7b
-     1.999991 USDT in 1 transfer, 2025-07-04 to 2025-07-04 (no price available)
+     1.999991 USDT in 1 transfer on 2025-07-04
   16. TK1siXYgSNMHujzGJd8izRH5p6yN3T7xVk
-     1.639999 USDT in 1 transfer, 2025-07-16 to 2025-07-16 (no price available)
+     1.639999 USDT in 1 transfer on 2025-07-16
   17. TK8ntk8EjmyebyfUPFkC1GTgZPcazvZDRE
-     1.449999 USDT in 1 transfer, 2025-07-25 to 2025-07-25 (no price available)
+     1.449999 USDT in 1 transfer on 2025-07-25
   18. TKwr3UsbuDWbYbw49iFwgRVJtcyiv5oz66
-     1.059999 USDT in 1 transfer, 2025-07-08 to 2025-07-08 (no price available)
+     1.059999 USDT in 1 transfer on 2025-07-08
   19. TWxPvb4M7B4zhpQ1Msc73SbMryZkKBqchq
-     1.01 USDT in 1 transfer, 2025-06-03 to 2025-06-03 (no price available)
+     1.01 USDT in 1 transfer on 2025-06-03
   20. TXDPHGmMGT1iqEkiiSEarnPiH8yn6zuu1j
-     1.01 USDT in 1 transfer, 2025-06-04 to 2025-06-04 (no price available)
-  ...and 8 more rows not shown.
+     1.01 USDT in 1 transfer on 2025-06-04
+  ...and 7 more addresses not shown.
 
-First funder read: TW6g1dufLjZy5MrPJGhzZQKTf5JU1Lurfu, 3,100,000 USDT on 2025-03-26 04:23 UTC (transaction 5fec6d32287cec1574467a9dd885f32fe3bc23bb497d7bfce6265a15e69be3dc).
+First funder read: TW6g1dufLjZy5MrPJGhzZQKTf5JU1Lurfu, 3,100,000 USDT on 2025-03-26 04:23 UTC.
+  transaction 5fec6d32287cec1574467a9dd885f32fe3bc23bb497d7bfce6265a15e69be3dc
 Distinct addresses that sent to this one: 174.
 
-== Set apart ==
-Zero-value transfers: 16. Transfers of a very small amount (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 271.
-These are listed here rather than with the transfers above.
-  2025-06-15 10:45 UTC  out to TEQEtuM5aDwX1B8sbingUHmQCHPm6zuu1j  0 USDT  tx fa516d0b13df0af5adcccf7d0d3cafb894d3bc8e833abd6a0096356d10f7c890
-  2025-06-15 10:45 UTC  out to TX2VdGj9QsJpDqErMLNLQdYX36PH6zuu1j  0 USDT  tx 374155016223c5115925ad563a0b90d6d5cfb8120434254220a7e4c0f0b02f8c
-  2025-06-04 16:27 UTC  out to TEQEtuM5aDwX1B8sbingUHmQCHPm6zuu1j  0 USDT  tx 80de79b1556c5d8bd43df189733607401043437045c8c054c242064bae01cc1d
-  2025-06-04 16:26 UTC  out to TXDPHGmMGT1iqEkiiSEarnPiH8yn6zuu1j  0 USDT  tx 4ef71122b6ce91102517b0d8eb10111986e79386e0a4ae2542f72480a4095ce7
-  2025-05-15 02:39 UTC  out to TF7EnyfVnafbPg2vnYkdipq4ZAe4N2FwcX  0 USDT  tx 0a28accc24c5f47d0ae2892cbfd42b21e36e27864cdddfbb54e2ca0cf5f7631c
-  2025-05-13 11:58 UTC  out to TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq  0 USDT  tx 673058a593f219b47240813b10a31ac4e9dd9d22d66c1fd99723c84c0eae016b
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-05-12 06:27 UTC  out to TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq  0 USDT  tx 237c68945110964833376e64c44831861d89d66ff79c36da7ae9f453ff9a12d9
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-04-21 11:53 UTC  out to TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq  0 USDT  tx af0dc638aaae93e7866eaadcef183a8aa8d73fd6c27058837ddce0ee75dc5c54
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-04-17 12:11 UTC  out to TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq  0 USDT  tx 6389cbd6cabe765eb6d5110b17d5038ae9d83ccdb8d54f42b89240f5645da557
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-04-16 12:40 UTC  out to TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq  0 USDT  tx 03f4abd7e2b77d0a0373c7ca761bffe91e3b626632869cb5d9f24ef600c80af2
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-04-16 12:39 UTC  out to TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq  0 USDT  tx f15ad959281042c8980a9c821bb6c97c0aeafa2bbaeedd7ddc790ac4b22d0983
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-04-12 11:00 UTC  out to TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq  0 USDT  tx 32330a94ba3f6ae14725553d387746b08c6e5874d6bf00543cc20b702636431c
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-04-10 04:18 UTC  out to TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq  0 USDT  tx 78696988806f49e062d8433cafb9951843ea1ba06d5b647baa1605fe4f1b6ea7
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-04-08 20:31 UTC  out to TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq  0 USDT  tx 8b84b6bcc05d3fe5578b54da4fc8b9b599820067c49dddd440cbc91131c464bb
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-04-08 20:31 UTC  out to TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq  0 USDT  tx 4479f8a4bc260e8990cb9bfd6a03a8f753c560bd046e98f3e1655984f3290f82
-      (begins and ends like TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq, TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq, TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq, TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq)
-  2025-03-29 10:49 UTC  out to TWNYyMBwj7WGihDzJk1ANJXdYAicKBqchq  0 USDT  tx 94fdba715c7006e788a1395ef7f14fb89fe5c13019acf03496b6c0a64d8f2fe8
-  2026-10-06 19:04 UTC  in from TJbK6ToUNM9q4bGihotsYYrAzXR9wtN94T  0.000003 TRX  tx e8a2b371a234cee9c7b83afa647ab204ab7a4efdd9b92c06b0ee32cb6004f122
-  2026-10-06 15:30 UTC  in from TKjZxirv3bjTMthy6CwbwuRmfbYZX5ojpS  0.000001 TRX  tx 726f99161dee9001175837e3ca835181f3912e22641b5501ef258a19b84aad3d
-  2026-10-06 15:16 UTC  in from TKr5feFZKadzJtKyGhtV2j8rzZ1RF8zPpS  0.000008 TRX  tx b3dbd8afd1307d1348acee78136abf5bbd52234369165cda0849115760cfb13c
-  2026-06-26 22:21 UTC  in from TMMBwahgzgtp7B4e8pwagi9eRyRdWmDYnQ  0.000002 TRX  tx f45f61b7c65826ad3fa1dfa18eae371fd3343cd666f06b10570e5c74ddc129e6
-  2026-06-26 22:20 UTC  in from TUHARvmt88v6TjExFdTb1zwJVrkf8Y1YnQ  0.000006 TRX  tx b42bac696a4c45be26b3d65be2b47e5551f37b29a8605fe0e2727f0394109938
-  2025-10-26 10:53 UTC  in from TUWzs1FN6zze2NNfi7sndBAary9BDgMVio  0.000001 TRX  tx 841067c805a4d5b78c7703947cd16bd0d52ba8b9753037d36e34b1af9f79d569
-  2025-08-04 18:00 UTC  in from TNLp6j4bcMXQ31zAXJsM4UtRonV6h49yFK  0.000008 TRX  tx 508ad11a0f373adac1d93df10d8c62bf6b582015459ddd88a6cd857e924abb03
-  2025-08-04 17:58 UTC  in from TGhrsQBrg75hvdw6NM1FuNnKTm4ZvRVyFK  0.000001 TRX  tx 56d40ca303edd868bef4a69f219ce4de0d4281765420c81e7f871c047b20622f
-  2025-07-26 10:52 UTC  in from TCkA9W2e3H5LkQaFKAd67atGmE3dongjie  0.0888 TRX  tx 239574672997682b7136d7f8a7a24ff8e00125d14898bbb75a3cea50295f506b
-  2025-07-26 10:52 UTC  in from TPKGWF9cBUo8EUdoqLngZTyYRbz6freeze  0.12345 TRX  tx a6b48e7c81f6c2f46fc1b9fd635b27c2d20f150da62f42ace4acd29ba88367e6
-  2025-07-25 13:12 UTC  in from TK1s8tGXkLAm3TsUTeYLhyrXQ7s46iBDRE  0.000001 TRX  tx d4e0b318eefee44fa386b3f234c1fb3ec1f4710d715837a96d709caf0abf4483
-  2025-07-21 11:58 UTC  in from TV8u4Kn2tsriFmxo1WJJxjrbKqaxK4CR3E  0.000005 TRX  tx 9cdc26d746694661ab834700f089f874098f62c0a0744bf774e34681cb20ed1f
-  2025-07-21 09:56 UTC  in from TP52xvFsoJZq72ghxGhKyp3vYzA2gixtRu  0.000001 TRX  tx 2e1ddb0d65f799ed93ccb29242ea7ca007940ea83c63a416a6ec4b5a1ae5d294
-  2025-07-21 04:45 UTC  in from TRjcULnqjhwuK7p2bbeidPk4dz41pf6QRu  0.000006 TRX  tx 2ce87593c90e15b7525a37606b73b18c43e9829f400d1352f8b5507fe878635b
-  2025-07-21 04:43 UTC  in from TAo2QN823VjjPex7Mg8sxd3tZXzEXxFQRu  0.000004 TRX  tx cebe37ff48219bae3cf300fdd7769c88878d41578b18840a1da909340f1c026f
-  2025-07-21 04:42 UTC  in from TGqZvU33EbnDJryDaHskv9TfAAsxzZ8pRu  0.000001 TRX  tx c110ecee16c2d6cb40ce9eadba774d04d705555c0e77d4f29f5a25d0cf603277
-  2025-07-17 02:54 UTC  in from TAmRQPnVGycVdfKjmA4qUxrgxpyTP2wGSb  0.000009 TRX  tx 395f3d0a4afd47fe9d374fe819de62185a7c39a644d4aa783c0af613bf665fc9
-  2025-07-16 08:39 UTC  in from THJKCbV7N8z3kAwz59R5VpSnETRZ267xVk  0.000004 TRX  tx 713d41af08e68fdb9681082b81cbfc0e780cb94f29d8f92686bee91bc915c954
-  2025-07-16 08:38 UTC  in from TCWLUFaeqCsDNVtNB3R8nkLeyREZQJHxVk  0.000003 TRX  tx e93ab2e6c78d46e6dc5bdc61d6352699120ff31a5aab459a5011aa6a6537487c
-  2025-07-16 08:36 UTC  in from TYZxq35RHC1jbe6MMmEGHmPsT7qS8Z5RVk  0.000001 TRX  tx 983968c575bbc62954a718d34b079e4cc0b1b6d70ed00e83fb28223f9ef2fe96
-  2025-07-15 03:48 UTC  in from TVbQfWdDYqUteNhGv7Pggf2s3kHgtYeNSb  0.000005 TRX  tx 97514a6e23f5d2821ea64fd7d8a3a5f8adf7cb34b4565b4a24640336c6ad0ccd
-  2025-07-15 03:45 UTC  in from TKgFUCyMzJRcufyp4S2Giy8eFrMs4F1NSb  0.000009 TRX  tx 92ad18a0d0b3a84c61c0684359555c84cc58e1dda25461e6f8babbe6b5f31c41
-  2025-07-14 13:09 UTC  in from TUiVQkBxJDjAbaEQC1xtP1joR5qB46WQpt  0.000007 TRX  tx fad030288e56f813b7cdf6c130650d0a4e484059fc73b2f20525dff319baa357
-  2025-07-14 13:07 UTC  in from TFgUwwSwzJGFiyvs2qqQikkNKUSAeYLQpt  0.000001 TRX  tx 1966672662d30f879b3547a45d468ed184e9c5f2df1a83732221809f3942ca0d
-  2025-07-14 13:07 UTC  in from TWb1RDscC3WwNV2496L9JYCgutFWmLQ9Z8  0.000001 TRX  tx af5fbbb31ad172012fb4c914417f4e46e7f8eea96082a21623b45e4b829e09c8
-  ...and 246 more not shown.
+== Lookalike addresses ==
+Some addresses in this report begin and end with the same characters. Wallets often show addresses shortened, so these are easy to mix up. Check every character before copying one.
+  Group A:
+    TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq
+    TWza6ZFbWGiosB9DvXrQkqREwchyKBqchq
+    TWzfoqKFcqyeny4nunNCV1t47mJRKBqchq
+    TWzhJJFtkrMPrhHamEedJ1DLm1YxVBqchq
+    TWzkbyenzzFmtwGkkfU3uGn2ytCpKBqchq
+    TWzoqNeHSFYEqN7UkE2JgeFLTj9zKBqchq
+  Group B:
+    TL341aZzEu72Jxc8E1mWawust2bTinuQRu
+    TL34x6JY55TTksamArx1mVrBWtrrvnuQRu
 
-Tokens we don't recognise: 6 transfers. A token's name and symbol are chosen by whoever deployed its contract, so a token named USDT here need not be Tether's. Only the contract identifies a token.
-  "ha138 com" contract THxYWbzAgzQgQaYi9G4mjeL1tq1hdrZe55: 2 in, 0 out
-  "解冻TG:USDT660088" contract TFc7J827FimhBLZ5VPBqxghP5DACnjesMe (name contains U+89E3, U+51BB): 1 in, 0 out
-  "Telegram: @ip292" contract TGKBroumSbjwsPyyJ3J5X2H8dSKiajBCrd: 1 in, 0 out
-  "TG: jieuu" contract TJXUL2YGcoVaNpFpNrQ9FjeE5AVMMSk6UJ: 1 in, 0 out
-  "AEDT" contract TV714TT9aQftbkYBjWiVExCxNZm9nPJX6K: 1 in, 0 out
+== List matches ==
+Checked: 19 destinations and 174 funders, every first-hop address read, against:
+  - our file of the wallets Bitfinex, Bybit, Crypto.com, HTX and KuCoin publish, as published on 2026-11-10
+  - OFAC's SDN sanctions list, as published on 2026-11-19
+  - OKX's published list of its wallets, as published on 2026-11-01
+Matched: 0.
+The exchange lists cover only the exchanges named. An address that matches nothing may still belong to an exchange, or to anyone else.
 
-== Labels ==
-Every claim a source makes about this address, worded as that source's claim:
+== Zero and very small transfers ==
+Zero-value transfers: 16. Very small transfers (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 271.
+The newest 5:
+  2026-10-06 19:04 UTC  in from TJbK6ToUNM9q4bGihotsYYrAzXR9wtN94T  0.000003 TRX
+      transaction e8a2b371a234cee9c7b83afa647ab204ab7a4efdd9b92c06b0ee32cb6004f122
+  2026-10-06 15:30 UTC  in from TKjZxirv3bjTMthy6CwbwuRmfbYZX5ojpS  0.000001 TRX
+      transaction 726f99161dee9001175837e3ca835181f3912e22641b5501ef258a19b84aad3d
+  2026-10-06 15:16 UTC  in from TKr5feFZKadzJtKyGhtV2j8rzZ1RF8zPpS  0.000008 TRX
+      transaction b3dbd8afd1307d1348acee78136abf5bbd52234369165cda0849115760cfb13c
+  2026-06-26 22:21 UTC  in from TMMBwahgzgtp7B4e8pwagi9eRyRdWmDYnQ  0.000002 TRX
+      transaction f45f61b7c65826ad3fa1dfa18eae371fd3343cd666f06b10570e5c74ddc129e6
+  2026-06-26 22:20 UTC  in from TUHARvmt88v6TjExFdTb1zwJVrkf8Y1YnQ  0.000006 TRX
+      transaction b42bac696a4c45be26b3d65be2b47e5551f37b29a8605fe0e2727f0394109938
+The full list of 287 is in the report's data.
+
+== Tokens we don't recognise ==
+6 transfers. A token is identified only by its contract, so a token named USDT here need not be Tether's.
+Token names are chosen by their creators and are often advertisements. Do not contact anyone named in a token or message sent to this address.
+  "ha138 com": 2 in, 0 out
+      contract THxYWbzAgzQgQaYi9G4mjeL1tq1hdrZe55
+  "解冻TG:USDT660088" (contains U+89E3, U+51BB): 1 in, 0 out
+      contract TFc7J827FimhBLZ5VPBqxghP5DACnjesMe
+  "Telegram: @ip292": 1 in, 0 out
+      contract TGKBroumSbjwsPyyJ3J5X2H8dSKiajBCrd
+  "TG: jieuu": 1 in, 0 out
+      contract TJXUL2YGcoVaNpFpNrQ9FjeE5AVMMSk6UJ
+  "AEDT": 1 in, 0 out
+      contract TV714TT9aQftbkYBjWiVExCxNZm9nPJX6K
+
+== Claims about this address ==
   - frozen by Tether: the USDT contract on Tron (TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t) reports isBlackListed = true for this address
     source: Tether USDT contract state; dated 2025-07-26; read 2026-11-20
-GoPlus: GoPlus has no flags for this address.
-  Powered by GoPlus.
-First-hop addresses are checked against OFAC's SDN list and the exchange wallet files only (lists as published: exchange-por 2026-11-10, ofac-sdn 2026-11-19, okx-por 2026-11-01).
+GoPlus: GoPlus has no flags for this address. Powered by GoPlus.
 
-== Completeness ==
-  - Stablecoin balances match the transfers read: passed
-  - Other token balances match the transfers read (for information only): did not pass. token THxYWbzAgzQgQaYi9G4mjeL1tq1hdrZe55 does not reconcile: balance 138138, transfers in minus out 276276 (does not mark the history incomplete)
-  - The native coin balance matches the transfers read: not run. TRX staking, unstaking and resource delegation are not parsed yet; they move the balance.
-  - The number of transactions sent matches the address's nonce: not run. Tron accounts have no transaction nonce.
-  - USDT (TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t): the balance matches the transfers read.
-Transfers read: 457, the whole history the source listed; the oldest is from 2025-03-26 04:23 UTC.
-TRC-10 tokens and their balances are not read.
-TRX moved by smart contracts (internal transactions) is not read.
+== Is the history complete? ==
+Complete as far as we can check: the balances we could check match the transfers read, and the source listed the whole history (457 transfers, from 2025-03-26).
+
+What we checked:
+  - Stablecoin balances match the transfers read: yes
+  - USDT balance: matches the transfers read.
+
+What we did not read or could not check:
+  - The native coin balance matches the transfers read: not checked. TRX staking, unstaking and resource delegation are not parsed yet; they move the balance.
+  - TRC-10 tokens and their balances are not read.
+  - TRX moved by smart contracts (internal transactions) is not read.
+  - First-hop addresses are matched against the lists above only. GoPlus and the token contracts are asked about this address alone.
+Detail: balances of tokens we don't recognise don't match their transfers (token THxYWbzAgzQgQaYi9G4mjeL1tq1hdrZe55 does not reconcile: balance 138138, transfers in minus out 276276). This does not affect the verdict.
 
 == Prior lookups ==
 Not counted yet for this address.
@@ -210,27 +196,35 @@ This count is read when the report is shown and is not part of the report's fing
 These sites are run by others. What they show is their own.
 
 == Sources ==
-  - GoPlus Security: Powered by GoPlus (shown with the GoPlus logo; results unmodified); a flag reads "flagged by GoPlus"
-  - TronGrid: TronGrid
-  - Circle USDC contract state: frozen by Circle
-  - Tether USDT contract state: frozen by Tether
+  - TronGrid: balances and transfers
+  - GoPlus Security: address flags (Powered by GoPlus)
+  - Circle USDC contract state: freeze status, read from the token contract
+  - Tether USDT contract state: freeze status, read from the token contract
 
 <<< fixed section: recovery scams >>>
 == Watch out for recovery scams (DRAFT, not yet approved) ==
-After a loss, people are often contacted by someone who says they can get the money back: a "recovery service", a "blockchain investigator", a lawyer, or someone claiming to be from a government agency. Many of these are a second scam aimed at the same victim.
+After a loss, people are often contacted by someone who says they can get the money back: a "recovery service", a "blockchain investigator", someone claiming to be a lawyer, or someone claiming to be from a government agency. Many of these are a second scam aimed at the same victim.
 
   - No one can reverse a confirmed blockchain transaction. Funds come back only when an exchange or issuer freezes them and a court or law enforcement acts.
-  - Law enforcement agencies do not charge fees to recover funds, and they do not ask for payment in crypto, gift cards or wire transfers.
+  - Law enforcement does not charge victims a fee, and does not ask for payment in crypto, gift cards or wire transfers.
+  - Tokens or messages sent to an address that advertise "unfreezing" or recovery are the same scheme. Do not contact the names, handles or websites in them.
+  - If a platform says you must pay a fee or a tax before you can withdraw your money, that request is part of the scam. Do not send more money: paying does not release anything.
   - Be wary of anyone who contacts you first, asks for an upfront fee, asks for your wallet's recovery phrase or private key, or asks you to install remote-access software.
   - TraceAWallet will never contact you to offer recovery, and never asks for payment.
 
-If someone offers recovery, report the contact at ic3.gov as well.
+If someone offers recovery, report that contact at ic3.gov as well.
 <<< end of fixed section >>>
 
 <<< fixed section: IC3 checklist >>>
-== Filing with the FBI's IC3 (DRAFT, not yet approved) ==
-The FBI's Internet Crime Complaint Center takes reports at ic3.gov. Gather these before you start:
+== Reporting what happened (DRAFT, not yet approved) ==
+Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
 
+  [ ] First, tell the exchange or wallet provider you sent from. Ask them to flag the transfer and record your report.
+  [ ] File with the FBI's Internet Crime Complaint Center (IC3) at ic3.gov.
+  [ ] In the US, also report to the Federal Trade Commission at reportfraud.ftc.gov.
+  [ ] Outside the US, report to your national police or fraud reporting centre, and at econsumer.gov, which consumer protection agencies in many countries use for cross-border scams.
+
+Gather these for the report:
   [ ] Each payment you made: the date, the amount, the asset (for example USDT on Tron) and the transaction hash
   [ ] The address you sent from, and the address you sent to (this report's address: TGuqbYqJ4m1J8dKWB3NVnsuXtgXCQkgdyf on Tron)
   [ ] The exchange or wallet app you sent from, and your account details there
@@ -238,8 +232,10 @@ The FBI's Internet Crime Complaint Center takes reports at ic3.gov. Gather these
   [ ] Messages, screenshots and any documents they sent you
   [ ] The platform or app you were told to use, with its web address
 
-After filing:
-  [ ] Keep the complaint ID IC3 gives you
-  [ ] Tell the exchange or wallet provider you sent from, and give them the IC3 complaint ID
-  [ ] Consider a report to your local police as well
+Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 <<< end of fixed section >>>
+
+== Report fingerprint ==
+Report id: assigned when the report is stored
+Fingerprint (SHA-256): 5d6b27eec0cc7760b0bdbd08b64069ae359eefcf523eb8d5c276bdc30f72efc2
+The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

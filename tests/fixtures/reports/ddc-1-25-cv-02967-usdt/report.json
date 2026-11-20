@@ -173,62 +173,75 @@
    "destinations": [
     {
      "address": "TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp",
-     "asset": "USDT",
-     "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-     "count": 2,
-     "first": "2024-10-30T15:03:39Z",
-     "labels": [],
-     "last": "2024-11-02T15:38:39Z",
-     "lookalikes": [
-      "TSdvEgYasuprGXWSC7cSGjULXTACP25Vbp",
-      "TSdvM8734JgFzViQ9baCVjuKugxXX25Vbp"
+     "assets": [
+      {
+       "asset": "USDT",
+       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+       "count": 2,
+       "first": "2024-10-30T15:03:39Z",
+       "last": "2024-11-02T15:38:39Z",
+       "symbol": "USDT",
+       "total": "20000",
+       "total_raw": "20000000000",
+       "usd": null
+      }
      ],
-     "symbol": "USDT",
-     "total": "20000",
-     "total_raw": "20000000000",
-     "usd": null
+     "labels": [],
+     "lookalike_group": "A"
     },
     {
      "address": "TL3PdiFm3HRM79hVTvssKa7wxJGVzVBG6H",
-     "asset": "TRX",
-     "contract": null,
-     "count": 1,
-     "first": "2025-05-23T00:36:03Z",
+     "assets": [
+      {
+       "asset": "TRX",
+       "contract": null,
+       "count": 1,
+       "first": "2025-05-23T00:36:03Z",
+       "last": "2025-05-23T00:36:03Z",
+       "symbol": "TRX",
+       "total": "103",
+       "total_raw": "103000000",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2025-05-23T00:36:03Z",
-     "lookalikes": [],
-     "symbol": "TRX",
-     "total": "103",
-     "total_raw": "103000000",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "TDGQD7nmZZaMZ7i37eQz5vVhsGNQMhbgSR",
-     "asset": "TRX",
-     "contract": null,
-     "count": 1,
-     "first": "2024-12-06T08:57:18Z",
+     "assets": [
+      {
+       "asset": "TRX",
+       "contract": null,
+       "count": 1,
+       "first": "2024-12-06T08:57:18Z",
+       "last": "2024-12-06T08:57:18Z",
+       "symbol": "TRX",
+       "total": "30",
+       "total_raw": "30000000",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2024-12-06T08:57:18Z",
-     "lookalikes": [],
-     "symbol": "TRX",
-     "total": "30",
-     "total_raw": "30000000",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "TZ5VUwCDAUrF2Bp573R1u89SQ4bj5nk7Kw",
-     "asset": "TRX",
-     "contract": null,
-     "count": 2,
-     "first": "2024-10-30T15:03:27Z",
+     "assets": [
+      {
+       "asset": "TRX",
+       "contract": null,
+       "count": 2,
+       "first": "2024-10-30T15:03:27Z",
+       "last": "2024-11-02T15:38:24Z",
+       "symbol": "TRX",
+       "total": "13.356",
+       "total_raw": "13356000",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2024-11-02T15:38:24Z",
-     "lookalikes": [],
-     "symbol": "TRX",
-     "total": "13.356",
-     "total_raw": "13356000",
-     "usd": null
+     "lookalike_group": null
     }
    ],
    "destinations_more": 0,
@@ -262,125 +275,163 @@
    "funders": [
     {
      "address": "TCLgK89AnXbC9rewvhNb9UgXCc2qJJpBXh",
-     "asset": "USDT",
-     "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-     "count": 2,
-     "first": "2024-10-29T04:36:30Z",
+     "assets": [
+      {
+       "asset": "USDT",
+       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+       "count": 2,
+       "first": "2024-10-29T04:36:30Z",
+       "last": "2024-10-29T10:54:18Z",
+       "symbol": "USDT",
+       "total": "104889.925458",
+       "total_raw": "104889925458",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2024-10-29T10:54:18Z",
-     "lookalikes": [],
-     "symbol": "USDT",
-     "total": "104889.925458",
-     "total_raw": "104889925458",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "TNXoiAJ3dct8Fjg4M9fkLFh9S2v9TXc32G",
-     "asset": "USDT",
-     "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-     "count": 2,
-     "first": "2024-10-29T04:04:27Z",
+     "assets": [
+      {
+       "asset": "USDT",
+       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+       "count": 2,
+       "first": "2024-10-29T04:04:27Z",
+       "last": "2024-10-29T10:31:06Z",
+       "symbol": "USDT",
+       "total": "103425.361702",
+       "total_raw": "103425361702",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2024-10-29T10:31:06Z",
-     "lookalikes": [],
-     "symbol": "USDT",
-     "total": "103425.361702",
-     "total_raw": "103425361702",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "TDqSquXBgUCLYvYC4XZgrprLK589dkhSCf",
-     "asset": "USDT",
-     "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-     "count": 1,
-     "first": "2024-10-29T08:14:12Z",
+     "assets": [
+      {
+       "asset": "USDT",
+       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+       "count": 1,
+       "first": "2024-10-29T08:14:12Z",
+       "last": "2024-10-29T08:14:12Z",
+       "symbol": "USDT",
+       "total": "61893.016625",
+       "total_raw": "61893016625",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2024-10-29T08:14:12Z",
-     "lookalikes": [],
-     "symbol": "USDT",
-     "total": "61893.016625",
-     "total_raw": "61893016625",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "TK4ykR48cQQoyFcZ5N4xZCbsBaHcg6n3gJ",
-     "asset": "USDT",
-     "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-     "count": 1,
-     "first": "2024-10-29T08:58:39Z",
+     "assets": [
+      {
+       "asset": "USDT",
+       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+       "count": 1,
+       "first": "2024-10-29T08:58:39Z",
+       "last": "2024-10-29T08:58:39Z",
+       "symbol": "USDT",
+       "total": "60579.633802",
+       "total_raw": "60579633802",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2024-10-29T08:58:39Z",
-     "lookalikes": [],
-     "symbol": "USDT",
-     "total": "60579.633802",
-     "total_raw": "60579633802",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "TJ5usJLLwjwn7Pw3TPbdzreG7dvgKzfQ5y",
-     "asset": "USDT",
-     "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-     "count": 1,
-     "first": "2024-10-29T09:57:57Z",
+     "assets": [
+      {
+       "asset": "USDT",
+       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+       "count": 1,
+       "first": "2024-10-29T09:57:57Z",
+       "last": "2024-10-29T09:57:57Z",
+       "symbol": "USDT",
+       "total": "58552.678891",
+       "total_raw": "58552678891",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2024-10-29T09:57:57Z",
-     "lookalikes": [],
-     "symbol": "USDT",
-     "total": "58552.678891",
-     "total_raw": "58552678891",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "TJDENsfBJs4RFETt1X1W8wMDc8M5XnJhCe",
-     "asset": "USDT",
-     "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-     "count": 1,
-     "first": "2024-10-29T13:00:48Z",
+     "assets": [
+      {
+       "asset": "USDT",
+       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+       "count": 1,
+       "first": "2024-10-29T13:00:48Z",
+       "last": "2024-10-29T13:00:48Z",
+       "symbol": "USDT",
+       "total": "57013.50929",
+       "total_raw": "57013509290",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2024-10-29T13:00:48Z",
-     "lookalikes": [],
-     "symbol": "USDT",
-     "total": "57013.50929",
-     "total_raw": "57013509290",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "TJqwA7SoZnERE4zW5uDEiPkbz4B66h9TFj",
-     "asset": "USDT",
-     "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-     "count": 1,
-     "first": "2024-10-29T21:13:51Z",
+     "assets": [
+      {
+       "asset": "USDT",
+       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+       "count": 1,
+       "first": "2024-10-29T21:13:51Z",
+       "last": "2024-10-29T21:13:51Z",
+       "symbol": "USDT",
+       "total": "39159.390493",
+       "total_raw": "39159390493",
+       "usd": null
+      }
+     ],
      "labels": [],
-     "last": "2024-10-29T21:13:51Z",
-     "lookalikes": [],
-     "symbol": "USDT",
-     "total": "39159.390493",
-     "total_raw": "39159390493",
-     "usd": null
+     "lookalike_group": null
     },
     {
      "address": "TSdvM8734JgFzViQ9baCVjuKugxXX25Vbp",
-     "asset": "USDT",
-     "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-     "count": 1,
-     "first": "2024-10-30T15:05:00Z",
-     "labels": [],
-     "last": "2024-10-30T15:05:00Z",
-     "lookalikes": [
-      "TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp",
-      "TSdvEgYasuprGXWSC7cSGjULXTACP25Vbp"
+     "assets": [
+      {
+       "asset": "USDT",
+       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+       "count": 1,
+       "first": "2024-10-30T15:05:00Z",
+       "last": "2024-10-30T15:05:00Z",
+       "symbol": "USDT",
+       "total": "1.0001",
+       "total_raw": "1000100",
+       "usd": null
+      }
      ],
-     "symbol": "USDT",
-     "total": "1.0001",
-     "total_raw": "1000100",
-     "usd": null
+     "labels": [],
+     "lookalike_group": "A"
     },
     {
      "address": "TM1zzNDZD2DPASbKcgdVoTYhfmYgtfwx9R",
-     "asset": "TRX",
-     "contract": null,
-     "count": 1,
-     "first": "2024-10-29T03:06:33Z",
+     "assets": [
+      {
+       "asset": "TRX",
+       "contract": null,
+       "count": 1,
+       "first": "2024-10-29T03:06:33Z",
+       "last": "2024-10-29T03:06:33Z",
+       "symbol": "TRX",
+       "total": "149.2",
+       "total_raw": "149200000",
+       "usd": null
+      }
+     ],
      "labels": [
       {
        "attribution": "listed by OKX as its wallet",
@@ -393,12 +444,7 @@
        "source_name": "OKX proof-of-reserves address file"
       }
      ],
-     "last": "2024-10-29T03:06:33Z",
-     "lookalikes": [],
-     "symbol": "TRX",
-     "total": "149.2",
-     "total_raw": "149200000",
-     "usd": null
+     "lookalike_group": null
     }
    ],
    "funders_more": 0
@@ -420,39 +466,34 @@
    "labels_as_of": "2026-11-20T18:43:13Z",
    "sources": [
     {
-     "attribution": "Powered by GoPlus (shown with the GoPlus logo; results unmodified); a flag reads \"flagged by GoPlus\"",
-     "kind": "label",
-     "name": "GoPlus Security",
-     "slug": "goplus",
-     "url": "https://gopluslabs.io"
-    },
-    {
-     "attribution": "listed by OKX as its wallet",
-     "kind": "label",
-     "name": "OKX proof-of-reserves address file",
-     "slug": "okx-por",
-     "url": "https://www.okx.com/en-us/proof-of-reserves/download"
-    },
-    {
-     "attribution": "TronGrid",
-     "kind": "chain_data",
      "name": "TronGrid",
      "slug": "trongrid",
-     "url": "https://www.trongrid.io"
+     "url": "https://www.trongrid.io",
+     "used_for": "chain_data"
     },
     {
-     "attribution": "frozen by Circle",
-     "kind": "onchain",
+     "name": "GoPlus Security",
+     "slug": "goplus",
+     "url": "https://gopluslabs.io",
+     "used_for": "goplus_flags"
+    },
+    {
+     "name": "OKX proof-of-reserves address file",
+     "slug": "okx-por",
+     "url": "https://www.okx.com/en-us/proof-of-reserves/download",
+     "used_for": "exchange_list"
+    },
+    {
      "name": "Circle USDC contract state",
      "slug": "usdc-contract",
-     "url": "https://www.circle.com"
+     "url": "https://www.circle.com",
+     "used_for": "freeze_status"
     },
     {
-     "attribution": "frozen by Tether",
-     "kind": "onchain",
      "name": "Tether USDT contract state",
      "slug": "usdt-contract",
-     "url": "https://tether.to"
+     "url": "https://tether.to",
+     "used_for": "freeze_status"
     }
    ]
   },
@@ -573,17 +614,57 @@
     "url": "https://tronscan.org/#/address/TC66d59uus8AWhYDvAgWM55T8NRa7KNWAN"
    }
   },
+  "lists": {
+   "destinations_checked": 4,
+   "funders_checked": 24,
+   "list_dates": {
+    "exchange-por": "2026-11-10",
+    "ofac-sdn": "2026-11-19",
+    "okx-por": "2026-11-01"
+   },
+   "matched": [
+    {
+     "address": "TM1zzNDZD2DPASbKcgdVoTYhfmYgtfwx9R",
+     "labels": [
+      {
+       "attribution": "listed by OKX as its wallet",
+       "category": "exchange",
+       "claim_url": "https://www.okx.com/en-us/proof-of-reserves/download",
+       "label": "listed by OKX as its wallet on 2026-11-01 (type in OKX's file: Non Staking)",
+       "observed_at": "2026-11-20T14:22:19Z",
+       "source": "okx-por",
+       "source_date": "2026-11-01",
+       "source_name": "OKX proof-of-reserves address file"
+      }
+     ],
+     "roles": [
+      "funder"
+     ]
+    }
+   ]
+  },
+  "lookalikes": [
+   {
+    "addresses": [
+     "TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp",
+     "TSdvEgYasuprGXWSC7cSGjULXTACP25Vbp",
+     "TSdvM8734JgFzViQ9baCVjuKugxXX25Vbp"
+    ],
+    "group": "A"
+   }
+  ],
+  "prices_available": false,
   "set_apart": {
    "tiny": {
     "count": 21,
-    "more": 0,
     "rows": [
      {
       "amount": "0.000001",
       "contract": null,
       "counterparty": "TU9cfjxLbNuxEkejexoPsqyXE4hzukwG6H",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2025-05-23T00:37:12Z",
       "tx_hash": "8b23994625b42f52597213e7298b6597191ba773f4c67fe9e394f2b9e5791ff8"
@@ -593,7 +674,8 @@
       "contract": null,
       "counterparty": "TSCHXZuZGLsF8jLbCjrawwyFpQgBCVXrjU",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2025-05-23T00:37:00Z",
       "tx_hash": "845a3051106beede1a418fb4e4bda2452b5372c9a537acd6bcc9076fc632340c"
@@ -603,7 +685,8 @@
       "contract": null,
       "counterparty": "TEvcxhFWriZPMbBTizyrS8BmUDUHi25Vbp",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-12-06T09:24:51Z",
       "tx_hash": "fd96fb69d4d3c4ad230ff3368b82d58850e398345738498e99efaea84ffb4816"
@@ -613,7 +696,8 @@
       "contract": null,
       "counterparty": "TUojwvRf8zABbMVdj3r3J5wJ3YCeUHkgSR",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-12-06T08:58:30Z",
       "tx_hash": "b909a8bff20b4e38fc6f23efc4eafaf652c155df489ca61678cf4d32a006f745"
@@ -623,7 +707,8 @@
       "contract": null,
       "counterparty": "TMZkD8AAeKLSDYggr5Yb9xdFvxZEP7tSSR",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-12-06T08:58:27Z",
       "tx_hash": "d0eea136e96d4500d7bb19ed202b6657038dfa9287e007580abd5fd1ffd00856"
@@ -633,7 +718,8 @@
       "contract": null,
       "counterparty": "TFJaxjSMcdxapTpQnoD3JouSomUaoMCySR",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-12-06T08:57:27Z",
       "tx_hash": "a5326e7e8569b9c569114ba3306f8def713e00d0bff3e9bf8a025eb696c0b4db"
@@ -643,7 +729,8 @@
       "contract": null,
       "counterparty": "TEvcxhFWriZPMbBTizyrS8BmUDUHi25Vbp",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-11-20T10:32:57Z",
       "tx_hash": "86a498b0f6b06f332d516048b8f62b43466ece4d365d977b0c9ed7951ba62df3"
@@ -653,7 +740,8 @@
       "contract": null,
       "counterparty": "TWBmb2CP2QWnrjmZL43Ku8mNBMZQ7hZJUo",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-11-20T07:10:09Z",
       "tx_hash": "94d9a276250c574c7ef2ba5a1713453bf7311d5194ec07a8f046da568bd4df3d"
@@ -663,7 +751,8 @@
       "contract": null,
       "counterparty": "TEvcxhFWriZPMbBTizyrS8BmUDUHi25Vbp",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-11-09T20:34:57Z",
       "tx_hash": "84eb32f7b9e8e393635ccfd910a6e5ea8066859845b57bf1f900af53fb92998a"
@@ -673,7 +762,8 @@
       "contract": null,
       "counterparty": "TV9oH6ZBw3EwBNpP4dssXtciQinxNtfitx",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-11-06T09:17:15Z",
       "tx_hash": "27102bf0cfe44c9b822d9e3620c255367a1c3384cc1aa14cadb5c410bf464715"
@@ -683,10 +773,8 @@
       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
       "counterparty": "TSdvM8734JgFzViQ9baCVjuKugxXX25Vbp",
       "direction": "in",
-      "lookalikes": [
-       "TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp",
-       "TSdvEgYasuprGXWSC7cSGjULXTACP25Vbp"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDT",
       "time": "2024-11-02T15:40:00Z",
       "tx_hash": "21cb2020d6a7ea548004d6bd29e43fed1080659c5f7ad207ca1a292d09951f0c"
@@ -696,10 +784,8 @@
       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
       "counterparty": "TSdvEgYasuprGXWSC7cSGjULXTACP25Vbp",
       "direction": "in",
-      "lookalikes": [
-       "TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp",
-       "TSdvM8734JgFzViQ9baCVjuKugxXX25Vbp"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDT",
       "time": "2024-11-02T15:39:33Z",
       "tx_hash": "7201bb5dcacf5512e3423be5438293a24c5b00561f2b02f0a2def58674e69f09"
@@ -709,10 +795,8 @@
       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
       "counterparty": "TSdvM8734JgFzViQ9baCVjuKugxXX25Vbp",
       "direction": "in",
-      "lookalikes": [
-       "TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp",
-       "TSdvEgYasuprGXWSC7cSGjULXTACP25Vbp"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDT",
       "time": "2024-11-02T15:39:18Z",
       "tx_hash": "6bea9aa115c98be464ceb2aa00124ece80886a5863002182735cf3c8c4954175"
@@ -722,7 +806,8 @@
       "contract": null,
       "counterparty": "TXEaanSHXupCJ5P9uNEKDU13JaTgmm1Vbp",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-11-02T15:39:00Z",
       "tx_hash": "bc921ae76485347135f90ff675d789dcabcc067d7de56f45cd362df89ed1c52f"
@@ -732,7 +817,8 @@
       "contract": null,
       "counterparty": "TMfeeUfu46YBHzgLY4KVYVZNuPvVBRmVbp",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-11-02T15:38:54Z",
       "tx_hash": "6c5d90f33b403b96c7267af5432621fcb022e06e7104a125828ee62d8ad354b5"
@@ -742,7 +828,8 @@
       "contract": null,
       "counterparty": "TEvcxhFWriZPMbBTizyrS8BmUDUHi25Vbp",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-10-30T16:47:42Z",
       "tx_hash": "f0e8b56c0b14968802bb55c2de012aa534df48f779f09eb3dac4a01d1e396375"
@@ -752,10 +839,8 @@
       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
       "counterparty": "TSdvM8734JgFzViQ9baCVjuKugxXX25Vbp",
       "direction": "in",
-      "lookalikes": [
-       "TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp",
-       "TSdvEgYasuprGXWSC7cSGjULXTACP25Vbp"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDT",
       "time": "2024-10-30T15:05:42Z",
       "tx_hash": "de602651772c94ce71a0ae67146465eb1f84091492ab6f1532c02ea7380ed201"
@@ -765,10 +850,8 @@
       "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
       "counterparty": "TSdvEgYasuprGXWSC7cSGjULXTACP25Vbp",
       "direction": "in",
-      "lookalikes": [
-       "TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp",
-       "TSdvM8734JgFzViQ9baCVjuKugxXX25Vbp"
-      ],
+      "lookalike_group": "A",
+      "recognised": true,
       "symbol": "USDT",
       "time": "2024-10-30T15:05:15Z",
       "tx_hash": "acf05cdda56eece20a3c4c81e84be594e07c6fbc0315b47efed37c34cef2a4eb"
@@ -778,7 +861,8 @@
       "contract": null,
       "counterparty": "TXEaanSHXupCJ5P9uNEKDU13JaTgmm1Vbp",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-10-30T15:04:00Z",
       "tx_hash": "78058e2e61d9fc4a1cd2af4ab4db928724f0fa2abb7092921c1c2cb49cd088ad"
@@ -788,7 +872,8 @@
       "contract": null,
       "counterparty": "TP46ZNNrqmEL3LXiPxqRViP6TG7w25CVbp",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-10-30T15:03:54Z",
       "tx_hash": "bdb8d6ce35eb402f20b80c4716052a8cafda9dcd139f6d00324a388c77d978c9"
@@ -798,7 +883,8 @@
       "contract": null,
       "counterparty": "THoyKSUrbbn36THStuifzAu9nLg7pCjdd2",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": true,
       "symbol": "TRX",
       "time": "2024-10-29T03:06:36Z",
       "tx_hash": "918f8920d14564f7b1f95887a9542d0492d80c2cd11600f46073ea1ac4cb9579"
@@ -807,21 +893,55 @@
    },
    "zero": {
     "count": 1,
-    "more": 0,
     "rows": [
      {
       "amount": "0",
       "contract": "TJXUL2YGcoVaNpFpNrQ9FjeE5AVMMSk6UJ",
       "counterparty": "TUZPztRsZQMUJVXQYKwEuwdGhzgTGjieuu",
       "direction": "in",
-      "lookalikes": [],
+      "lookalike_group": null,
+      "recognised": false,
       "symbol": "TG: jieuu",
       "time": "2026-07-16T09:17:54Z",
       "tx_hash": "4c962e1b83dc07322f97cb5cd3964123b6bad191d88ef46f310ff40e07c601d2"
      }
     ]
    }
+  },
+  "summary": {
+   "checked": 28,
+   "destroyed": [
+    {
+     "amount": "465514.638375",
+     "issuer": "Tether",
+     "time": "2025-04-01T01:34:12Z",
+     "token": "USDT"
+    }
+   ],
+   "frozen": [
+    {
+     "issuer": "Tether",
+     "since": "2024-11-04T18:55:48+00:00",
+     "token": "USDT"
+    }
+   ],
+   "held": [
+    {
+     "amount": "0.278724",
+     "freezable": false,
+     "name": "TRX"
+    }
+   ],
+   "history": "complete",
+   "largest_destination": {
+    "address": "TSdvEfHwkfkvNmuTh7TRejchZ4WBf25Vbp",
+    "asset": "USDT",
+    "listed": false,
+    "share_percent": "100.0",
+    "total": "20000"
+   },
+   "list_matches": 1
   }
  },
- "sha256": "b331cee33fb38e387115e76f562bac45a84c8584f34ee595029c4a1a8aaee9aa"
+ "sha256": "b1cb5dd137217ea27d75113da7ba21208458a794c010e55cb2254931f83cf09a"
 }

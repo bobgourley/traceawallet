@@ -1,20 +1,24 @@
 TraceAWallet report
 Bitcoin address 39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq
 
-As of block 976,769 (2026-11-20 18:27 UTC). Labels and lists as they stood at 2026-11-20 18:28 UTC.
-Chain data: mempool.space.
+As of block 976,769 (2026-11-20 18:27 UTC). Lists and labels as they stood at 2026-11-20 18:28 UTC.
 This report states what public records show. It does not say who controls the address or whether anyone did anything wrong.
+
+== Summary ==
+Held: nothing we recognise.
+Largest output to another address: bc1q343gc0p9kjyltfa30ze5nce4tdrtshwl9yd6lg, 212.5015216 BTC, 34.0% of the BTC that left this address.
+Lists: none of the 17 first-hop addresses checked matched OFAC's list or the exchange wallet lists we hold.
+History read: complete as far as we can check. See "Is the history complete?"
+Prices: no price data was available for this report, so no US dollar values are shown.
 
 == Chains ==
 This report covers Bitcoin.
 
 == Holdings at block 976,769 ==
-BTC: 0 (no price available)
+BTC: 0
 
-Share held in stablecoins the issuer can freeze: nothing of value is held.
-
-Freeze status, read from the stablecoin contracts themselves:
-  - No stablecoin on Bitcoin is checked for freezes.
+Freeze status:
+  No stablecoin on Bitcoin is checked for freezes.
 
 OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026-11-19.
 
@@ -22,73 +26,80 @@ OFAC sanctions list: this address is not on OFAC's SDN list as published on 2026
 First activity read: 2019-09-08 07:34 UTC. Last activity read: 2024-07-25 21:05 UTC.
 Received counts outputs paying this address. Spent counts inputs it spent; one output of a spending transaction is usually change returning to the spender.
 BTC:
-  received: 12 outputs, 625.1975312 (no price available)
-  spent:    12 inputs, 625.1975312 (no price available)
-No price is available for: BTC. Dollar figures for those are left out, never counted as zero.
+  received: 12 outputs, 625.1975312
+  spent:    12 inputs, 625.1975312
 
-== First-hop outputs ==
+== Where funds went next ==
 Outputs of transactions that spent from this address, to other addresses, largest first. Being an output does not mean the money was sent to that address on purpose: one output is often change to the spender's own new address.
   1. bc1q343gc0p9kjyltfa30ze5nce4tdrtshwl9yd6lg
-     212.5015216 BTC in 3 transfers, 2020-12-28 to 2022-07-03 (no price available)
+     212.5015216 BTC in 3 outputs from 2020-12-28 to 2022-07-03
   2. 3JQDrsy65fy218VUsSMQiWP6UHEjDFUpat
-     200 BTC in 1 transfer, 2020-05-07 to 2020-05-07 (no price available)
+     200 BTC in 1 output on 2020-05-07
   3. bc1qv360g37p53wsuln7uyw9hv4x2kqh3qn3jnfs89
-     0.0916728 BTC in 3 transfers, 2020-12-28 to 2022-07-03 (no price available)
+     0.0916728 BTC in 3 outputs from 2020-12-28 to 2022-07-03
   4. 357R3FeNmySYeHuRfyhFd6nMwzoLDdjfwV
-     0.01 BTC in 1 transfer, 2019-09-08 to 2019-09-08 (no price available)
+     0.01 BTC in 1 output on 2019-09-08
   5. 34rzDEUhY4sUiuhpVaiZsbTqjgEmEbyWmT
-     0.001244 BTC in 2 transfers, 2024-07-25 to 2024-07-25 (no price available)
+     0.001244 BTC in 2 outputs on 2024-07-25
   6. bc1qmmyzwldzr7dpv8tz5rvt885z5flg65s023ep4y
-     0.001244 BTC in 2 transfers, 2024-07-25 to 2024-07-25 (no price available)
+     0.001244 BTC in 2 outputs on 2024-07-25
 
 Returned to this address in its own spending transactions: 212.5897816 BTC in 2 outputs (2 transactions). These are shown apart from the outputs above.
 
-== Funders ==
+== Where funds came from ==
 Other inputs of transactions that paid this address, largest first.
   1. 3CRywj5tDJz171MsocRTBKgMbWy26KodqS
-     99.41772428 BTC in 1 transfer, 2019-09-08 to 2019-09-08 (no price available)
+     99.41772428 BTC in 1 output on 2019-09-08
   2. 3BXXV6cWw91RsnDDMF8R8YPM8aDrVEAa6P
-     96.62572428 BTC in 1 transfer, 2019-09-08 to 2019-09-08 (no price available)
+     96.62572428 BTC in 1 output on 2019-09-08
   3. 3C6RjUP38aiH2bnwTUkeSWjrARnnA6PFsW
-     95.57477552 BTC in 1 transfer, 2019-09-08 to 2019-09-08 (no price available)
+     95.57477552 BTC in 1 output on 2019-09-08
   4. 3KdPUEoqueNtdMzwYwgsrV4zRP5gYJ8Ncr
-     90.81672428 BTC in 1 transfer, 2019-09-08 to 2019-09-08 (no price available)
+     90.81672428 BTC in 1 output on 2019-09-08
   5. 39U3Ks45mxCCoKz9FZajQSynXfLedrLFau
-     29.14346641 BTC in 1 transfer, 2019-09-08 to 2019-09-08 (no price available)
+     29.14346641 BTC in 1 output on 2019-09-08
   6. 3AAd9bDZNhfGsJ6xacyBrtdB9UttPfsiWT
-     2.05385608 BTC in 2 transfers, 2022-07-03 to 2024-07-25 (no price available)
+     2.05385608 BTC in 2 outputs from 2022-07-03 to 2024-07-25
   7. 32cizna4vaCgvr4cEmjco54mfmE7Dzp5yj
-     0.98877552 BTC in 1 transfer, 2019-09-08 to 2019-09-08 (no price available)
+     0.98877552 BTC in 1 output on 2019-09-08
   8. 3DhRhXY5USqpgiCrDjh5mjBdGfmScsUycP
-     0.88869908 BTC in 1 transfer, 2019-09-08 to 2019-09-08 (no price available)
+     0.88869908 BTC in 1 output on 2019-09-08
   9. 357R3FeNmySYeHuRfyhFd6nMwzoLDdjfwV
-     0.02 BTC in 2 transfers, 2019-09-08 to 2019-09-08 (no price available)
+     0.02 BTC in 2 outputs on 2019-09-08
   10. 3H5j1d99KjGp1jBapR4rFYCojjSx2AWm2Y
-     0.01 BTC in 1 transfer, 2019-09-08 to 2019-09-08 (no price available)
+     0.01 BTC in 1 output on 2019-09-08
   11. 3LrBL5gvxZtAcTDHAhHkwVFFJShxrqsTaQ
-     0.005 BTC in 5 transfers, 2019-09-08 to 2019-09-08 (no price available)
+     0.005 BTC in 5 outputs on 2019-09-08
 
-First funder read: 32cizna4vaCgvr4cEmjco54mfmE7Dzp5yj, 357R3FeNmySYeHuRfyhFd6nMwzoLDdjfwV, 0.1 BTC on 2019-09-08 07:34 UTC (transaction 53ca91a5b6c84f1b9bc032f07cf2acfb7efb4b8f11716563708e14e46f2d924d).
+First funder read: 32cizna4vaCgvr4cEmjco54mfmE7Dzp5yj, 357R3FeNmySYeHuRfyhFd6nMwzoLDdjfwV, 0.1 BTC on 2019-09-08 07:34 UTC.
+  transaction 53ca91a5b6c84f1b9bc032f07cf2acfb7efb4b8f11716563708e14e46f2d924d
 Distinct other addresses among the inputs of transactions that paid this one: 11.
 
-== Set apart ==
-Zero-value transfers: 0. Transfers of a very small amount (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 0.
-These are listed here rather than with the transfers above.
+== List matches ==
+Checked: 6 destinations and 11 funders, every first-hop address read, against:
+  - our file of the wallets Bitfinex, Bybit, Crypto.com, HTX and KuCoin publish, as published on 2026-11-10
+  - OFAC's SDN sanctions list, as published on 2026-11-19
+  - OKX's published list of its wallets, as published on 2026-11-01
+Matched: 0.
+The exchange lists cover only the exchanges named. An address that matches nothing may still belong to an exchange, or to anyone else.
 
-Tokens we don't recognise: 0 transfers. A token's name and symbol are chosen by whoever deployed its contract, so a token named USDT here need not be Tether's. Only the contract identifies a token.
+== Zero and very small transfers ==
+Zero-value transfers: 0. Very small transfers (below 1 USDT, USDC or DAI, 1 TRX, 0.0005 ETH or 0.00001 BTC): 0.
 
-== Labels ==
-Every claim a source makes about this address, worded as that source's claim:
+== Claims about this address ==
   - None of our sources makes a claim about this address.
 GoPlus: not asked. GoPlus answers every Bitcoin address with no flags, so its answer would say nothing.
-First-hop addresses are checked against OFAC's SDN list and the exchange wallet files only (lists as published: exchange-por 2026-11-10, ofac-sdn 2026-11-19, okx-por 2026-11-01).
 
-== Completeness ==
-  - The native coin balance matches the transfers read: passed
-  - The number of transactions sent matches the address's nonce: passed
-  - Every input and output of the transactions read was stored: did not pass. 2 transaction(s) had more than 200 inputs and outputs of other addresses; only the first 200 of those are stored (does not mark the history incomplete)
-Transfers read: 456, the whole history the source listed; the oldest is from 2019-09-08 07:34 UTC.
-Transactions not yet in a block are not counted.
+== Is the history complete? ==
+Complete as far as we can check: the balances we could check match the transfers read, and the source listed the whole history (456 transfers, from 2019-09-08).
+
+What we checked:
+  - The native coin balance matches the transfers read: yes
+  - Every input and output of the transactions read was stored: no. 2 transaction(s) had more than 200 inputs and outputs of other addresses; only the first 200 of those are stored
+
+What we did not read or could not check:
+  - Transactions not yet in a block are not counted.
+  - First-hop addresses are matched against the lists above only. GoPlus and the token contracts are asked about this address alone.
 
 == Prior lookups ==
 Not counted yet for this address.
@@ -101,24 +112,32 @@ This count is read when the report is shown and is not part of the report's fing
 These sites are run by others. What they show is their own.
 
 == Sources ==
-  - mempool.space: mempool.space
+  - mempool.space: balances and transfers
 
 <<< fixed section: recovery scams >>>
 == Watch out for recovery scams (DRAFT, not yet approved) ==
-After a loss, people are often contacted by someone who says they can get the money back: a "recovery service", a "blockchain investigator", a lawyer, or someone claiming to be from a government agency. Many of these are a second scam aimed at the same victim.
+After a loss, people are often contacted by someone who says they can get the money back: a "recovery service", a "blockchain investigator", someone claiming to be a lawyer, or someone claiming to be from a government agency. Many of these are a second scam aimed at the same victim.
 
   - No one can reverse a confirmed blockchain transaction. Funds come back only when an exchange or issuer freezes them and a court or law enforcement acts.
-  - Law enforcement agencies do not charge fees to recover funds, and they do not ask for payment in crypto, gift cards or wire transfers.
+  - Law enforcement does not charge victims a fee, and does not ask for payment in crypto, gift cards or wire transfers.
+  - Tokens or messages sent to an address that advertise "unfreezing" or recovery are the same scheme. Do not contact the names, handles or websites in them.
+  - If a platform says you must pay a fee or a tax before you can withdraw your money, that request is part of the scam. Do not send more money: paying does not release anything.
   - Be wary of anyone who contacts you first, asks for an upfront fee, asks for your wallet's recovery phrase or private key, or asks you to install remote-access software.
   - TraceAWallet will never contact you to offer recovery, and never asks for payment.
 
-If someone offers recovery, report the contact at ic3.gov as well.
+If someone offers recovery, report that contact at ic3.gov as well.
 <<< end of fixed section >>>
 
 <<< fixed section: IC3 checklist >>>
-== Filing with the FBI's IC3 (DRAFT, not yet approved) ==
-The FBI's Internet Crime Complaint Center takes reports at ic3.gov. Gather these before you start:
+== Reporting what happened (DRAFT, not yet approved) ==
+Report promptly. How quickly a report is made affects whether funds can still be frozen before they move on.
 
+  [ ] First, tell the exchange or wallet provider you sent from. Ask them to flag the transfer and record your report.
+  [ ] File with the FBI's Internet Crime Complaint Center (IC3) at ic3.gov.
+  [ ] In the US, also report to the Federal Trade Commission at reportfraud.ftc.gov.
+  [ ] Outside the US, report to your national police or fraud reporting centre, and at econsumer.gov, which consumer protection agencies in many countries use for cross-border scams.
+
+Gather these for the report:
   [ ] Each payment you made: the date, the amount, the asset (for example USDT on Tron) and the transaction hash
   [ ] The address you sent from, and the address you sent to (this report's address: 39B6oSa58qNpFMGpuowtRHAYp3fM4ghXRq on Bitcoin)
   [ ] The exchange or wallet app you sent from, and your account details there
@@ -126,8 +145,10 @@ The FBI's Internet Crime Complaint Center takes reports at ic3.gov. Gather these
   [ ] Messages, screenshots and any documents they sent you
   [ ] The platform or app you were told to use, with its web address
 
-After filing:
-  [ ] Keep the complaint ID IC3 gives you
-  [ ] Tell the exchange or wallet provider you sent from, and give them the IC3 complaint ID
-  [ ] Consider a report to your local police as well
+Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 <<< end of fixed section >>>
+
+== Report fingerprint ==
+Report id: assigned when the report is stored
+Fingerprint (SHA-256): 65125fd855da9b9d7ead0062315afb14bbea6c8c113f10922ec168137aaccf76
+The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

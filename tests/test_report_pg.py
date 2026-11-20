@@ -296,3 +296,22 @@ def test_the_api_end_to_end(client, db_url):
     assert "prior" not in json.dumps(rep["data"])
     text = client.get(f"/api/v1/reports/{public_id}?format=text", headers={"X-TAW-User": "anyone"}).text
     assert "Tether destroyed 465,514.638375 USDT" in text and "looked up this address: 1" in text
+
+
+def test_the_owner_sees_the_report_with_their_match_and_no_one_else_does(client, db_url):
+    addr = rf.CASES[CASE3][1]
+    r = client.post("/api/v1/lookups", json={"address": addr, "amount": "242209.53", "sent_on": "2025-05-10",
+                                             "asset": "USDC"}, headers={"X-TAW-User": "victim"})
+    lid = r.json()["id"]
+    with psycopg.connect(db_url, autocommit=True) as data, psycopg.connect(db_url, autocommit=True) as raw:
+        sid = save_case(data, raw, CASE3)
+        finish_jobs(data, {"eth": sid})
+        assert lookups.run_match(data, ACTOR, lid, adapter_for=None, raw_store=None) == "matched"
+    assert client.get(f"/api/v1/lookups/{lid}/report", headers={"X-TAW-User": "other"}).status_code == 404
+    text = client.get(f"/api/v1/lookups/{lid}/report?chain=eth", headers={"X-TAW-User": "victim"}).text
+    assert "== Your transaction (private) ==" in text and "242,209.413589 USDC" in text
+    public_id = client.get(f"/api/v1/lookups/{lid}", headers={"X-TAW-User": "victim"}).json()["chains"]
+    pid = next(c["report"]["public_id"] for c in public_id if c["chain"] == "eth")
+    assert f"Report id: {pid}" in text
+    shared = client.get(f"/api/v1/reports/{pid}?format=text", headers={"X-TAW-User": "other"}).text
+    assert "Your transaction" not in shared and "242,209.413589" not in shared.split("== Chains ==")[0]

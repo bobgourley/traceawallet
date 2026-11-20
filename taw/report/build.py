@@ -153,6 +153,23 @@ def _labels_out(labels, sources) -> list[dict]:
 
 # -- sections -----------------------------------------------------------------------------------
 
+def used_for(slug: str, kind: str | None, inp: ReportInput) -> str:
+    """A code for what a source contributed (worded in the template)."""
+    if slug == inp.source:
+        return "chain_data"
+    if slug in ("usdt-contract", "usdc-contract"):
+        return "freeze_status"
+    if slug == "goplus":
+        return "goplus_flags"
+    if slug == "ofac-sdn":
+        return "sanctions_list"
+    if slug in ("exchange-por", "okx-por"):
+        return "exchange_list"
+    if slug == "chainlink":
+        return "prices"
+    return kind or "other"
+
+
 def _header(inp: ReportInput, c: Ctx, used_sources: set[str]) -> dict:
     snap = inp.snapshot
     src = inp.sources.get(inp.source, {})
@@ -165,10 +182,10 @@ def _header(inp: ReportInput, c: Ctx, used_sources: set[str]) -> dict:
                             for ch in EVM_ORDER if ch in EVM_NOT_CHECKED],
         }
     sources = []
-    for slug in sorted(used_sources | {inp.source}):
+    for slug in sorted(used_sources | {inp.source}, key=lambda x: (x != inp.source, x)):
         s = inp.sources.get(slug, {})
-        sources.append({"slug": slug, "name": s.get("name", slug), "attribution": s.get("attribution"),
-                        "kind": s.get("kind"), "url": s.get("url")})
+        sources.append({"slug": slug, "name": s.get("name", slug), "used_for": used_for(slug, s.get("kind"), inp),
+                        "url": s.get("url")})
     return {"chain": inp.chain, "chain_name": inp.chain_name, "address": inp.address,
             "as_of_block": snap["as_of_block"], "as_of_time": iso(snap["as_of_time"]),
             "fetched_at": iso(snap["fetched_at"]), "labels_as_of": iso(inp.labels_as_of),
@@ -318,7 +335,8 @@ def _activity(inp: ReportInput, c: Ctx, inbound, outbound) -> dict:
 
 
 def _hop_rows(pairs, c: Ctx, inp: ReportInput) -> tuple[list[dict], int]:
-    """pairs: (counterparty, transfer). One row per counterparty and asset, largest first."""
+    """pairs: (counterparty, transfer). One entry per address with one line per asset,
+    addresses ordered by their largest line."""
     agg: dict[tuple[str, str], dict] = {}
     for party, t in pairs:
         k = (party, c.key(t.token_contract))
@@ -335,17 +353,21 @@ def _hop_rows(pairs, c: Ctx, inp: ReportInput) -> tuple[list[dict], int]:
             a["usd"] += u
         a["first"], a["last"] = min(a["first"], t.block_time), max(a["last"], t.block_time)
     order = {x: i for i, x in enumerate(ASSET_ORDER)}
-    rows = sorted(agg.values(), key=lambda a: (-(a["usd"] if a["unpriced"] == 0 else Decimal(0)),
-                                               order.get(a["asset"], 99), -a["raw"], a["address"]))
+    rank = lambda a: (-(a["usd"] if a["unpriced"] == 0 else Decimal(0)), order.get(a["asset"], 99), -a["raw"],  # noqa: E731
+                      a["address"])
+    by_address: dict[str, list[dict]] = defaultdict(list)
+    for a in sorted(agg.values(), key=rank):
+        by_address[a["address"]].append(a)
+    addresses = sorted(by_address, key=lambda addr: rank(by_address[addr][0]))
     out = []
-    for a in rows[:FIRST_HOP_ROWS]:
-        labels = inp.counterparty_labels.get(a["address"]) or ()
-        out.append({"address": a["address"], "contract": a["contract"], "symbol": a["symbol"], "asset": a["asset"],
-                    "count": a["count"], "total_raw": str(a["raw"]), "total": amount_str(a["raw"], a["decimals"]),
-                    "usd": usd_str(a["usd"]) if a["unpriced"] == 0 else None,
-                    "first": iso(a["first"]), "last": iso(a["last"]),
-                    "labels": _labels_out(labels, inp.sources)})
-    return out, max(0, len(rows) - FIRST_HOP_ROWS)
+    for addr in addresses[:FIRST_HOP_ROWS]:
+        lines = [{"contract": a["contract"], "symbol": a["symbol"], "asset": a["asset"], "count": a["count"],
+                  "total_raw": str(a["raw"]), "total": amount_str(a["raw"], a["decimals"]),
+                  "usd": usd_str(a["usd"]) if a["unpriced"] == 0 else None,
+                  "first": iso(a["first"]), "last": iso(a["last"])} for a in by_address[addr]]
+        out.append({"address": addr, "assets": lines,
+                    "labels": _labels_out(inp.counterparty_labels.get(addr) or (), inp.sources)})
+    return out, max(0, len(addresses) - FIRST_HOP_ROWS)
 
 
 def lookalike_groups(addresses, chain: str) -> dict[str, list[str]]:
@@ -367,15 +389,30 @@ def lookalike_groups(addresses, chain: str) -> dict[str, list[str]]:
     return {a: sorted(g - {a}) for g in groups.values() if len(g) > 1 for a in g}
 
 
-def _mark_lookalikes(hops: dict, set_apart: dict, chain: str) -> None:
+def _mark_lookalikes(hops: dict, set_apart: dict, chain: str) -> list[dict]:
+    """Give each lookalike group a letter, mark its rows, and return the groups so the
+    report can describe each one once."""
     rows = hops["destinations"] + hops["funders"]
     others = [r["counterparty"] for k in ("zero", "tiny") for r in set_apart[k]["rows"]]
-    look = lookalike_groups({r["address"] for r in rows} | set(others), chain)
+    shown = {r["address"] for r in rows} | {o for o in others if o}
+    look = lookalike_groups(shown, chain)
+    groups: list[list[str]] = []
+    for addr in [r["address"] for r in rows] + others:
+        if addr not in look:
+            continue
+        members = sorted({addr, *look[addr]})
+        if members not in groups:
+            groups.append(members)
+    letter = {}
+    for i, members in enumerate(groups):
+        for m in members:
+            letter[m] = chr(ord("A") + i) if i < 26 else str(i + 1)
     for r in rows:
-        r["lookalikes"] = look.get(r["address"], [])
+        r["lookalike_group"] = letter.get(r["address"])
     for k in ("zero", "tiny"):
         for r in set_apart[k]["rows"]:
-            r["lookalikes"] = look.get(r["counterparty"], [])
+            r["lookalike_group"] = letter.get(r["counterparty"])
+    return [{"group": letter[m[0]], "addresses": m} for m in groups]
 
 
 def _first_hop(inp: ReportInput, c: Ctx, inbound, outbound) -> dict:
@@ -442,11 +479,11 @@ def _set_apart(inp: ReportInput, c: Ctx, inbound, outbound) -> dict:
     out = {}
     for k, rows in groups.items():
         rows.sort(key=lambda r: (r[0].block_number, r[0].tx_hash, r[0].event_index), reverse=True)
-        out[k] = {"count": len(rows), "more": max(0, len(rows) - SET_APART_ROWS),
+        out[k] = {"count": len(rows),
                   "rows": [{"direction": d, "counterparty": o, "tx_hash": t.tx_hash, "time": iso(t.block_time),
                             "symbol": visible(t.token_symbol), "contract": t.token_contract,
-                            "amount": amount_str(t.amount_raw, t.token_decimals)}
-                           for t, d, o in rows[:SET_APART_ROWS]]}
+                            "recognised": c.recognised(t.token_contract),
+                            "amount": amount_str(t.amount_raw, t.token_decimals)} for t, d, o in rows]}
     return out
 
 
@@ -507,6 +544,62 @@ def _links(inp: ReportInput) -> dict:
             "arkham": f"https://intel.arkm.com/explorer/address/{a}"}
 
 
+def _lists(inp: ReportInput, c: Ctx) -> dict:
+    """How many first-hop addresses were checked against the lists, and which matched.
+    Every counterparty counts, small and zero-value transfers included, as the worker
+    applies the lists (taw/labels.py)."""
+    from taw.labels import counterparties
+    parties = counterparties(inp.chain, inp.address, inp.transfers)
+    dests = {c.norm(a) for a, roles in parties.items() if "destination" in roles}
+    funds = {c.norm(a) for a, roles in parties.items() if "funder" in roles}
+    matched = []
+    for a in sorted(dests | funds):
+        ls = inp.counterparty_labels.get(a) or ()
+        if ls:
+            matched.append({"address": a, "roles": sorted(r for r, group in (("destination", dests), ("funder", funds))
+                                                          if a in group),
+                            "labels": _labels_out(ls, inp.sources)})
+    return {"destinations_checked": len(dests), "funders_checked": len(funds), "matched": matched,
+            "list_dates": {k: str(v) for k, v in sorted(inp.list_dates.items())}}
+
+
+def _summary(holdings: dict, activity: dict, hops: dict, lists: dict, completeness: dict, c: Ctx) -> dict:
+    held = []
+    n = holdings["native"]
+    if int(n["amount_raw"]) > 0:
+        held.append({"name": n["symbol"], "amount": n["amount"], "freezable": False})
+    for t in holdings["tokens"]:
+        if t["recognised"] and int(t["amount_raw"]) > 0:
+            held.append({"name": t["asset"] or t["symbol"], "amount": t["amount"], "freezable": t["freezable"]})
+    frozen = [{"token": f["token"], "issuer": f["issuer"], "since": f["since"]}
+              for f in holdings["freeze"] if f["status"] == "frozen"]
+    destroyed = [{"token": f["token"], "issuer": f["issuer"], "amount": x["amount"], "time": x["time"]}
+                 for f in holdings["freeze"] for x in f["destructions"]]
+    largest = None
+    if hops["destinations"]:
+        top = hops["destinations"][0]
+        line = top["assets"][0]
+        key = line["contract"] if line["contract"] is None else c.norm(line["contract"])
+        out_total = next((int(a["out"]["total_raw"]) for a in activity["assets"]
+                          if (a["contract"] is None and key is None) or (a["contract"] and c.norm(a["contract"]) == key)),
+                         0)
+        share = (Decimal(int(line["total_raw"])) * 100 / out_total).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP) \
+            if out_total else None
+        largest = {"address": top["address"], "asset": line["asset"] or line["symbol"], "total": line["total"],
+                   "share_percent": str(share) if share is not None else None, "listed": bool(top["labels"])}
+    if not completeness["checked"]:
+        verdict = "not_checked"
+    elif completeness["history_incomplete"]:
+        verdict = "incomplete"
+    elif completeness["transfers"]["truncated"]:
+        verdict = "truncated"
+    else:
+        verdict = "complete"
+    return {"held": held, "frozen": frozen, "destroyed": destroyed, "largest_destination": largest,
+            "list_matches": len(lists["matched"]),
+            "checked": lists["destinations_checked"] + lists["funders_checked"], "history": verdict}
+
+
 def build(inp: ReportInput) -> dict:
     """report.data for one snapshot. Pure: no database, no clock."""
     c = Ctx(inp)
@@ -517,7 +610,6 @@ def build(inp: ReportInput) -> dict:
     hops = _first_hop(inp, c, inbound, outbound)
     labels = _labels_section(inp, c)
     set_apart = _set_apart(inp, c, inbound, outbound)
-    _mark_lookalikes(hops, set_apart, inp.chain)
     used = {l["source"] for l in inp.labels}
     used |= {l["source"] for ls in inp.counterparty_labels.values() for l in ls}
     used |= {k["source"] for k in inp.label_checks}
@@ -526,13 +618,20 @@ def build(inp: ReportInput) -> dict:
         used.add("chainlink")
     if inp.chain == "btc":
         used.discard("goplus")
+    completeness = _completeness(inp, c, inbound, outbound)
+    lists = _lists(inp, c)
+    groups = _mark_lookalikes(hops, set_apart, inp.chain)
     return {
+        "summary": _summary(holdings, activity, hops, lists, completeness, c),
         "header": _header(inp, c, used),
         "holdings": holdings,
         "activity": activity,
         "first_hop": hops,
+        "lookalikes": groups,
         "set_apart": set_apart,
         "labels": labels,
-        "completeness": _completeness(inp, c, inbound, outbound),
+        "lists": lists,
+        "completeness": completeness,
         "links": _links(inp),
+        "prices_available": any(r.get("status") == "ok" for r in inp.prices.values()),
     }
