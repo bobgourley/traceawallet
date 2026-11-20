@@ -69,8 +69,12 @@ def _tx_shape(family: str, tx: str) -> str:
     return h
 
 
-def create(conn, actor: str, user_id: str, req: LookupRequest) -> tuple[str, tuple[str, ...]]:
-    """Record the lookup and queue its jobs. Returns (lookup id, chains)."""
+def create(conn, actor: str, req: LookupRequest, *, user_id: str | None = None, session_hash: str | None = None,
+           ip_hash: str | None = None) -> tuple[str, tuple[str, ...]]:
+    """Record the lookup and queue its jobs. Returns (lookup id, chains). A lookup made
+    before sign-in has no user yet, only the hashed session id; signing in claims it."""
+    if not user_id and not session_hash:
+        raise LookupRefused("a lookup needs a signed-in account or a session")
     family = family_of(req.address)
     chains = chains_for(family)
     try:
@@ -87,10 +91,11 @@ def create(conn, actor: str, user_id: str, req: LookupRequest) -> tuple[str, tup
     tx = _tx_shape(family, req.tx_hash) if req.tx_hash else None
     with store.actor_transaction(conn, actor):
         lookup_id = conn.execute(
-            "INSERT INTO lookup (family, submitted_address, clerk_user_id, claimed_at, chain_hint, asset, amount,"
-            " sent_on, sending_address, tx_hash, platform_name, platform_url)"
-            " VALUES (%s::chain_family, %s, %s, now(), %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id::text",
-            (family, address, user_id, req.chain, (req.asset or "").strip().upper() or None, amount, req.sent_on,
+            "INSERT INTO lookup (family, submitted_address, clerk_user_id, session_hash, ip_hash, claimed_at,"
+            " chain_hint, asset, amount, sent_on, sending_address, tx_hash, platform_name, platform_url)"
+            " VALUES (%s::chain_family, %s, %s, %s, %s, CASE WHEN %s::text IS NULL THEN NULL ELSE now() END,"
+            " %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id::text",
+            (family, address, user_id, session_hash, ip_hash, user_id, req.chain, (req.asset or "").strip().upper() or None, amount, req.sent_on,
              sender, tx, req.platform_name, req.platform_url)).fetchone()[0]
         for chain in chains:
             job_id, _ = jobs.enqueue_lookup(conn, chain, address)
@@ -149,6 +154,47 @@ def get(conn, actor: str, lookup_id: str, user_id: str) -> dict | None:
                            "as_of_time": rep["as_of_time"].astimezone(dt.timezone.utc).isoformat()}})
     return {"id": lid, "family": family, "address": address, "created_at": created.isoformat(), "chains": chains,
             "match": match, "match_checked_at": checked.isoformat() if checked else None}
+
+
+CLAIM_WINDOW = dt.timedelta(days=1)
+
+
+def claim(conn, actor: str, user_id: str, session_hash: str) -> list[str]:
+    """Give the signed-in account every unclaimed lookup made in this browser session
+    within the last day. Returns the lookup ids claimed."""
+    with store.actor_transaction(conn, actor):
+        ids = [r[0] for r in conn.execute(
+            "UPDATE lookup SET clerk_user_id = %s, claimed_at = now() WHERE session_hash = %s"
+            " AND clerk_user_id IS NULL AND redacted_at IS NULL AND created_at > now() - %s RETURNING id::text",
+            (user_id, session_hash, CLAIM_WINDOW)).fetchall()]
+        for lid in ids:
+            for chain, address in conn.execute(
+                    "SELECT lj.chain, l.submitted_address FROM lookup_job lj JOIN lookup l ON l.id = lj.lookup_id"
+                    " WHERE lj.lookup_id = %s", (lid,)).fetchall():
+                refresh_count(conn, chain, address)
+    return ids
+
+
+def list_mine(conn, user_id: str) -> list[dict]:
+    rows = conn.execute(
+        "SELECT id::text, family::text, submitted_address, created_at FROM lookup"
+        " WHERE clerk_user_id = %s AND redacted_at IS NULL ORDER BY created_at DESC LIMIT 200", (user_id,)).fetchall()
+    return [{"id": i, "family": f, "address": a, "created_at": c.isoformat()} for i, f, a, c in rows]
+
+
+def redact(conn, actor: str, lookup_id: str, user_id: str) -> bool:
+    """Delete a lookup for its owner (lookup_redact keeps only the fact that it happened),
+    then recount who has looked up the address."""
+    with store.actor_transaction(conn, actor):
+        row = conn.execute("SELECT submitted_address FROM lookup WHERE id = %s AND clerk_user_id = %s"
+                           " AND redacted_at IS NULL FOR UPDATE", (lookup_id, user_id)).fetchone()
+        if row is None:
+            return False
+        chains = [r[0] for r in conn.execute("SELECT chain FROM lookup_job WHERE lookup_id = %s", (lookup_id,))]
+        conn.execute("SELECT lookup_redact(%s)", (lookup_id,))
+        for chain in chains:
+            refresh_count(conn, chain, row[0])
+    return True
 
 
 def refresh_count(conn, chain: str, address: str) -> int | None:
