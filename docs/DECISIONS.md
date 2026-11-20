@@ -3,6 +3,74 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-20 (night): The web interface
+
+**The site is a client of the API.** The pages call `/api/v1` over the loopback
+connection (`TAW_API_URL`) and never open the database. They pass the visitor's
+Clerk session token as a Bearer token, our own session id as `X-TAW-Session`,
+and the visitor's IP as `X-Real-IP`, which Railway's edge sets. The API reads
+no cookies, so a form on another site cannot act through it. The `X-TAW-User`
+test header and the `TAW_API_ENABLED` switch are gone. Until every setting the
+site needs exists, the API answers 503 and the home page says "Coming soon", so
+a deploy cannot open the site early.
+
+**Sign-in (Clerk, docs read 2026-11-20).**
+- **Where the token lives.** ClerkJS (clerk-js 6 with the ui 1 bundle, loaded
+  from the instance's Frontend API) keeps a short-lived session token in the
+  `__session` cookie.
+- **How it's checked.** The API verifies it: RS256, `exp` and `nbf`, and
+  `azp` must be our own origin. The key comes from `CLERK_JWT_KEY`, or from
+  Clerk's JWKS fetched with the secret key.
+- **Invite-only.** The email comes from a custom session claim,
+  `primaryEmail`. Only addresses in `TESTER_EMAILS` may use the site; a token
+  without the claim counts as not invited.
+- **Before sign-in.** A lookup starts on submit, tied to a salted hash of our
+  session cookie. Signing in claims every lookup from that session made in the
+  last day. Results are shown only to a signed-in owner.
+
+**Limits** come from the lookup table itself:
+
+| Who | Limit |
+|---|---|
+| Before sign-in, per IP | 5 an hour, 20 a day |
+| Signed in, per account | 10 an hour, 40 a day |
+| Before sign-in, the whole site | 200 a day |
+
+The site-wide cap is there because a lookup starts before sign-in: without it,
+people who are not invited could spend the day's Blockscout allowance. When
+less than 5% of today's allowance is left, the lookup still queues, and the
+reply says it will run after the 00:00 UTC reset. IPs and session ids are
+stored only as HMAC-SHA256 with `HASH_SALT`.
+
+**Turnstile** (docs read 2026-11-20). The token goes to `siteverify` with the
+secret and the visitor's IP. Tokens last 300 seconds, can be used once and are
+at most 2048 characters. A failed check starts nothing.
+
+**Protection.**
+- **Cookies.** Our session cookie is HttpOnly, Secure and SameSite=Lax.
+- **Forms.** Every form carries a CSRF token, an HMAC of the session id.
+- **Content security policy.** It allows only our own origin, the Clerk
+  Frontend API, `*.protect.clerk.com` and `challenges.cloudflare.com`, from
+  Clerk's published CSP list. Styles allow `'unsafe-inline'` because Clerk
+  styles itself at runtime. There are no inline scripts, `frame-ancestors` is
+  `'none'`, and HSTS is on.
+- **Search engines.** Lookup, report, account and sign-in pages send
+  `X-Robots-Tag: noindex` and `no-store`.
+
+**One template for text and HTML.** The web report is the text template
+rendered with autoescape on. Addresses get a copy button and a "Look up" link;
+hashes and contracts get a copy button; outside links get anchors. Each
+heading becomes a section, and sections longer than eight lines start
+collapsed. The buttons carry no text of their own, only an aria-label and a
+CSS label. A test checks that every line of the text report appears in the
+HTML for all five cases, and the text golden files did not change. Token names
+stay escaped and defanged and never become links.
+
+**Screenshots.** `scripts/screenshot_pages.py` serves the app on a seeded
+throwaway database and photographs each page at 390 px with Playwright driving
+the installed Chrome. A fixed tester stands in for Clerk, inside that process
+only.
+
 ## 2026-11-20 (night): Report wording, third pass
 
 - **Summary per asset.** One line per recognised asset that moved: received,

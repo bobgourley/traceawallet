@@ -70,8 +70,9 @@ Out of scope: multi-hop tracing, PDF export, alerts, public API keys, file uploa
 
     migrations/          numbered SQL files
     scripts/migrate.py   migration runner
-    taw/main.py          web app; mounts the API
-    taw/api/             /api/v1 routes (off unless TAW_API_ENABLED=1)
+    taw/main.py          mounts the API, the web pages and their security headers
+    taw/api/             /api/v1 routes, behind Clerk sign-in (taw/auth.py) and limits (taw/guard.py)
+    taw/web/             server-rendered pages: a client of the API, never the database
     taw/lookups.py       private lookups, their jobs, transaction matching runs
     taw/worker/          job loop
     taw/adapters/        chains/, labels/, prices/ (to be built)
