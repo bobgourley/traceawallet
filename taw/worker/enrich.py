@@ -7,16 +7,45 @@ from __future__ import annotations
 
 from typing import Callable
 
-from taw import labels, pricing
+from taw import blacklist, labels, pricing
 from taw.adapters import registry
 from taw.adapters.labels import freeze
+from taw.adapters.labels.blacklist import indexed
 from taw.adapters.prices.chainlink import ChainlinkReader
+from taw.reconcile import StablecoinContext
 
 
-def freeze_checks(chain: str, address: str, block: int, adapter) -> list[freeze.FreezeCheck]:
+def index_for(data_conn) -> Callable:
+    """freeze.Index over the global blacklist index: None for a contract not indexed."""
+    def look(contract: freeze.FreezeContract, address: str, block: int | None):
+        if indexed(contract.chain, contract.contract) is None:
+            return None
+        return blacklist.freeze_since(data_conn, contract.chain, contract.contract, address, block)
+    return look
+
+
+def freeze_checks(chain: str, address: str, block: int, adapter, index=None) -> list[freeze.FreezeCheck]:
     if chain == "tron":
-        return [freeze.check_tron(adapter, c, address) for c in freeze.contracts_for(chain)]
-    return [freeze.check_evm(adapter, c, address, block) for c in freeze.contracts_for(chain)]
+        return [freeze.check_tron(adapter, c, address, index) for c in freeze.contracts_for(chain)]
+    return [freeze.check_evm(adapter, c, address, block, index) for c in freeze.contracts_for(chain)]
+
+
+def stablecoin_context(data_conn, chain: str, address: str, block: int,
+                       checks: list[freeze.FreezeCheck]) -> StablecoinContext:
+    """Freeze status from the contract reads, destructions from the index (no calls)."""
+    frozen = {c.contract.contract: c.frozen for c in checks}
+    burns, covered = {}, {}
+    for c in freeze.contracts_for(chain):
+        if indexed(chain, c.contract) is None:
+            continue
+        cov = blacklist.coverage(data_conn, chain, c.contract)
+        if cov is None:
+            continue
+        covered[c.contract] = cov.to_block
+        found = blacklist.destructions(data_conn, chain, c.contract, address, block)
+        if found:
+            burns[c.contract] = tuple(e.as_json() for e in found)
+    return StablecoinContext(frozen, burns, covered)
 
 
 def save_freeze_checks(conn, actor: str, chain: str, address: str, checks: list[freeze.FreezeCheck]) -> None:
@@ -34,12 +63,16 @@ def save_freeze_checks(conn, actor: str, chain: str, address: str, checks: list[
                     source_date=None, only_address=(chain, address), raw_source=raw_source)
 
 
-def freeze_step(data_conn, state_conn, actor: str) -> Callable:
+def freeze_step(data_conn, state_conn, actor: str, cache: dict | None = None) -> Callable:
+    """cache: checks already read by prepare_step for this snapshot, reused here."""
     def step(snap, batch, raw_store) -> str:
         if not freeze.contracts_for(snap.chain):
             return f"freeze status: no stablecoin contract checked on {snap.chain}"
-        adapter = registry.adapter_for(snap.chain, raw_store, state_conn=state_conn)
-        checks = freeze_checks(snap.chain, snap.address, snap.as_of_block, adapter)
+        key = (snap.chain, snap.address, snap.as_of_block)
+        checks = (cache or {}).pop(key, None)
+        if checks is None:
+            adapter = registry.adapter_for(snap.chain, raw_store, state_conn=state_conn)
+            checks = freeze_checks(snap.chain, snap.address, snap.as_of_block, adapter, index_for(data_conn))
         save_freeze_checks(data_conn, actor, snap.chain, snap.address, checks)
         return "freeze status: " + ", ".join(f"{c.contract.token} {c.result.replace('_', ' ')}" for c in checks)
     return step
@@ -83,9 +116,40 @@ def run_steps(steps: list[tuple[str, Callable]], snap, batch, raw_store) -> list
     return notes
 
 
-def for_worker(*, data_conn, state_conn, actor: str) -> Callable:
-    steps = [("freeze status", freeze_step(data_conn, state_conn, actor)),
-             ("GoPlus", goplus_step(data_conn, state_conn, actor)),
-             ("prices", price_step(data_conn, state_conn, actor)),
-             ("labels", label_step(data_conn))]
-    return lambda snap, batch, raw_store: run_steps(steps, snap, batch, raw_store)
+def prepare_step(data_conn, state_conn, cache: dict) -> Callable:
+    """Before the completeness checks: read freeze status (kept in `cache` for the
+    freeze step) and the address's indexed destructions."""
+    def prepare(snap, batch, raw_store):
+        if not freeze.contracts_for(snap.chain):
+            return None, None
+        checks = None
+        try:
+            adapter = registry.adapter_for(snap.chain, raw_store, state_conn=state_conn)
+            checks = freeze_checks(snap.chain, snap.address, snap.as_of_block, adapter, index_for(data_conn))
+            cache[(snap.chain, snap.address, snap.as_of_block)] = checks
+            note = None
+        except Exception as exc:                                      # noqa: BLE001
+            note = f"freeze status before the checks: not read ({type(exc).__name__}: {exc})"
+        ctx = stablecoin_context(data_conn, snap.chain, snap.address, snap.as_of_block, checks or [])
+        return ctx, note
+    return prepare
+
+
+class Enrichment:
+    """The worker's steps around a lookup: prepare (before the checks) and the steps
+    after the save. Calling it runs the steps after the save."""
+
+    def __init__(self, *, data_conn, state_conn, actor: str):
+        cache: dict = {}
+        self.prepare = prepare_step(data_conn, state_conn, cache)
+        self.steps = [("freeze status", freeze_step(data_conn, state_conn, actor, cache)),
+                      ("GoPlus", goplus_step(data_conn, state_conn, actor)),
+                      ("prices", price_step(data_conn, state_conn, actor)),
+                      ("labels", label_step(data_conn))]
+
+    def __call__(self, snap, batch, raw_store) -> list[str]:
+        return run_steps(self.steps, snap, batch, raw_store)
+
+
+def for_worker(*, data_conn, state_conn, actor: str) -> Enrichment:
+    return Enrichment(data_conn=data_conn, state_conn=state_conn, actor=actor)

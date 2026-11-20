@@ -28,14 +28,23 @@ Why the adapter's own checks matter: arithmetic cannot see a gap that nets to
 zero. Blockscout's log search returned 6 of the test wallet's 41 token transfers;
 the wallet passes everything through, so in minus out still equalled 0.
 
-Not seen by any check: a balance that changes without a Transfer event (a
-rebasing token, an issuer burning frozen funds). It shows as a failed
-reconciliation, which for a stablecoin marks the history incomplete: the safe
-direction.
+Burned frozen funds. Tether can destroy a frozen address's USDT
+(destroyBlackFunds), which moves the balance with no Transfer event. When the
+global index of blacklist events (taw/blacklist.py) holds a DestroyedBlackFunds
+event for the address up to the snapshot block, its amount counts as an
+accounted movement out, listed with its transaction hash. An address the
+contract reports frozen, with a zero balance that the transfers don't explain
+and no destruction event found, gets its own result, frozen_zero_no_destruction:
+not reconciled, and it marks the history incomplete. The result says how far the
+index was complete.
+
+Not seen by any check: any other balance change without a Transfer event (a
+rebasing token). It shows as a failed reconciliation, which for a stablecoin
+marks the history incomplete: the safe direction.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Iterable
 
 from taw.adapters.base import FAILED, NOT_RUN, PASSED, AddressSnapshot, CheckResult, TransferBatch
@@ -43,6 +52,7 @@ from taw.adapters.base import FAILED, NOT_RUN, PASSED, AddressSnapshot, CheckRes
 RECONCILED = "reconciled"
 NOT_RECONCILED = "not_reconciled"
 NOT_CHECKABLE = "not_checkable"
+FROZEN_NO_DESTRUCTION = "frozen_zero_no_destruction"
 
 NATIVE_CHECK_CHAINS = ("eth", "arbitrum")
 NATIVE_NOT_RUN = {
@@ -65,12 +75,31 @@ class TokenCheck:
     balance_raw: int | None          # read from the contract at the snapshot block
     net_flow_raw: int                # transfers in minus transfers out, up to that block
     reason: str | None = None        # for not_checkable
+    destroyed_raw: int = 0           # burned by the issuer (indexed destruction events), up to that block
+    destructions: tuple[dict, ...] = ()   # each: tx_hash, log_index, block, time, amount_raw
+    frozen: bool | None = None       # the contract's freeze status, when it was read
+    index_to_block: int | None = None     # the blacklist index was complete to this block (None: not used)
 
     def as_json(self) -> dict:
         d = asdict(self)
         d["balance_raw"] = None if self.balance_raw is None else str(self.balance_raw)
         d["net_flow_raw"] = str(self.net_flow_raw)        # strings: no precision lost
+        d["destroyed_raw"] = str(self.destroyed_raw)
+        d["destructions"] = list(self.destructions)
         return d
+
+
+@dataclass(frozen=True)
+class StablecoinContext:
+    """What a lookup knows about freezes and burns, per stablecoin contract.
+
+    frozen: the contract's status for the address (None: the call gave no answer).
+    destructions: indexed DestroyedBlackFunds events for the address, as
+      IndexedEvent.as_json() dicts, up to the snapshot block.
+    index_to_block: the block the index is complete to, for each indexed contract."""
+    frozen: dict[str, bool | None] = field(default_factory=dict)
+    destructions: dict[str, tuple[dict, ...]] = field(default_factory=dict)
+    index_to_block: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -83,8 +112,10 @@ class Completeness:
 
 # -- tokens -------------------------------------------------------------------------
 
-def token_checks(snap: AddressSnapshot, batch: TransferBatch, stablecoins: Iterable[str]) -> tuple[TokenCheck, ...]:
+def token_checks(snap: AddressSnapshot, batch: TransferBatch, stablecoins: Iterable[str],
+                 context: StablecoinContext | None = None) -> tuple[TokenCheck, ...]:
     stable = set(stablecoins)
+    ctx = context or StablecoinContext()
     held = {b.contract: b for b in snap.token_balances}
     read = None if snap.balances_read is None else set(snap.balances_read)
 
@@ -112,26 +143,49 @@ def token_checks(snap: AddressSnapshot, batch: TransferBatch, stablecoins: Itera
             balance = None
         if balance == 0 and net == 0 and contract not in flow:
             continue                              # checked, never touched: nothing to say
+        burns = tuple(d for d in ctx.destructions.get(contract, ()) if int(d["block"]) <= snap.as_of_block)
+        destroyed = sum(int(d["amount_raw"]) for d in burns)
+        frozen = ctx.frozen.get(contract)
         if batch.truncated:
             status, reason = NOT_CHECKABLE, "history_truncated"
         elif balance is None:
             status, reason = NOT_CHECKABLE, "balance_not_read"
-        elif balance == net:
+        elif balance == net - destroyed:
             status, reason = RECONCILED, None
+        elif contract in stable and frozen and balance == 0 and not burns:
+            status, reason = FROZEN_NO_DESTRUCTION, None
         else:
             status, reason = NOT_RECONCILED, None
-        out.append(TokenCheck(contract, symbols.get(contract), contract in stable, status, balance, net, reason))
+        out.append(TokenCheck(contract, symbols.get(contract), contract in stable, status, balance, net, reason,
+                              destroyed, burns, frozen, ctx.index_to_block.get(contract)))
     return tuple(out)
 
 
+def _index_words(t: TokenCheck) -> str:
+    if t.index_to_block is None:
+        return "the index of destruction events was not available"
+    return f"the index of destruction events is complete to block {t.index_to_block:,}"
+
+
+def _failure_words(t: TokenCheck, what: str) -> str:
+    if t.status == FROZEN_NO_DESTRUCTION:
+        return (f"{what} {t.contract} is frozen with a zero balance, transfers in minus out {t.net_flow_raw}, "
+                f"and no destruction event was found ({_index_words(t)})")
+    burned = f", destroyed by the issuer {t.destroyed_raw}" if t.destroyed_raw else ""
+    return (f"{what} {t.contract} does not reconcile: balance {t.balance_raw}, "
+            f"transfers in minus out {t.net_flow_raw}{burned}")
+
+
 def _token_summary(name: str, tokens: list[TokenCheck], marks_incomplete: bool, what: str) -> CheckResult:
-    failed = [t for t in tokens if t.status == NOT_RECONCILED]
+    failed = [t for t in tokens if t.status in (NOT_RECONCILED, FROZEN_NO_DESTRUCTION)]
     done = [t for t in tokens if t.status == RECONCILED]
-    details = {"reconciled": len(done), "not_reconciled": len(failed),
-               "not_checkable": len(tokens) - len(done) - len(failed)}
+    details = {"reconciled": len(done),
+               "not_reconciled": sum(1 for t in failed if t.status == NOT_RECONCILED),
+               "frozen_zero_no_destruction": sum(1 for t in failed if t.status == FROZEN_NO_DESTRUCTION),
+               "not_checkable": len(tokens) - len(done) - len(failed),
+               "reconciled_with_destruction": sum(1 for t in done if t.destructions)}
     if failed:
-        reason = "; ".join(f"{what} {t.contract} does not reconcile: balance {t.balance_raw}, "
-                           f"transfers in minus out {t.net_flow_raw}" for t in failed)
+        reason = "; ".join(_failure_words(t, what) for t in failed)
         return CheckResult(name, FAILED, reason, details, marks_incomplete)
     if done:
         return CheckResult(name, PASSED, None, details, marks_incomplete)
@@ -216,10 +270,11 @@ def tx_count_check(snap: AddressSnapshot, batch: TransferBatch) -> CheckResult:
 
 # -- all of them -------------------------------------------------------------------------
 
-def run_checks(snap: AddressSnapshot, batch: TransferBatch, stablecoins: Iterable[str]) -> Completeness:
+def run_checks(snap: AddressSnapshot, batch: TransferBatch, stablecoins: Iterable[str],
+               context: StablecoinContext | None = None) -> Completeness:
     if (snap.chain, snap.address) != (batch.chain, batch.address):
         raise ValueError("snapshot and transfers are for different addresses")
-    tokens = token_checks(snap, batch, stablecoins)
+    tokens = token_checks(snap, batch, stablecoins, context)
     generic = [native_check(snap, batch), tx_count_check(snap, batch)]
     if snap.chain not in NO_TOKENS:
         generic = [

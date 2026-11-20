@@ -17,12 +17,13 @@ Status is read at the snapshot block on EVM chains (eth_call through Blockscout,
 metered). TronGrid has no calls at a past block, so on Tron it is read at the
 current head right after the snapshot; the snapshot block is recorded beside it.
 
-The freeze date is read only where it is cheap: where the event indexes the
-address, one eth_getLogs for the address's freeze and unfreeze events up to the
-snapshot block, plus one block read for the time. That is USDC on the three EVM
-chains and USDT0 on Arbitrum. Ethereum USDT's events don't index the address,
-and TronGrid can't filter events by address (Tron USDT logs thousands of
-freezes), so those dates are not read.
+Freeze dates. Where the event indexes the address (USDC on the three EVM chains,
+USDT0 on Arbitrum), one eth_getLogs for the address's freeze and unfreeze events
+up to the snapshot block, plus one block read for the time. Ethereum USDT's
+events don't index the address and TronGrid can't filter events by address, so
+for Ethereum USDT and Tron USDT and USDC the date comes from the global index of
+blacklist events (taw/blacklist.py): free, plus one block read on Ethereum when
+the log carried no time. The note says how far the index was complete.
 
 A frozen address gets a label worded as the issuer's action (rule 9): "frozen by
 Tether: the USDT contract on Ethereum reports isBlackListed = true".
@@ -31,6 +32,7 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
+from typing import Callable
 
 from taw.adapters.chains.tron_address import to_hex
 from taw.adapters.labels.base import LabelClaim
@@ -126,16 +128,17 @@ def _pad(hex40: str) -> str:
     return hex40.lower().removeprefix("0x").rjust(64, "0")
 
 
-def check_evm(adapter, contract: FreezeContract, address: str, block: int) -> FreezeCheck:
-    """adapter: a BlockscoutAdapter for the chain (metered). address: 0x... lower case."""
+def check_evm(adapter, contract: FreezeContract, address: str, block: int, index: Index | None = None) -> FreezeCheck:
+    """adapter: a BlockscoutAdapter for the chain (metered). address: 0x... lower case.
+    index(contract, address, block) -> taw.blacklist.FreezeFound, for contracts whose
+    events don't index the address."""
     out, sha = adapter._eth_call(contract.contract, _SEL[contract.function] + _pad(address), hex(block))
     frozen = _word_bool(out)
     check = FreezeCheck(contract, address, frozen, block, sha)
     if not frozen:
         return check
     if not contract.date_readable:
-        return FreezeCheck(contract, address, frozen, block, sha,
-                           date_note="not read: this contract's freeze event does not index the address")
+        return _from_index(contract, address, frozen, block, sha, index, adapter)
     freeze, unfreeze = contract.events
     r = adapter._rpc("eth_getLogs", [{"address": contract.contract, "fromBlock": "0x0", "toBlock": hex(block),
                                       "topics": [[freeze, unfreeze], "0x" + _pad(address)]}])
@@ -152,8 +155,34 @@ def check_evm(adapter, contract: FreezeContract, address: str, block: int) -> Fr
                        extra_sha256=(r.sha, block_sha))
 
 
-def check_tron(adapter, contract: FreezeContract, address: str) -> FreezeCheck:
+def check_tron(adapter, contract: FreezeContract, address: str, index: Index | None = None) -> FreezeCheck:
     """adapter: a TronGridAdapter. Read at the current head (TronGrid has no past-block calls)."""
     out, sha = adapter._constant_call(contract.contract, f"{contract.function}(address)", _pad(to_hex(address)[2:]))
-    return FreezeCheck(contract, address, _word_bool(out), None, sha,
-                       date_note="not read: TronGrid cannot filter freeze events by address")
+    frozen = _word_bool(out)
+    if not frozen:
+        return FreezeCheck(contract, address, frozen, None, sha)
+    return _from_index(contract, address, frozen, None, sha, index, None)
+
+
+Index = Callable[[FreezeContract, str, "int | None"], object]
+
+
+def _from_index(contract, address, frozen, block, sha, index, adapter) -> FreezeCheck:
+    """The freeze date from the global index of blacklist events (taw/blacklist.py)."""
+    found = index(contract, address, block) if index else None
+    if found is None or found.covered_to_block is None:
+        return FreezeCheck(contract, address, frozen, block, sha,
+                           date_note="not read: the index of this contract's freeze events is not available")
+    upto = f"the index of the contract's freeze events, complete to block {found.covered_to_block:,}"
+    e = found.event
+    if e is None:
+        return FreezeCheck(contract, address, frozen, block, sha,
+                           date_note=f"no freeze event for this address in {upto}")
+    when, extra = e.block_time, ()
+    if when is None and adapter is not None:
+        head, block_sha = adapter._block(e.block_number)
+        when = dt.datetime.fromtimestamp(int(head["timestamp"], 16), dt.timezone.utc) if head.get("timestamp") else None
+        extra = (block_sha,)
+    return FreezeCheck(contract, address, frozen, block, sha, e.block_number, when,
+                       date_note=f"from the last freeze event for this address (transaction {e.tx_hash}) in {upto}",
+                       extra_sha256=extra)

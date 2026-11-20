@@ -47,10 +47,10 @@ def test_status_is_read_at_the_snapshot_block_and_metered(tmp_path):
     assert len(ledger.calls) == 1
 
 
-def test_eth_usdt_frozen_has_no_cheap_date(tmp_path):
+def test_eth_usdt_frozen_date_needs_the_index(tmp_path):
     server = FreezeServer(TRUE)
     chk = freeze.check_evm(make(tmp_path, server), contract("eth", "USDT"), ADDR, 23_000_000)
-    assert chk.frozen and chk.frozen_since is None and "does not index" in chk.date_note
+    assert chk.frozen and chk.frozen_since is None and "index" in chk.date_note and "not available" in chk.date_note
     assert [c["rpc"] for c in server.calls] == ["eth_call"]                      # no log search
     claim = chk.claim()
     assert claim.category == "frozen" and claim.source_date is None
@@ -86,7 +86,7 @@ def test_tron_passes_the_address_as_the_parameter():
             return "0" * 63 + "1", "f" * 64
     chk = freeze.check_tron(Tron(), contract("tron", "USDT"), TRON_ADDR)
     assert seen == [("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t", "isBlackListed(address)", "0" * 24 + to_hex(TRON_ADDR)[2:])]
-    assert chk.frozen and chk.block is None and "cannot filter" in chk.date_note
+    assert chk.frozen and chk.block is None and "not available" in chk.date_note
     assert chk.claim().label.startswith("frozen by Tether: the USDT contract on Tron (TR7NH")
 
 

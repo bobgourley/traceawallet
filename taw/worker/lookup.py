@@ -32,9 +32,15 @@ class Outcome:
 
 
 def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
-               adapter_for: Callable, store_module=store, enrich: Callable | None = None) -> Outcome:
+               adapter_for: Callable, store_module=store, enrich: Callable | None = None,
+               prepare: Callable | None = None) -> Outcome:
     """enrich(snap, batch, raw_store) -> list of notes runs after the lookup is saved
-    (prices, labels). It must not raise for a provider problem; the lookup stands."""
+    (prices, labels). It must not raise for a provider problem; the lookup stands.
+
+    prepare(snap, batch, raw_store) -> (StablecoinContext | None, note) runs before
+    the completeness checks: freeze status and indexed destructions, so a burn by
+    the issuer counts as an accounted movement. A failure there leaves the checks
+    without it."""
     chain, address = read_lookup_payload(payload)
 
     fresh = store_module.fresh_snapshot(data_conn, chain, address)
@@ -46,11 +52,18 @@ def run_lookup(payload, *, data_conn, raw_store: RawStore, actor: str,
     adapter = adapter_for(chain, raw_store)
     snap = adapter.fetch_snapshot(address)
     batch = adapter.fetch_transfers(snap.address, limit=TRANSFER_LIMIT)
-    recon = run_checks(snap, batch, stablecoins_for(chain))
+    context, prep_note = None, None
+    if prepare is not None:
+        try:
+            context, prep_note = prepare(snap, batch, raw_store)
+        except Exception as exc:                                      # noqa: BLE001
+            prep_note = f"freeze and burn context: not read ({type(exc).__name__}: {exc})"
+    recon = run_checks(snap, batch, stablecoins_for(chain), context)
     saved = store_module.save_lookup(data_conn, actor, snap, batch, recon=recon)
     note = ", truncated at the limit" if batch.truncated else ""
     warning = ("; HISTORY MAY BE INCOMPLETE: " + "; ".join(recon.incomplete_reasons)) if recon.history_incomplete else ""
-    extra = "".join(f"; {n}" for n in (enrich(snap, batch, raw_store) if enrich else []))
+    notes = ([prep_note] if prep_note else []) + (enrich(snap, batch, raw_store) if enrich else [])
+    extra = "".join(f"; {n}" for n in notes)
     return Outcome(
         f"snapshot {saved.snapshot_id} at block {snap.as_of_block}; {saved.transfers_seen} transfers "
         f"({saved.transfers_new} new{note}); {saved.addresses_seen} addresses{warning}{extra}",
