@@ -100,6 +100,7 @@ from typing import Any, Callable, Iterable
 import httpx
 
 from taw.adapters.base import (FAILED, PASSED, AddressSnapshot, CheckResult, RawStore, TokenBalance,
+                               TransactionFetch,
                                TransferBatch, TransferRecord)
 from taw.adapters.chains.common import Pacer, decode_string, decode_uint
 from taw.adapters.chains.evm_address import normalize
@@ -470,6 +471,14 @@ class EtherscanAdapter:
         r = self._proxy("eth_getBlockByNumber", tag=hex(number), boolean="false")
         return (r.data.get("result") or {}), r.sha
 
+    def _tx_by_hash(self, tx_hash: str) -> tuple[dict | None, str]:
+        r = self._proxy("eth_getTransactionByHash", txhash=tx_hash)
+        return r.data.get("result") or None, r.sha
+
+    def _tx_receipt(self, tx_hash: str) -> tuple[dict | None, str]:
+        r = self._proxy("eth_getTransactionReceipt", txhash=tx_hash)
+        return r.data.get("result") or None, r.sha
+
     def _get_code(self, address: str, tag: str) -> tuple[str, str]:
         r = self._proxy("eth_getCode", address=address, tag=tag)
         return (r.data.get("result") or "0x"), r.sha
@@ -720,6 +729,49 @@ class EtherscanAdapter:
             balances_read=tuple(checked), nonce=nonce, eip7702_delegate=delegate,
             nonce_before_history=before, history_start_block=start,
         )
+
+    def fetch_transaction(self, tx_hash: str) -> TransactionFetch:
+        """One transaction by hash, at any age: its native value and its ERC-20 Transfer
+        logs, from the transaction and its receipt. Internal transfers (value moved by
+        contract code) are not read here, and the note says so."""
+        h = tx_hash.strip().lower()
+        if not h.startswith("0x"):
+            h = "0x" + h
+        if len(h) != 66 or any(c not in "0123456789abcdef" for c in h[2:]):
+            raise ValueError(f"not an EVM transaction hash: {tx_hash!r}")
+        tx, tx_sha = self._tx_by_hash(h)
+        shas = [tx_sha]
+        if not tx:
+            return TransactionFetch(self.chain, h, False, (), None, None, None, self.source, tuple(shas),
+                                    f"{self.provider_name} does not know this transaction on {self.info.name}")
+        if tx.get("blockNumber") in (None, ""):
+            return TransactionFetch(self.chain, h, False, (), None, None, None, self.source, tuple(shas),
+                                    "the transaction is not in a block yet")
+        receipt, receipt_sha = self._tx_receipt(h)
+        shas.append(receipt_sha)
+        number = _int(tx["blockNumber"])
+        block, block_sha = self._block(number)
+        shas.append(block_sha)
+        when = _ts(block["timestamp"]) if block.get("timestamp") else None
+        ok = None if not receipt else str(receipt.get("status", "")) in ("0x1", "1")
+        records: list[TransferRecord] = []
+        value = _int(tx.get("value") or "0x0")
+        if ok and value > 0 and tx.get("to") and when is not None:
+            records.append(TransferRecord(
+                chain=self.chain, tx_hash=h, kind="native", event_index=0, from_address=tx["from"].lower(),
+                to_address=tx["to"].lower(), token_contract=None, token_symbol=self.info.native_symbol,
+                token_decimals=self.info.native_decimals, amount_raw=value, block_number=number, block_time=when,
+                source_slug=self.source, raw_sha256=tx_sha))
+        for lg in (receipt or {}).get("logs") or [] if ok and when is not None else []:
+            topics = [t for t in lg.get("topics") or [] if t]
+            if len(topics) == 3 and topics[0].lower() == TRANSFER_TOPIC:
+                records.append(self._log_record({**lg, "topics": topics, "blockNumber": lg.get("blockNumber") or
+                                                 tx["blockNumber"], "timeStamp": int(when.timestamp())}, receipt_sha))
+        note = "internal transfers (value moved by contract code) are not read for a single transaction"
+        if ok is False:
+            note = "the transaction failed, so it moved no value"
+        return TransactionFetch(self.chain, h, True, tuple(self._with_decimals(records)), number, when, ok,
+                                self.source, tuple(shas), note)
 
     def fetch_transfers(self, address: str, limit: int = 2000) -> TransferBatch:
         addr = normalize(address)

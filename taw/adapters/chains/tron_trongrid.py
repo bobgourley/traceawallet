@@ -42,7 +42,7 @@ from typing import Any, Callable
 import httpx
 
 from taw.adapters.base import (AddressSnapshot, RawMissing, RawStore, ReusableRawStore,
-                               TokenBalance, TransferBatch, TransferRecord)
+                               TokenBalance, TransactionFetch, TransferBatch, TransferRecord)
 from taw.adapters.chains.common import Pacer, decode_string, decode_uint
 from taw.adapters.chains.tron_address import to_base58
 
@@ -302,6 +302,59 @@ class TronGridAdapter:
         token_records = iter(self._token_records(token_items))
         out = [m[3] if m[2] == "trx" else next(token_records) for m in kept]
         return TransferBatch(CHAIN, addr, tuple(out), truncated, limit)
+
+    def fetch_transaction(self, tx_hash: str) -> TransactionFetch:
+        """One confirmed transaction by hash, at any age: a TRX transfer from the
+        transaction itself, TRC-20 transfers from its events.
+
+          POST /walletsolidity/gettransactionbyid      the transaction ({} when unknown)
+          POST /walletsolidity/gettransactioninfobyid  block number and time
+          GET  /v1/transactions/{txid}/events          Transfer events with their log index
+        """
+        h = tx_hash.strip().lower().removeprefix("0x")
+        if len(h) != 64 or any(c not in "0123456789abcdef" for c in h):
+            raise ValueError(f"not a Tron transaction hash: {tx_hash!r}")
+        tx = self._request("POST", "/walletsolidity/gettransactionbyid", body={"value": h, "visible": True})
+        shas = [tx.sha]
+        if not tx.data or not tx.data.get("txID"):
+            return TransactionFetch(CHAIN, h, False, (), None, None, None, SOURCE, tuple(shas),
+                                    "TronGrid does not know this transaction as confirmed on Tron")
+        info = self._request("POST", "/walletsolidity/gettransactioninfobyid", body={"value": h})
+        shas.append(info.sha)
+        number = int(info.data["blockNumber"]) if info.data.get("blockNumber") is not None else None
+        when = _ms_to_dt(int(info.data["blockTimeStamp"])) if info.data.get("blockTimeStamp") else None
+        ret = (tx.data.get("ret") or [{}])[0].get("contractRet")
+        ok = ret == "SUCCESS"
+        records: list[TransferRecord] = []
+        contracts = (tx.data.get("raw_data") or {}).get("contract") or []
+        if ok and number is not None and len(contracts) == 1 and contracts[0].get("type") == "TransferContract":
+            value = contracts[0]["parameter"]["value"]
+            records.append(TransferRecord(
+                chain=CHAIN, tx_hash=h, kind="native", event_index=0, from_address=to_base58(value["owner_address"]),
+                to_address=to_base58(value["to_address"]), token_contract=None, token_symbol="TRX",
+                token_decimals=TRX_DECIMALS, amount_raw=int(value.get("amount") or 0), block_number=number,
+                block_time=when, source_slug=SOURCE, raw_sha256=tx.sha))
+        if ok:
+            ev = self._request("GET", f"/v1/transactions/{h}/events", query={"only_confirmed": "true"}, reuse=True)
+            shas.append(ev.sha)
+            for e in ev.data.get("data") or []:
+                res = e.get("result") or {}
+                if e.get("event_name") != "Transfer" or not all(k in res for k in ("0", "1", "2")):
+                    continue
+                token = to_base58(e["contract_address"])
+                (decimals, symbol), used = self.token_meta(token)
+                shas.extend(used)
+                if decimals is None:
+                    continue
+                records.append(TransferRecord(
+                    chain=CHAIN, tx_hash=h, kind="token", event_index=int(e.get("event_index") or 0),
+                    from_address=to_base58(res["0"]), to_address=to_base58(res["1"]), token_contract=token,
+                    token_symbol=symbol, token_decimals=int(decimals), amount_raw=int(res["2"]),
+                    block_number=int(e.get("block_number") or number or 0),
+                    block_time=_ms_to_dt(int(e["block_timestamp"])) if e.get("block_timestamp") else when,
+                    source_slug=SOURCE, raw_sha256=ev.sha))
+        note = None if ok else f"the transaction did not succeed ({ret or 'no result'}), so it moved no value"
+        return TransactionFetch(CHAIN, h, True, tuple(records), number, when, ok, SOURCE, tuple(shas), note)
 
     # -- parsing ---------------------------------------------------------------
 

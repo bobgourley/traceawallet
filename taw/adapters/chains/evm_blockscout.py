@@ -217,6 +217,14 @@ class BlockscoutAdapter(EtherscanAdapter):
         r = self._rpc("eth_getBlockByNumber", [hex(number), False])
         return (r.data.get("result") or {}), r.sha
 
+    def _tx_by_hash(self, tx_hash: str) -> tuple[dict | None, str]:
+        r = self._rpc("eth_getTransactionByHash", [tx_hash])
+        return r.data.get("result") or None, r.sha
+
+    def _tx_receipt(self, tx_hash: str) -> tuple[dict | None, str]:
+        r = self._rpc("eth_getTransactionReceipt", [tx_hash])
+        return r.data.get("result") or None, r.sha
+
     def _get_code(self, address: str, tag: str) -> tuple[str, str]:
         r = self._rpc("eth_getCode", [address, tag])
         return (r.data.get("result") or "0x"), r.sha

@@ -95,6 +95,7 @@ class FreezeCheck:
     frozen_since: dt.datetime | None = None
     date_note: str = ""
     extra_sha256: tuple[str, ...] = ()
+    frozen_since_tx: str | None = None  # the freeze event's transaction, when the date was found
 
     @property
     def result(self) -> str:
@@ -115,7 +116,7 @@ class FreezeCheck:
         return {"token": self.contract.token, "function": self.contract.function, "block": self.block,
                 "frozen_since_block": self.frozen_since_block,
                 "frozen_since": self.frozen_since.isoformat() if self.frozen_since else None,
-                "date_note": self.date_note}
+                "frozen_since_tx": self.frozen_since_tx, "date_note": self.date_note}
 
 
 def _word_bool(out: str | None) -> bool | None:
@@ -152,7 +153,7 @@ def check_evm(adapter, contract: FreezeContract, address: str, block: int, index
     since = dt.datetime.fromtimestamp(int(head["timestamp"], 16), dt.timezone.utc) if head.get("timestamp") else None
     return FreezeCheck(contract, address, frozen, block, sha, since_block, since,
                        date_note="from the contract's last freeze event for this address",
-                       extra_sha256=(r.sha, block_sha))
+                       extra_sha256=(r.sha, block_sha), frozen_since_tx=last.get("transactionHash"))
 
 
 def check_tron(adapter, contract: FreezeContract, address: str, index: Index | None = None) -> FreezeCheck:
@@ -185,4 +186,4 @@ def _from_index(contract, address, frozen, block, sha, index, adapter) -> Freeze
         extra = (block_sha,)
     return FreezeCheck(contract, address, frozen, block, sha, e.block_number, when,
                        date_note=f"from the last freeze event for this address (transaction {e.tx_hash}) in {upto}",
-                       extra_sha256=extra)
+                       extra_sha256=extra, frozen_since_tx=e.tx_hash)

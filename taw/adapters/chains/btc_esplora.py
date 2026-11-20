@@ -58,8 +58,8 @@ from typing import Any, Callable
 
 import httpx
 
-from taw.adapters.base import (FAILED, NOT_RUN, PASSED, AddressSnapshot, CheckResult, RawStore, TransferBatch,
-                               TransferRecord)
+from taw.adapters.base import (FAILED, NOT_RUN, PASSED, AddressSnapshot, CheckResult, RawStore, TransactionFetch,
+                               TransferBatch, TransferRecord)
 from taw.adapters.chains.btc_address import normalize
 from taw.adapters.chains.common import Pacer
 
@@ -302,6 +302,29 @@ class BtcEsploraAdapter:
         if earliest_check:
             checks.append(earliest_check)
         return TransferBatch(CHAIN, addr, tuple(records), truncated, limit, checks=tuple(checks))
+
+    def fetch_transaction(self, tx_hash: str) -> TransactionFetch:
+        """One confirmed transaction by txid (GET /tx/:txid), at any age: every input
+        with an address (utxo_in) and every output with one (utxo_out)."""
+        h = tx_hash.strip().lower()
+        if len(h) != 64 or any(c not in "0123456789abcdef" for c in h):
+            raise ValueError(f"not a Bitcoin transaction id: {tx_hash!r}")
+        try:
+            r = self.client.get(f"/tx/{h}")
+        except EsploraError as exc:
+            if exc.status in (400, 404):
+                return TransactionFetch(CHAIN, h, False, (), None, None, None, self.source, (),
+                                        f"{self.provider_name} does not know this transaction")
+            raise
+        tx = r.data or {}
+        if not (tx.get("status") or {}).get("confirmed"):
+            return TransactionFetch(CHAIN, h, False, (), None, None, None, self.source, (r.sha,),
+                                    "the transaction is not in a block yet")
+        rows, capped = self._rows(tx, r.sha, "")
+        note = (f"the transaction has more than {self.other_cap} inputs and outputs with an address; only the first "
+                f"{self.other_cap} are read") if capped else None
+        return TransactionFetch(CHAIN, h, True, tuple(rows), int(tx["status"]["block_height"]), _block_time(tx), None,
+                                self.source, (r.sha,), note)
 
     # -- rows ------------------------------------------------------------------------------
 

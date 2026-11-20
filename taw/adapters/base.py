@@ -139,6 +139,25 @@ class TransferBatch:
                                                     # None where internal transfers are not read at all
 
 
+@dataclass(frozen=True)
+class TransactionFetch:
+    """One transaction read directly by its hash (taw/matching.py), whatever its age.
+
+    records: every value movement the adapter reads from it (native, token, and on
+    Bitcoin each input and output). found False: the provider does not know the
+    hash on this chain, or it is not in a block yet (note says which)."""
+    chain: str
+    tx_hash: str
+    found: bool
+    records: tuple[TransferRecord, ...]
+    block_number: int | None
+    block_time: dt.datetime | None
+    succeeded: bool | None            # None where the chain has no failed transactions to report
+    source_slug: str
+    raw_sha256: tuple[str, ...]       # every response read
+    note: str | None = None           # what this read does not cover, in plain words
+
+
 @runtime_checkable
 class ChainAdapter(Protocol):
     chain: str
