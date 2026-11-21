@@ -69,7 +69,7 @@ def test_labels_are_dfpis_record_dated_by_the_day_read():
     assert {c.chain for c in evm} == {"arbitrum", "eth", "optimism"}
     c = evm[0]
     assert c.category == "scam_report" and c.source_date == dt.date(2026, 11, 21) and c.claim_url == dfpi.URL
-    assert c.label == ("named in a complaint reported to California's DFPI (tracker entry: \"grokai-network.net/ "
+    assert c.label == ("named in a complaint reported to California's DFPI (DFPI's tracker entry: \"grokai-network.net/ "
                        "(Entity impersonating legitimate companies)\")")
     assert "Fraudulent" not in c.label and "Imposter" not in c.label          # DFPI's categories stay in the data
     assert {(x.chain, x.address) for x in claims if x.chain in ("tron", "btc")} == {("tron", TRON), ("btc", BECH32)}
@@ -113,7 +113,7 @@ def test_the_private_section_states_what_matched_in_dfpis_words():
     assert "Only you see this section. It comes from what you typed" in section
     assert "You entered: https://www.hcxz.com/login\nWebsite checked: hcxz.com\n" in section
     assert "California DFPI Crypto Scam Tracker (read 2026-11-21):\n  - Website: 1 entry lists hcxz.com.\n" in section
-    assert '      "hcxz.com gptss.com" (listed website: hcxz.com)' in section
+    assert '      DFPI\'s entry: "hcxz.com gptss.com" (listed website: hcxz.com)' in section
     assert 'DFPI says the tracker\'s entries "are based on consumer complaints"' in section
     for word in ("scam ", "fraud", "suspicious", "risk", "dangerous", "legitimate"):
         assert word not in section.replace("Crypto Scam Tracker", "").lower()

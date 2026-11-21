@@ -129,14 +129,14 @@ Website checked: {{ pe.domain }}
   - Website: {% if l.website_matches %}{{ plural(l.website_matches, "entry lists", "entries list") }} {{ pe.domain }}{% if not l.website_entries[0].exact %} or a domain it belongs to{% endif %}.{% else %}no entry lists {{ pe.domain }} or a domain it belongs to.{% endif %}
 
 {% for x in l.website_entries %}
-      "{{ x.subject }}" (listed website: {{ x.website }})
+      DFPI's entry: "{{ x.subject }}" (listed website: {{ x.website }})
 {% endfor %}
 {% endif %}
 {% if pe.name_words %}
   - Name: {% if l.name_matches %}{{ plural(l.name_matches, "entry names", "entries name") }} "{{ pe.name }}" in its subject.{% else %}no entry names "{{ pe.name }}" in its subject.{% endif %}
 
 {% for x in l.name_entries %}
-      "{{ x.subject }}"
+      DFPI's entry: "{{ x.subject }}"
 {% endfor %}
 {% endif %}
 {% if l.website_matches > l.website_entries|length or l.name_matches > l.name_entries|length %}

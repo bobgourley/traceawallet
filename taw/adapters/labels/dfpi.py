@@ -178,8 +178,13 @@ def short_subject(subject: str) -> str:
     return s if len(s) <= SUBJECT_MAX else s[:SUBJECT_MAX - 1].rstrip() + "…"
 
 
+LABEL_VERSION = 2          # 2026-11-21: the subject attributed to DFPI ("DFPI's tracker entry")
+
+
 def label_text(entry: Entry) -> str:
-    return f"named in a complaint reported to California's DFPI (tracker entry: \"{short_subject(entry.subject)}\")"
+    """The subject is DFPI's own text, quoted and attributed (owner's decision, 2026-11-21)."""
+    return (f"named in a complaint reported to California's DFPI (DFPI's tracker entry: "
+            f"\"{short_subject(entry.subject)}\")")
 
 
 def claims(entries: list[Entry], read_on: dt.date, evm_chains: Iterable[str], sha: str | None) -> list[LabelClaim]:
@@ -226,7 +231,7 @@ class DfpiTracker:
         detail = {"entries": len(entries), "websites": sum(len(e.websites) for e in entries),
                   "addresses": len({a for e in entries for a in e.addresses}),
                   "skipped_no_checksum": skipped["no_checksum"], "skipped_bad_checksum": skipped["bad_checksum"],
-                  "bytes": len(body), "page_sha256": sha}
+                  "bytes": len(body), "page_sha256": sha, "label_version": LABEL_VERSION}
         pub = Publication(SOURCE, read_on, sha, found, unmapped=skipped["no_checksum"] + skipped["bad_checksum"],
                           detail=detail)
         return TrackerLoad(pub, entries)

@@ -86,3 +86,15 @@ def test_the_match_job_stores_the_platform_result_privately_and_erasure_removes_
     assert lookups.redact(data, "api", lid, "victim")
     assert data.execute("SELECT platform_result, platform_checked_at, platform_url FROM lookup WHERE id = %s",
                         (lid,)).fetchone() == (None, None, None)
+
+
+def test_new_label_wording_reloads_an_unchanged_page_once(conns, monkeypatch):
+    data, raw = conns
+    lists.refresh_dfpi(data_conn=data, raw_store=None, actor=ACTOR, source=FakeTracker(raw, page(ROWS)))
+    monkeypatch.setattr(dfpi, "LABEL_VERSION", dfpi.LABEL_VERSION + 1)
+    monkeypatch.setattr(dfpi, "label_text", lambda e: f"named in a complaint reported to California's DFPI (v3: {e.subject})")
+    note = lists.refresh_dfpi(data_conn=data, raw_store=None, actor=ACTOR, source=FakeTracker(raw, page(ROWS)))
+    assert "unchanged" not in note
+    assert count(data, "SELECT count(*) FROM label_current WHERE label LIKE %s", "%(v3: %") == 5
+    again = lists.refresh_dfpi(data_conn=data, raw_store=None, actor=ACTOR, source=FakeTracker(raw, page(ROWS)))
+    assert again == "DFPI tracker unchanged (3 entries)"
