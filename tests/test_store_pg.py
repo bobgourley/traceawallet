@@ -452,7 +452,7 @@ def test_every_source_shown_to_users_has_its_terms_checked(conns):
     resale = {s for (s,) in data.execute("SELECT slug FROM source WHERE resale_permitted")}
     # Public chain state and US government work only (the freeze contracts added 2026-11-21 included).
     assert resale <= {"ofac-sdn", "usdt-contract", "usdc-contract", "paxos-contracts", "fdusd-contract",
-                      "usd1-contract", "rlusd-contract"}
+                      "usd1-contract", "rlusd-contract", "dfpi-tracker"}
     assert count(data, "SELECT count(*) FROM event_log WHERE actor = 'migration:0006_source_terms'") == 8
 
 
