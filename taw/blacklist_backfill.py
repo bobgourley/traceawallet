@@ -270,3 +270,131 @@ def by_windows(store, get_logs, c: bl.IndexedContract, hi: int) -> Result:
             e = bl.evm_event(c, ev, log, sha)
             events.setdefault(e.key, e)
     return Result(sorted(events.values(), key=lambda e: (e.block_number, e.log_index)), calls, sorted(shas))
+
+
+# -- the whole backfill, for the script and for the worker job --------------------------------
+
+SLICE_SECONDS = 240        # a worker job works this long, then queues itself again so lookups go first
+
+
+class PauseSlice(Exception):
+    """The slice's time is up. Everything answered so far is saved."""
+
+
+class Timed:
+    """A BlockscoutAdapter that stops the slice before its next request once the
+    deadline (time.monotonic()) has passed."""
+
+    def __init__(self, inner, deadline: float | None, clock=None):
+        import time
+        self.inner, self.deadline, self.clock = inner, deadline, clock or time.monotonic
+
+    def _check(self) -> None:
+        if self.deadline is not None and self.clock() > self.deadline:
+            raise PauseSlice()
+
+    def _rpc(self, *a, **k):
+        self._check()
+        return self.inner._rpc(*a, **k)
+
+    def _request(self, *a, **k):
+        self._check()
+        return self.inner._request(*a, **k)
+
+    def _eth_call(self, *a, **k):
+        self._check()
+        return self.inner._eth_call(*a, **k)
+
+    def __getattr__(self, name):
+        return getattr(self.inner, name)
+
+
+def compare(ours, theirs, c: bl.IndexedContract, log=print) -> tuple[bool, dict]:
+    """Event by event: transaction, log position, address and (destructions) amount."""
+    agree, summary = True, {}
+    for ev in c.events:
+        a = {(e.key, e.address, e.amount_raw) for e in ours.events if e.event_name == ev.name}
+        b = {(e.key, e.address, e.amount_raw) for e in theirs.events if e.event_name == ev.name}
+        summary[f"{c.token} {ev.name}"] = {"blockscout": len(a), "etherscan": len(b),
+                                           "only_etherscan": len(b - a), "only_blockscout": len(a - b)}
+        log(f"eth {c.token} {ev.name}: Blockscout {len(a)}, Etherscan {len(b)}"
+            f"{'' if a == b else f'  DIFFERENT: {len(b - a)} only in Etherscan, {len(a - b)} only in Blockscout'}")
+        for k in sorted(b - a)[:10]:
+            log(f"    only in Etherscan: {k}")
+        for k in sorted(a - b)[:10]:
+            log(f"    only in Blockscout: {k}")
+        agree = agree and a == b
+    return agree, summary
+
+
+@dataclass
+class Outcome:
+    finished: list[str]          # tokens written to the index in this run
+    differ: list[str]            # tokens Blockscout and Etherscan disagree on (not written)
+    pending: list[str]           # tokens still to do
+    summary: dict
+    replies: dict
+
+    def message(self) -> str:
+        parts = []
+        if self.finished:
+            parts.append("written: " + ", ".join(self.finished))
+        if self.differ:
+            parts.append("NOT written, providers differ: " + ", ".join(self.differ))
+        if self.pending:
+            parts.append("still to do: " + ", ".join(self.pending))
+        counts = "; ".join(f"{k} {v['blockscout']}/{v['etherscan']}" for k, v in sorted(self.summary.items()))
+        return "eth blacklist backfill: " + ("; ".join(parts) or "nothing to do") + (f" ({counts})" if counts else "")
+
+
+def backfill_eth(conn, actor: str, scout, ether, *, deadline: float | None = None, log=print,
+                 record: dict | None = None) -> Outcome:
+    """Every Ethereum contract in the index that has no coverage yet: read through
+    Blockscout (USDT through its owner, USDC by windows), saved part by part; then
+    Etherscan's events for the same range, compared; written when they agree.
+    deadline: raise PauseSlice before the next Blockscout request after it.
+    record: a dict to collect Etherscan's replies in (for the replay test)."""
+    from taw import blacklist
+    timed = Timed(scout, deadline)
+    parts = Parts(conn)
+    timed._check()
+    head, _ = scout._block_number()
+    to_block = head - blacklist.EVM_CONFIRMATIONS
+    replies = record if record is not None else {}
+
+    def get_ether(contract, topic, lo, hi):
+        logs, sha = bl.etherscan_logs(ether)(contract, topic, lo, hi)
+        replies[f"{contract}|{topic}|{lo}|{hi}"] = [{k: g[k] for k in LOG_FIELDS if k in g} for g in logs]
+        return logs, sha
+
+    out = Outcome([], [], [], {}, replies)
+    todo = [c for c in bl.for_chain("eth") if blacklist.coverage(conn, c.chain, c.contract) is None]
+    for i, c in enumerate(todo):
+        try:
+            ours = (usdt_through_owner(parts, timed, c, to_block) if c.token == "USDT"
+                    else by_windows(parts, bl.blockscout_logs(timed), c, to_block))
+        except PauseSlice:
+            out.pending = [x.token for x in todo[i:]]
+            raise PauseSlice(out.message()) from None
+        log(f"eth {c.token}: {len(ours.events)} event(s) read through Blockscout ({ours.calls} request(s) this run)")
+        theirs = bl.evm_scan(get_ether, c, c.start_block, to_block)
+        agree, summary = compare(ours, theirs, c, log)
+        out.summary.update(summary)
+        if not agree:
+            out.differ.append(c.token)
+            continue
+        sid, n = blacklist.record_scan(conn, actor, c, c.start_block, to_block, None, ours, "blockscout",
+                                       detail={"etherscan_comparison": summary,
+                                               "method": "owner multisig" if c.token == "USDT" else "windows"})
+        log(f"eth {c.token}: scan {sid}, {n} event(s) written, blocks {c.start_block:,} to {to_block:,}")
+        out.finished.append(c.token)
+    return out
+
+
+def saved_parts(conn) -> dict:
+    """Every saved Blockscout reply, cut, for the replay fixture."""
+    parts = Parts(conn)
+    return {f"{contract}|{part}": [{"from_block": p.from_block, "to_block": p.to_block, "rows": p.rows,
+                                    "sha256": p.sha256} for p in parts.load(contract, part)]
+            for contract, part in conn.execute("SELECT DISTINCT contract, part FROM blacklist_backfill_part"
+                                               " WHERE chain = 'eth' ORDER BY 1, 2").fetchall()}

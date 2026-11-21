@@ -23,6 +23,7 @@ BLACKLIST_REFRESH = "blacklist_refresh"
 MATCH = "lookup_match"
 RETENTION = "lookup_retention"
 DFPI_REFRESH = "dfpi_refresh"
+BACKFILL = "blacklist_backfill"
 # kind -> hour (UTC) it runs each day. blacklist_refresh runs after Blockscout's
 # allowance resets at 00:00 UTC.
 DAILY = {OFAC_REFRESH: 23, EXCHANGE_REFRESH: 6, BLACKLIST_REFRESH: 1, RETENTION: 3, DFPI_REFRESH: 7}
@@ -148,6 +149,33 @@ def later(seconds: int):
 
 
 NO_HANDLER = "No handler for job kind"
+
+
+class Requeue(Exception):
+    """A job that did part of its work and wants to run again at `when` (a slice of
+    the blacklist backfill). Not a failure: the attempt is not counted."""
+
+    def __init__(self, when, message: str):
+        super().__init__(message)
+        self.when = when
+
+
+def ensure_backfill(conn, *, needed: bool) -> bool:
+    """Queue the blacklist backfill when it is needed and none is queued or running.
+    After a failed run, wait a day before queueing another, so a lasting problem is
+    reported once a day rather than retried in a loop. True when a job was queued."""
+    if not needed:
+        return False
+    recent_failure = conn.execute(
+        "SELECT 1 FROM job WHERE kind = %s AND status = 'failed' AND finished_at > now() - interval '1 day'"
+        " AND last_error NOT LIKE %s LIMIT 1", (BACKFILL, NO_HANDLER + "%")).fetchone()
+    if recent_failure:
+        return False
+    row = conn.execute(
+        "INSERT INTO job (kind, dedupe_key, payload, max_attempts) VALUES (%s, %s, '{}'::jsonb, 5)"
+        " ON CONFLICT (kind, dedupe_key) WHERE status IN ('queued', 'running') DO NOTHING RETURNING id",
+        (BACKFILL, BACKFILL)).fetchone()
+    return row is not None
 
 
 STEPS = ("reading_balances", "reading_transfers", "checking", "checking_lists", "building_report")

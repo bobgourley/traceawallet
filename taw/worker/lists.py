@@ -86,7 +86,9 @@ def refresh_dfpi(*, data_conn, raw_store, actor: str, source=None) -> str:
     src = store.source_id(data_conn, dfpi.SOURCE)
     last = data_conn.execute("SELECT page_sha256 FROM site_list_load WHERE source_id = %s ORDER BY id DESC LIMIT 1",
                              (src,)).fetchone()
-    if last and last[0].strip() == pub.raw_sha256:
+    worded = data_conn.execute("SELECT (detail->>'label_version')::int FROM label_load WHERE source_id = %s"
+                               " ORDER BY id DESC LIMIT 1", (src,)).fetchone()
+    if last and last[0].strip() == pub.raw_sha256 and worded and worded[0] == dfpi.LABEL_VERSION:
         return f"DFPI tracker unchanged ({len(loaded.entries)} entries)"
     result = labels.load_publication(data_conn, actor, pub)
     raw_id = store.raw_response_ids(data_conn, dfpi.SOURCE, [pub.raw_sha256])[pub.raw_sha256]
@@ -104,3 +106,38 @@ def refresh_dfpi(*, data_conn, raw_store, actor: str, source=None) -> str:
     return (f"DFPI tracker read {pub.source_date}: {d['entries']} entries, {d['websites']} websites; address labels "
             f"{result.summary()}; {d['skipped_no_checksum']} address(es) without a checksum and "
             f"{d['skipped_bad_checksum']} failing it left out")
+
+
+def backfill_needed(conn) -> bool:
+    from taw import blacklist
+    from taw.adapters.labels import blacklist as bl
+    return any(blacklist.coverage(conn, c.chain, c.contract) is None for c in bl.for_chain("eth"))
+
+
+def run_backfill(*, data_conn, raw_store, actor: str, scout=None, ether=None, seconds: float | None = None) -> str:
+    """One slice of the Ethereum blacklist backfill (taw/blacklist_backfill.py). It works
+    for SLICE_SECONDS, then raises jobs.Requeue so lookups queued meanwhile go first;
+    everything answered is saved, so the next slice, or the next worker after a deploy,
+    carries on. An exhausted allowance raises BudgetExhausted, which the worker turns
+    into a wait for the reset. Finished when every contract is written."""
+    import os
+    import time
+    from taw import blacklist_backfill as bf
+    from taw import jobs
+    from taw.adapters.chains.evm_blockscout import BlockscoutAdapter
+    from taw.adapters.chains.evm_etherscan import EtherscanAdapter
+    from taw.budget import PostgresBudget, PostgresRangeStore
+    if not backfill_needed(data_conn):
+        return "eth blacklist backfill: already complete"
+    if scout is None:
+        scout = BlockscoutAdapter("eth", raw_store, os.environ["BLOCKSCOUT_API_KEY"],
+                                  budget=PostgresBudget(data_conn, "backfill"), range_store=PostgresRangeStore(data_conn))
+    ether = ether or EtherscanAdapter("eth", raw_store, os.environ["ETHERSCAN_API_KEY"])
+    deadline = time.monotonic() + (bf.SLICE_SECONDS if seconds is None else seconds)
+    try:
+        out = bf.backfill_eth(data_conn, actor, scout, ether, deadline=deadline, log=lambda m: print(m, flush=True))
+    except bf.PauseSlice as pause:
+        raise jobs.Requeue(jobs.later(5), f"slice done, progress saved; {pause}") from None
+    if out.differ:
+        raise RuntimeError(out.message())          # a real failure: reported, retried, then left failed
+    return out.message()

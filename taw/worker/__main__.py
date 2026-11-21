@@ -7,6 +7,10 @@ Job kinds:
   blacklist_refresh  taw/worker/lists.py, daily: the global index of stablecoin blacklist events
   lookup_match       taw/lookups.py: the victim's transaction, once the lookup's address jobs finish
   lookup_retention   taw/worker/lists.py, daily: erase lookups older than LOOKUP_RETENTION_DAYS (365)
+  dfpi_refresh       taw/worker/lists.py, daily: California DFPI's Crypto Scam Tracker
+  blacklist_backfill taw/worker/lists.py: the Ethereum blacklist backfill, in slices of a few
+                     minutes that queue themselves again (jobs.Requeue), until it is complete;
+                     queued again whenever the index is incomplete and none is queued
 
 After an address_lookup the worker builds the report for its snapshot (stored once
 per build, taw/report/store.py) and recounts lookup_count for the address. A
@@ -69,7 +73,7 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         return "failed"
     list_jobs = {jobs.OFAC_REFRESH: lists.refresh_ofac, jobs.EXCHANGE_REFRESH: lists.refresh_exchanges,
                  jobs.BLACKLIST_REFRESH: lists.refresh_blacklists, jobs.RETENTION: lists.expire_lookups,
-                 jobs.DFPI_REFRESH: lists.refresh_dfpi}
+                 jobs.DFPI_REFRESH: lists.refresh_dfpi, jobs.BACKFILL: lists.run_backfill}
     if job.kind not in (jobs.LOOKUP, jobs.MATCH) and job.kind not in list_jobs:
         # During a deploy the old worker can claim a job kind only the new code knows.
         # Put it back for a newer worker instead of failing it.
@@ -94,6 +98,10 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
                                         actor=actor, adapter_for=adapter_for, store_module=store_module,
                                         enrich=enrich, prepare=getattr(enrich, "prepare", None),
                                         progress=lambda step: jobs.set_step(data_conn, job.id, step))
+    except jobs.Requeue as again:
+        jobs.defer_until(data_conn, job, again.when, str(again))
+        log(f"job {job.id}: {again}")
+        return "queued"
     except Exception as exc:
         resets_at = lookup.allowance_reset(exc)
         if resets_at is not None:
@@ -144,6 +152,11 @@ def queue_daily_jobs() -> None:
         for kind in jobs.DAILY:
             if jobs.ensure_daily(conn, kind):
                 print(f"queued today's {kind}", flush=True)
+        # Until the Ethereum blacklist index is complete, keep its backfill queued: a
+        # deploy that stops the worker mid-slice loses nothing, and the next worker
+        # carries on from the saved replies.
+        if jobs.ensure_backfill(conn, needed=lists.backfill_needed(conn)):
+            print("queued the blacklist backfill", flush=True)
 
 
 def main() -> None:

@@ -3,6 +3,36 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-21 (evening): The backfill runs itself; DFPI's subjects attributed
+
+**The backfill as a worker job** (owner: "a deploy never needs a manual
+restart"). The first run by hand died when its SSH session closed, and every
+deploy restarts the worker container. Now:
+- The orchestration moved from the script into `taw/blacklist_backfill.py`
+  (`backfill_eth`), shared by the script and a new job kind, `blacklist_backfill`.
+- The worker runs one job at a time, so a backfill that took hours in one job would
+  hold up every lookup. The job works in slices of four minutes
+  (`SLICE_SECONDS`): before each Blockscout request it checks the time, and when
+  the slice is over it raises `jobs.Requeue`. The worker puts it back to run five
+  seconds later without counting an attempt, so lookups queued meanwhile go first.
+  Every answered reply is already saved, so nothing is lost.
+- An exhausted allowance waits for the reset, as for lookups.
+- Every ten minutes (with the daily jobs) and at every worker start, the backfill
+  is queued if the Ethereum index is incomplete and none is queued or running. A
+  deploy that stops a slice loses nothing; the next worker carries on.
+- When Blockscout and Etherscan disagree, the contract is not written and the job
+  fails with the counts (retried up to five times). A failed backfill is not
+  queued again for a day, so a lasting problem is reported rather than looped.
+- `scripts/backfill_blacklist.py eth` still runs the same thing by hand, and
+  `--record-only DIR` writes the replay fixture after the job has finished
+  (Etherscan's free API read again; nothing written).
+
+**DFPI's subjects** (owner's decision): quoted and attributed to DFPI. The label
+reads "named in a complaint reported to California's DFPI (DFPI's tracker entry:
+"...")", and the private section introduces each quoted subject with "DFPI's
+entry:". A change of label wording (`dfpi.LABEL_VERSION`) makes the next daily
+load reload an unchanged page once, so the labels follow.
+
 ## 2026-11-21: Domain age
 
 **What.** The owner's third pick. For the website a user enters, the private
