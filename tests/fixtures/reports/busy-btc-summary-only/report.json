@@ -48,8 +48,11 @@
     }
    ],
    "history_incomplete": true,
-   "incomplete_reasons": [
-    "the address has 86,570 transactions, more than the 10,000 that can be read in detail, so no transfers were read"
+   "incomplete": [
+    {
+     "kind": "text",
+     "text": "the address has 86,570 transactions, more than the 10,000 that can be read in detail, so no transfers were read"
+    }
    ],
    "internal": null,
    "not_read": [
@@ -209,5 +212,5 @@
    "tx_count": 86570
   }
  },
- "sha256": "ffce49f974c3bd95c6be1cf0fe5a15d9a39851257ec58d0449e58b3e1c1e2ebe"
+ "sha256": "25f830b2108dc2afda2c2fdb9e96604807caf42dcca2b3eef6f80e887171314b"
 }

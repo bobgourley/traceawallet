@@ -570,13 +570,39 @@ def _completeness(inp: ReportInput, c: Ctx, inbound, outbound) -> dict:
         internal = {"from_block": lo, "to_block": hi,
                     "full": lo == 0 and hi == snap["as_of_block"] if lo is not None else False}
     not_read = list(NOT_READ.get(inp.chain if inp.chain in NOT_READ else inp.family, []))
-    recon = [{"contract": t["contract"], "symbol": visible(t.get("symbol")), "status": t["status"],
-              "stablecoin": t["stablecoin"], "reason": t.get("reason"),
-              "destroyed": bool(int(t.get("destroyed_raw") or 0))}
-             for t in snap.get("token_reconciliation") or [] if t["stablecoin"]]
+    decimals = {c.key(t.token_contract): t.token_decimals for t in every if t.token_contract and t.token_decimals is not None}
+    for b in snap.get("token_balances") or []:
+        if b.get("decimals") is not None:
+            decimals.setdefault(c.key(b["contract"]), b["decimals"])
+    recon = []
+    for t in snap.get("token_reconciliation") or []:
+        if not t["stablecoin"]:
+            continue
+        dec = decimals.get(c.key(t["contract"]))
+        balance = None if t.get("balance_raw") is None else int(t["balance_raw"])
+        net, destroyed = int(t.get("net_flow_raw") or 0), int(t.get("destroyed_raw") or 0)
+        recon.append({"contract": t["contract"], "symbol": visible(t.get("symbol")),
+                      "name": c.asset(t["contract"]) or visible(t.get("symbol")) or t["contract"],
+                      "status": t["status"], "stablecoin": t["stablecoin"], "reason": t.get("reason"),
+                      "destroyed": bool(destroyed), "decimals": dec,
+                      "balance": None if balance is None else amount_str(balance, dec),
+                      "net": amount_str(net, dec), "destroyed_amount": amount_str(destroyed, dec),
+                      "unaccounted": None if balance is None else amount_str(net - destroyed - balance, dec),
+                      "index_to_block": t.get("index_to_block")})
+    # The stored reasons are the checks' own sentences, written at lookup time. The
+    # stablecoin one is worded here from the numbers instead (amounts and token names).
+    stable_reason = next((ch.get("reason") for ch in snap.get("checks") or []
+                          if ch["name"] == "stablecoin_reconciliation" and ch["status"] == "failed"), None)
+    incomplete = []
+    for r in snap.get("incomplete_reasons") or []:
+        if r == stable_reason:
+            incomplete += [{"kind": "stablecoin", **t} for t in recon
+                           if t["status"] in ("not_reconciled", "frozen_zero_no_destruction")]
+        else:
+            incomplete.append({"kind": "text", "text": r})
     return {"checked": snap.get("history_incomplete") is not None,
             "history_incomplete": snap.get("history_incomplete"),
-            "incomplete_reasons": list(snap.get("incomplete_reasons") or []),
+            "incomplete": incomplete,
             "checks": checks, "stablecoins": recon,
             "transfers": {"read": snap["transfer_count"], "truncated": snap["transfers_truncated"],
                           "oldest_read": iso(oldest)},

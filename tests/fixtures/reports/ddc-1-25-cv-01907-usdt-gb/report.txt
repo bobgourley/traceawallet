@@ -155,11 +155,11 @@ GoPlus: GoPlus has no flags for this address. Powered by GoPlus.
 
 == Is the history complete? ==
 The history may be incomplete. What was read does not add up:
-  - stablecoin 0xdac17f958d2ee523a2206206994597c13d831ec7 is frozen with a zero balance, transfers in minus out 2137276136000, and no destruction event was found (the index of destruction events was not available)
+  - USDT: the address is frozen and holds none, but the transfers read leave 2,137,276.136 USDT unaccounted for. No destruction by the issuer was found (the index of the issuer's destruction events was not available).
 Treat totals and lists in this report as partial.
 
 What we checked:
-  - Stablecoin balances match the transfers read: no. stablecoin 0xdac17f958d2ee523a2206206994597c13d831ec7 is frozen with a zero balance, transfers in minus out 2137276136000, and no destruction event was found (the index of destruction events was not available)
+  - Stablecoin balances match the transfers read: no
   - The native coin balance matches the transfers read: yes
   - The number of transactions sent matches the address's nonce: yes
   - Etherscan's token list matches the token transfer logs: yes
@@ -224,5 +224,5 @@ Keep the complaint ID IC3 gives you, and give it to the exchange you sent from.
 
 == Report fingerprint ==
 Report id: assigned when the report is stored
-Fingerprint (SHA-256): cb25b010f15b9489cf298e59e88f5da1b782188019d489eea5546618449d95d9
+Fingerprint (SHA-256): 4911d2d1ea03e88836f72bd4612ba37491ad248584b0f82d31a7a76c3ef186de
 The fingerprint lets anyone holding a copy confirm it has not been changed: recomputing it from the report's data gives the same value.

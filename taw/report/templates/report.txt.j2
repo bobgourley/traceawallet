@@ -6,6 +6,8 @@
 {% set f = d.first_hop %}
 {% set btc = h.chain == "btc" %}
 {% set priced = d.prices_available %}
+{% macro stable_amount(t, v) %}{% if t.decimals is none %}an amount we could not convert (the token's decimals were not read){% else %}{{ v|num }} {{ t.name }}{% endif %}{% endmacro %}
+{% macro stable_gap(t) %}{% if t.status == "frozen_zero_no_destruction" %}{{ t.name }}: the address is frozen and holds none, but the transfers read leave {{ stable_amount(t, t.unaccounted) }} unaccounted for. No destruction by the issuer was found ({% if t.index_to_block is none %}the index of the issuer's destruction events was not available{% else %}the index of the issuer's destruction events is complete to block {{ t.index_to_block|num }}{% endif %}).{% else %}{{ t.name }}: the balance is {{ stable_amount(t, t.balance) }}, but the transfers read add up to {{ stable_amount(t, t.net) }}{% if t.destroyed %}, less {{ stable_amount(t, t.destroyed_amount) }} destroyed by the issuer{% endif %}.{% endif %}{% endmacro %}
 {% macro amount_line(x) %}{{ x.total|num }} {{ x.asset or (x.symbol|defang) }} in {{ plural(x.count, "transfer" if not btc else "output") }} {{ when_span(x.first, x.last) }}{% if priced %} ({{ x.usd|usd }}){% endif %}{% endmacro %}
 {% macro party(r, i) %}
   {{ i }}. {{ r.address|addr }}{% if r.lookalike_group %}  [lookalike group {{ r.lookalike_group }}]{% endif %}
@@ -328,8 +330,9 @@ Partial: only the newest {{ c.transfers.read|num }} transfers were read{% if c.t
 Summary only: no transfers were read. The balance, the totals received and spent, and the transaction count all come from {{ d.summary_only.provider }}'s summary of the address when it was read.
 {% elif sm.history == "incomplete" %}
 The history may be incomplete. What was read does not add up:
-{% for r in c.incomplete_reasons %}
-  - {{ r }}
+{% for r in c.incomplete %}
+  - {% if r.kind == "stablecoin" %}{{ stable_gap(r) }}{% else %}{{ r.text }}{% endif %}
+
 {% endfor %}
 Treat totals and lists in this report as partial.
 {% else %}
@@ -338,7 +341,7 @@ Not checked: the completeness checks were not run on this snapshot, so it is not
 
 What we checked:
 {% for ch in c.checks if (h.chain, ch.name) not in SKIP_CHECKS and ch.status != "not_run" and ch.name not in ("other_token_reconciliation", "history_not_read") %}
-  - {{ CHECK_TITLES.get(ch.name, ch.name) }}: {{ "yes" if ch.status == "passed" else "no" }}{% if ch.status == "failed" and ch.reason %}. {{ ch.reason }}{% endif %}
+  - {{ CHECK_TITLES.get(ch.name, ch.name) }}: {{ "yes" if ch.status == "passed" else "no" }}{% if ch.status == "failed" and ch.reason and ch.name != "stablecoin_reconciliation" %}. {{ ch.reason }}{% endif %}
 
 {% else %}
 {% if d.summary_only %}

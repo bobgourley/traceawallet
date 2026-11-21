@@ -294,7 +294,7 @@
     }
    ],
    "history_incomplete": false,
-   "incomplete_reasons": [],
+   "incomplete": [],
    "internal": {
     "from_block": 0,
     "full": true,
@@ -305,12 +305,19 @@
    ],
    "stablecoins": [
     {
+     "balance": "0",
      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+     "decimals": 6,
      "destroyed": false,
+     "destroyed_amount": "0",
+     "index_to_block": null,
+     "name": "USDC",
+     "net": "0",
      "reason": null,
      "stablecoin": true,
      "status": "reconciled",
-     "symbol": "USDC"
+     "symbol": "USDC",
+     "unaccounted": "0"
     }
    ],
    "summary_only": false,
@@ -1065,5 +1072,5 @@
   },
   "summary_only": null
  },
- "sha256": "6ad6d3de6f478c591b8540309641cdd7ff5a30d1f9302e5a3749574704aec608"
+ "sha256": "3f87aa7933021c91118a00149aa803ac232b302de0aec303c2d5bc318007fa54"
 }

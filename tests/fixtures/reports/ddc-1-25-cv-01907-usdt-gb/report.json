@@ -294,8 +294,23 @@
     }
    ],
    "history_incomplete": true,
-   "incomplete_reasons": [
-    "stablecoin 0xdac17f958d2ee523a2206206994597c13d831ec7 is frozen with a zero balance, transfers in minus out 2137276136000, and no destruction event was found (the index of destruction events was not available)"
+   "incomplete": [
+    {
+     "balance": "0",
+     "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+     "decimals": 6,
+     "destroyed": false,
+     "destroyed_amount": "0",
+     "index_to_block": null,
+     "kind": "stablecoin",
+     "name": "USDT",
+     "net": "2137276.136",
+     "reason": null,
+     "stablecoin": true,
+     "status": "frozen_zero_no_destruction",
+     "symbol": "USDT",
+     "unaccounted": "2137276.136"
+    }
    ],
    "internal": {
     "from_block": 0,
@@ -307,20 +322,34 @@
    ],
    "stablecoins": [
     {
+     "balance": "0.0001",
      "contract": "0x0000000000085d4780b73119b644ae5ecd22b376",
+     "decimals": 18,
      "destroyed": false,
+     "destroyed_amount": "0",
+     "index_to_block": null,
+     "name": "TUSD",
+     "net": "0.0001",
      "reason": null,
      "stablecoin": true,
      "status": "reconciled",
-     "symbol": "TUSD"
+     "symbol": "TUSD",
+     "unaccounted": "0"
     },
     {
+     "balance": "0",
      "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+     "decimals": 6,
      "destroyed": false,
+     "destroyed_amount": "0",
+     "index_to_block": null,
+     "name": "USDT",
+     "net": "2137276.136",
      "reason": null,
      "stablecoin": true,
      "status": "frozen_zero_no_destruction",
-     "symbol": "USDT"
+     "symbol": "USDT",
+     "unaccounted": "2137276.136"
     }
    ],
    "summary_only": false,
@@ -1338,5 +1367,5 @@
   },
   "summary_only": null
  },
- "sha256": "cb25b010f15b9489cf298e59e88f5da1b782188019d489eea5546618449d95d9"
+ "sha256": "4911d2d1ea03e88836f72bd4612ba37491ad248584b0f82d31a7a76c3ef186de"
 }

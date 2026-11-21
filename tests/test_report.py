@@ -147,7 +147,30 @@ def test_a_frozen_address_with_no_destruction_found_says_the_history_may_be_inco
     text = render_text(data)
     assert data["completeness"]["history_incomplete"] is True
     assert "History read: may be incomplete." in text and "The history may be incomplete." in text
-    assert "the index of destruction events was not available" in text
+    assert ("USDT: the address is frozen and holds none, but the transfers read leave 2,137,276.136 USDT unaccounted "
+            "for. No destruction by the issuer was found (the index of the issuer's destruction events was not "
+            "available).") in text
+    assert "2137276136000" not in text and "stablecoin 0xdac17f958d2ee523a2206206994597c13d831ec7" not in text
+    assert "Stablecoin balances match the transfers read: no\n" in text
+
+
+def test_a_balance_that_does_not_match_is_worded_with_amounts_and_the_token_name():
+    _, data = built("ddc-1-25-cv-01907-usdt-gb")
+    usdt = next(t for t in data["completeness"]["stablecoins"] if t["name"] == "USDT")
+    usdt.update(status="not_reconciled", balance="10", destroyed=True, destroyed_amount="5")
+    data["completeness"]["incomplete"] = [{"kind": "stablecoin", **usdt}]
+    text = render_text(data)
+    assert ("USDT: the balance is 10 USDT, but the transfers read add up to 2,137,276.136 USDT, less 5 USDT destroyed "
+            "by the issuer.") in text
+    usdt.update(decimals=None)
+    data["completeness"]["incomplete"] = [{"kind": "stablecoin", **usdt}]
+    assert "an amount we could not convert (the token's decimals were not read)" in render_text(data)
+
+
+def test_other_reasons_are_shown_as_the_check_gave_them():
+    _, data = built("ddc-1-25-cv-01907-usdt-gb")
+    data["completeness"]["incomplete"] = [{"kind": "text", "text": "the two lists differ by 3 transfers"}]
+    assert "  - the two lists differ by 3 transfers\n" in render_text(data)
 
 
 def test_a_0x_report_names_the_chains_checked_and_not():
