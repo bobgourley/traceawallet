@@ -17,6 +17,17 @@
       "Bash(git diff *)",
       "Bash(git log *)",
       "Bash(git show *)",
+      "Bash(git switch *)",
+      "Bash(git checkout -b *)",
+      "Bash(git checkout -q -b *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git merge *)",
+      "Bash(git revert *)",
+      "Bash(git push)",
+      "Bash(git push -u origin *)",
+      "Bash(git push -q *)",
+      "Bash(git push origin *)",
 
       "Bash(gh auth status *)",
       "Bash(gh repo view *)",
@@ -29,6 +40,7 @@
       "Bash(gh issue view *)",
       "Bash(gh run list *)",
       "Bash(gh run view *)",
+      "Bash(gh run watch *)",
       "Bash(gh workflow list *)",
       "Bash(gh workflow view *)",
       "Bash(gh release list *)",
@@ -39,16 +51,28 @@
       "Bash(railway status *)",
       "Bash(railway list *)",
       "Bash(railway logs *)",
+      "Bash(railway deployment list *)",
       "Bash(railway service list *)",
-      "Bash(railway service status *)"
+      "Bash(railway service status *)",
+      "Bash(railway ssh *)",
+
+      "Bash(curl -s https://traceawallet.com/*)",
+      "Bash(curl -s -m * https://traceawallet.com/*)"
     ],
     "ask": [
-      "Bash(git push)",
-      "Bash(git push *)",
-
       "Bash(railway variables)",
       "Bash(railway variables *)",
       "Bash(railway variable *)",
+      "Bash(railway domain *)",
+      "Bash(railway environment *)",
+      "Bash(railway redeploy *)",
+      "Bash(railway up *)",
+
+      "Bash(gh api -X *)",
+      "Bash(gh api --method *)",
+      "Bash(gh repo edit *)",
+      "Bash(gh secret *)",
+      "Bash(gh variable *)",
 
       "Bash(rm *)",
       "Bash(git rm *)",
@@ -81,7 +105,12 @@
       "Bash(git push -f*)",
       "Bash(git push * --force*)",
       "Bash(git push * -f*)",
-      "Bash(git push * +*)"
+      "Bash(git push * +*)",
+      "Bash(git push --mirror*)",
+      "Bash(git push * --mirror*)",
+      "Bash(git push --delete*)",
+      "Bash(git push * --delete*)",
+      "Bash(git push * :*)"
     ]
   }
 }

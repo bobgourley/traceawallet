@@ -36,7 +36,39 @@ Railway deploys whatever lands on `main`, so nothing goes to `main` directly.
 2. GitHub Actions (`.github/workflows/tests.yml`) runs every test, including the
    database tests against a throwaway Postgres with all migrations applied. A
    skipped test counts as a failure. Fix and push again until the run is green.
-3. Show the owner the passing run and ask before merging to `main`.
+3. Merge to `main` (fast-forward) only when CI passed on that exact commit with
+   no skipped tests. Branch protection on `main` requires the CI check. Never
+   force-push.
+4. After every deploy, check `/healthz` and the worker log. If either fails,
+   revert the merge (a revert commit, through CI like any change), confirm the
+   site is healthy again, and tell the owner.
+
+## What needs the owner's approval (owner's policy, 2026-11-21)
+
+Do without asking, and report afterwards:
+- push branches; merge to `main` when CI is green on that exact commit, with no
+  skipped tests
+- deploys, and migrations that only add tables, columns or indexes
+- bug fixes, tests, docs, and follow-up work within a brief the owner has given
+- restarting jobs, running live checks and case checks within the ledger limits
+
+Always ask first:
+- anything that costs money or changes a paid plan (the no-spending rule stands)
+- changing secrets or settings in Railway, Clerk or Cloudflare
+- deleting data, or a migration that alters or drops anything existing
+- changing who can use the site, or enabling anything public
+- adding an outside data source, or anything that touches a provider's terms
+- changes to the Privacy or Terms pages or the two fixed report sections
+  (recovery scams, IC3 checklist)
+- contacting anyone outside the project
+- changing the design rules in this file
+- force-pushing: never
+
+When unsure which list something belongs to, ask.
+
+At the end of each working session, save a summary to `~/Downloads/` named
+`taw-review-<date>-summary.md`: what was merged, what changed for users, anything
+that failed or was reverted, and anything waiting on the owner.
 
 ## Review files for the owner
 
