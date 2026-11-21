@@ -24,12 +24,12 @@ class FakeScout:
         self.chain, self.requests = chain, 0
 
     def _block_number(self):
-        return HEAD, "h" * 64
+        return HEAD, "d4" * 32
 
     def _request(self, params):
         self.requests += 1
-        rows, sha = self.chain.txlist(int(params["startblock"]), int(params["endblock"]))
-        return R({"result": rows}, sha)
+        rows, _ = self.chain.txlist(int(params["startblock"]), int(params["endblock"]))
+        return R({"result": rows}, "a1" * 32)
 
     def _eth_call(self, to, data, tag):
         self.requests += 1
@@ -39,9 +39,9 @@ class FakeScout:
         self.requests += 1
         f = params[0]
         if f["address"] not in (bf.OWNER_MULTISIG, USDT.contract):
-            return R({"result": []}, "u" * 64)                       # USDC: no events in this history
-        logs, sha = self.chain.get_logs(f["address"], f["topics"][0], int(f["fromBlock"], 16), int(f["toBlock"], 16))
-        return R({"result": logs}, sha)
+            return R({"result": []}, "c3" * 32)                       # USDC: no events in this history
+        logs, _ = self.chain.get_logs(f["address"], f["topics"][0], int(f["fromBlock"], 16), int(f["toBlock"], 16))
+        return R({"result": logs}, "b2" * 32)
 
 
 class FakeEther:
@@ -171,4 +171,4 @@ def _stop_after(scout, n):
 def _replies_saved(data):
     """raw_response rows for the fakes' replies, as the bucket store would have written (rule 3)."""
     from tests.test_report_pg import seed_raw
-    seed_raw(data, "blockscout", ["l" * 64, "t" * 64, "u" * 64, "c" * 64, "h" * 64])
+    seed_raw(data, "blockscout", ["a1" * 32, "b2" * 32, "c3" * 32, "c" * 64, "d4" * 32])
