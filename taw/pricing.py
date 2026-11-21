@@ -1,7 +1,11 @@
 """Fill the price table for a lookup's transfers (Chainlink, read through Blockscout).
 
 For each transfer whose asset has a feed (taw/adapters/prices/assets.py), the
-(asset, bucket) it falls in is priced once and kept for every later report. A
+(asset, bucket) it falls in is priced once and kept for every later report. So is
+each asset the address holds, at the snapshot's time: the report values holdings
+there, and before 2026-11-21 nothing asked for that bucket, so an address whose
+last transfer was months ago showed "no price available" for what it holds.
+Holdings come first, inside the cap. A
 lookup reads at most PRICE_MAX_NEW_PER_LOOKUP new buckets, newest first, so one
 long history can't use up the day's Blockscout allowance; the rest show "no
 price yet" and are filled by later lookups. Running out of allowance stops
@@ -16,7 +20,7 @@ from typing import Iterable
 
 from taw import store
 from taw.adapters.base import TransferRecord
-from taw.adapters.prices.assets import asset_of
+from taw.adapters.prices.assets import NATIVE, TOKENS, asset_of
 from taw.adapters.prices.chainlink import FEEDS, SOURCE, ChainlinkReader, PriceRead, bucket_for
 
 
@@ -35,6 +39,19 @@ def needed(records: Iterable[TransferRecord], now: dt.datetime) -> list[Key]:
         if asset in FEEDS:
             keys.add((asset, *bucket_for(r.block_time, now)))
     return sorted(keys, key=lambda k: (k[1], k[0]), reverse=True)
+
+
+def held(snap, now: dt.datetime) -> list[Key]:
+    """The (asset, bucket) pairs that value the snapshot's holdings."""
+    assets = set()
+    if snap.native_balance_raw > 0:
+        assets.add(NATIVE.get(snap.chain))
+    for b in snap.token_balances:
+        contract = b.contract if snap.chain == "tron" else b.contract.lower()
+        if b.amount_raw > 0:
+            assets.add(TOKENS.get((snap.chain, contract)))
+    start, size = bucket_for(snap.as_of_time, now)
+    return [(a, start, size) for a in sorted(a for a in assets if a in FEEDS)]
 
 
 def already_read(conn, keys: list[Key]) -> set[Key]:
@@ -89,13 +106,14 @@ class PriceFill:
 
 
 def fill(conn, actor: str, records: Iterable[TransferRecord], reader: ChainlinkReader, *,
-         now: dt.datetime | None = None, cap: int | None = None) -> PriceFill:
+         now: dt.datetime | None = None, cap: int | None = None, snap=None) -> PriceFill:
     from taw.adapters.chains.evm_etherscan import EtherscanDailyLimit
     from taw.budget import BudgetExhausted
 
     now = now or dt.datetime.now(dt.timezone.utc)
     cap = max_new_per_lookup() if cap is None else cap
-    keys = needed(records, now)
+    first = held(snap, now) if snap is not None else []
+    keys = first + [k for k in needed(records, now) if k not in first]
     have = already_read(conn, keys)
     todo = [k for k in keys if k not in have]
     out = PriceFill(needed=len(keys), reused=len(keys) - len(todo), left_for_later=max(0, len(todo) - cap))

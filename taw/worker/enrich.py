@@ -102,7 +102,7 @@ def label_step(data_conn) -> Callable:
 def price_step(data_conn, state_conn, actor: str) -> Callable:
     def step(snap, batch, raw_store) -> str:
         reader = ChainlinkReader(lambda chain: registry.adapter_for(chain, raw_store, state_conn=state_conn))
-        return pricing.fill(data_conn, actor, batch.transfers, reader).summary()
+        return pricing.fill(data_conn, actor, batch.transfers, reader, snap=snap).summary()
     return step
 
 

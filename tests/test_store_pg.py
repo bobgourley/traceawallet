@@ -720,6 +720,20 @@ def test_price_cap_leaves_the_oldest_for_later(conns):
     assert "left for a later lookup" in out.summary()
 
 
+def test_holdings_are_priced_first_inside_the_cap(conns):
+    from taw import pricing
+    from taw.adapters.base import AddressSnapshot
+    data, raw = conns
+    reader = StubPriceReader(store.RecordingRawStore(raw, ACTOR, s3_client=FakeS3(), bucket="test"))
+    now, recs = price_records()
+    snap = AddressSnapshot(chain="eth", address="0x" + "ab" * 20, as_of_block=1, as_of_time=now - dt.timedelta(days=3),
+                           native_symbol="ETH", native_decimals=18, native_balance_raw=5, token_balances=(),
+                           is_contract=False, truncated=False, source_slug="blockscout", raw_sha256=("0" * 64,))
+    out = pricing.fill(data, ACTOR, recs, reader, now=now, cap=1, snap=snap)
+    assert out.read == 1 and reader.reads[0][:3] == ("ETH", pricing.held(snap, now)[0][1], "day")
+    assert out.needed == 4
+
+
 def test_price_rows_must_be_consistent(conns):
     data, _ = conns
     good = ("ETH", dt.datetime(2026, 11, 1, tzinfo=dt.timezone.utc), "day", "ok", 1719)

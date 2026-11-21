@@ -154,3 +154,22 @@ def test_needed_is_distinct_and_newest_first():
                     ("ETH", dt.datetime(2026, 11, 20, 3, tzinfo=UTC), "hour"),
                     ("ETH", dt.datetime(2026, 11, 10, tzinfo=UTC), "day"),       # both 10-day-old transfers
                     ("USDT", dt.datetime(2025, 10, 16, tzinfo=UTC), "day")]       # the unknown token: none
+
+
+def held_snapshot(chain="eth", native=10, tokens=(), as_of=NOW - dt.timedelta(minutes=2)):
+    from taw.adapters.base import AddressSnapshot, TokenBalance
+    return AddressSnapshot(chain=chain, address="0x" + "ab" * 20, as_of_block=1, as_of_time=as_of, native_symbol="ETH",
+                           native_decimals=18, native_balance_raw=native,
+                           token_balances=tuple(TokenBalance(c, n, 6, "X") for c, n in tokens), is_contract=False,
+                           truncated=False, source_slug="blockscout", raw_sha256=("0" * 64,))
+
+
+def test_holdings_are_priced_at_the_snapshot_time():
+    # 2026-11-21: an address last active months ago showed ETH "no price available" under
+    # Holdings, because only transfer dates were priced.
+    snap = held_snapshot(tokens=[("0xdAC17F958D2ee523a2206206994597C13D831ec7", 5),
+                                 ("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", 0),        # holds none: no price
+                                 ("0x1111111111111111111111111111111111111111", 9)])       # no feed
+    assert pricing.held(snap, NOW) == [("ETH", dt.datetime(2026, 11, 20, 4, tzinfo=UTC), "hour"),
+                                       ("USDT", dt.datetime(2026, 11, 20, 4, tzinfo=UTC), "hour")]
+    assert pricing.held(held_snapshot(native=0), NOW) == []
