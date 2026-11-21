@@ -441,6 +441,8 @@ def test_pages_are_final_and_name_who_processes_data(browser):
                  "The site's operator can access stored lookups in order to run the service"):
         assert need in privacy, need
     assert "<!--email_off-->" in privacy                                  # left alone by Cloudflare
+    # The website a user enters goes to its registry and crt.sh (2026-11-21); the page says so.
+    assert "RDAP" in privacy and "crt.sh" in privacy and "We never visit the website itself." in privacy
     assert "contact@traceawallet.com" in browser.get("/about").text.split("<footer")[0]
 
 

@@ -1,7 +1,8 @@
 """The platform a user entered (a website or a name), checked against the site lists
 we hold. Private: it comes from the user's own input, so the result is stored on
 their lookup row (lookup.platform_result), shown only in their private section,
-and erased with the lookup. Nothing here is fetched from the user's website.
+and erased with the lookup. Nothing here is fetched from the user's website; the
+domain's dates come from its registry and crt.sh (taw/domain_age.py).
 
   website   the host name the user typed (taw.adapters.labels.dfpi.host_of), equal to
             a listed host or a subdomain of one
@@ -66,9 +67,17 @@ def site_lists(conn, typed: dict) -> list[dict]:
     return out
 
 
-def check(conn, name: str | None, url: str | None) -> dict | None:
-    """The private platform result, or None when nothing usable was entered."""
+def check(conn, name: str | None, url: str | None, *, paid_on=None, domain_age=None) -> dict | None:
+    """The private platform result, or None when nothing usable was entered.
+    domain_age: a taw.domain_age.DomainAge, to add the website's registration and
+    first-certificate dates (None: not asked)."""
     typed = entered(name, url)
     if not typed["domain"] and not typed["name_words"]:
         return None if not (name or url) else {"entered": typed, "usable": False}
-    return {"entered": typed, "usable": True, "lists": site_lists(conn, typed)}
+    out = {"entered": typed, "usable": True, "lists": site_lists(conn, typed)}
+    if typed["domain"] and domain_age is not None:
+        try:
+            out["domain_age"] = domain_age.check(typed["domain"], paid_on)
+        except Exception as exc:                               # noqa: BLE001 - a private extra, never a failure
+            out["domain_age"] = {"host": typed["domain"], "error": type(exc).__name__}
+    return out

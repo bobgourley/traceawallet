@@ -635,6 +635,14 @@ def test_every_freeze_contract_has_its_source_row(conns):
     assert count(data, "SELECT count(*) FROM source WHERE slug = 'usdc-contract' AND position('EURC' in name) > 0") == 1
 
 
+def test_domain_age_sources_are_registry_records_not_for_resale(conns):
+    """0022-0023: the registry kind, and the RDAP and crt.sh sources."""
+    data, _ = conns
+    rows = {s: (k, r) for s, k, r in data.execute(
+        "SELECT slug, kind::text, resale_permitted FROM source WHERE slug IN ('rdap', 'crtsh')").fetchall()}
+    assert rows == {"rdap": ("registry", False), "crtsh": ("registry", False)}
+
+
 def test_range_store_round_trip(conns):
     from taw.budget import PostgresRangeStore
     data, _ = conns

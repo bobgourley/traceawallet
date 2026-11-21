@@ -3,6 +3,49 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-21: Domain age
+
+**What.** The owner's third pick. For the website a user enters, the private
+section gives two dated facts, each with its source, and, when the user gave a
+payment date, the number of days between each and that date:
+- **Registration:** the "registration" event in the domain registry's RDAP record.
+  The registry's RDAP service comes from IANA's bootstrap file
+  (`data.iana.org/rdap/dns.json`, by the domain's last label).
+- **First certificate:** the earliest validity start among the certificates
+  crt.sh lists for the domain, with the crt.sh certificate number.
+
+**Never the user's website.** The only hosts asked are IANA, the RDAP service
+IANA names for the domain's ending, and crt.sh. Redirects are not followed, so a
+registry answer cannot send us to the website. The host name was already parsed
+and validated (`host_of`: no IP addresses, no single labels, international names
+in ASCII form). The domain is shown as text, never a link.
+
+**Which name.** A user may type a subdomain. The registry is asked for the full
+host first, then each shorter name, and the first record found is used. A
+two-label registry suffix such as `co.uk` is never asked about when the host had
+more labels.
+
+**Outcomes, worded plainly.** Found; no record ("a name is missing from the
+registry when it was never registered or its registration has ended"); no RDAP
+service for that ending (`.io`, `.de` and `.co` had none on 2026-11-21); no
+registration date in the record; not read, with the reason. crt.sh is asked at
+most twice (it often answers 502 when busy); its wildcard search for subdomains
+failed on 2026-11-21, so only the plain search is used.
+
+**When.** In the match job, once per lookup, beside the DFPI check (the match job
+now runs whenever a platform was entered). A failure here never fails the job.
+
+**Privacy.** The registry and crt.sh receive the domain name, not who asked.
+Their replies are kept in the bucket like every raw response (rule 3). Those
+replies name the domain but not the user or the lookup, and they stay when a
+lookup is erased. The Privacy page now says this ("What we ask other services"),
+and also says that report addresses are sent to blockchain data services, which
+was true before and not stated.
+
+**Sources (migrations 0022-0023).** A new source kind, `registry`, for records
+about a domain name. `rdap` and `crtsh`, neither for resale: registry terms vary
+(Verisign's allow low-volume lookups), and crt.sh states none.
+
 ## 2026-11-21: DFPI Crypto Scam Tracker
 
 **What.** The owner's second pick. California DFPI's Crypto Scam Tracker is one

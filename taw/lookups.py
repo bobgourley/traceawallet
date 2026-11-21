@@ -354,7 +354,9 @@ def run_match(conn, actor: str, lookup_id: str, *, adapter_for, raw_store) -> st
         return "redacted"
     if (pname or purl) and pchecked is None:
         from taw import platform
-        result = platform.check(conn, pname, purl)
+        from taw.domain_age import DomainAge
+        result = platform.check(conn, pname, purl, paid_on=sent_on,
+                                domain_age=DomainAge(raw_store) if raw_store is not None else None)
         with store.actor_transaction(conn, actor):
             conn.execute("UPDATE lookup SET platform_result = %s::jsonb, platform_checked_at = now() WHERE id = %s",
                          (json.dumps(result, sort_keys=True, default=str), lookup_id))

@@ -6,7 +6,7 @@
 <h2>What we keep</h2>
 <ul>
   <li>Your account: the email address you sign in with. It is held by our sign-in provider, Clerk.</li>
-  <li>Your lookups: the address you entered, any details you added such as an amount, a date or a transaction ID, and when you made the lookup.</li>
+  <li>Your lookups: the address you entered, any details you added such as an amount, a date, a transaction ID or the app or website you were told to use, and when you made the lookup.</li>
   <li>To apply limits and stop misuse: your IP address and browser session, stored only as one-way scrambled codes (salted hashes), never in readable form.</li>
 </ul>
 
@@ -19,6 +19,13 @@
   <li><strong>Clerk</strong> runs sign-in and holds your account's email address.</li>
   <li><strong>Cloudflare</strong> delivers the site and runs the check on the lookup form that confirms a person is using it. Every request to the site passes through Cloudflare, including your IP address.</li>
   <li><strong>Railway</strong> hosts the site and its database. Every request to the site also passes through Railway.</li>
+</ul>
+
+<h2>What we ask other services</h2>
+<ul>
+  <li>To build a report, we ask public blockchain data services about the address you entered.</li>
+  <li>If you enter a website, we ask the registry for that domain (through its public RDAP service) and the public certificate search crt.sh when the domain was registered and when it first had a certificate. We never visit the website itself.</li>
+  <li>These services receive the address or domain name, not who you are. We keep their answers. The answers record what was asked about, not who asked, and they stay when you delete a lookup.</li>
 </ul>
 
 <h2>Cookies</h2>

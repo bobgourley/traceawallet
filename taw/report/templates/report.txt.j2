@@ -8,6 +8,7 @@
 {% set priced = d.prices_available %}
 {% macro stable_amount(t, v) %}{% if t.decimals is none %}an amount we could not convert (the token's decimals were not read){% else %}{{ v|num }} {{ t.name }}{% endif %}{% endmacro %}
 {% macro stable_gap(t) %}{% if t.status == "frozen_zero_no_destruction" %}{{ t.name }}: the address is frozen and holds none, but the transfers read leave {{ stable_amount(t, t.unaccounted) }} unaccounted for. No destruction by the issuer was found ({% if t.index_to_block is none %}the index of the issuer's destruction events was not available{% else %}the index of the issuer's destruction events is complete to block {{ t.index_to_block|num }}{% endif %}).{% else %}{{ t.name }}: the balance is {{ stable_amount(t, t.balance) }}, but the transfers read add up to {{ stable_amount(t, t.net) }}{% if t.destroyed %}, less {{ stable_amount(t, t.destroyed_amount) }} destroyed by the issuer{% endif %}.{% endif %}{% endmacro %}
+{% macro day_gap(n, paid) %}{% if n is not none %} That is {% if n == 0 %}the same day as{% else %}{{ plural(n|abs, "day") }} {{ "before" if n > 0 else "after" }}{% endif %} the payment date you entered ({{ paid }}).{% endif %}{% endmacro %}
 {% macro amount_line(x) %}{{ x.total|num }} {{ x.asset or (x.symbol|defang) }} in {{ plural(x.count, "transfer" if not btc else "output") }} {{ when_span(x.first, x.last) }}{% if priced %} ({{ x.usd|usd }}){% endif %}{% endmacro %}
 {% macro party(r, i) %}
   {{ i }}. {{ r.address|addr }}{% if r.lookalike_group %}  [lookalike group {{ r.lookalike_group }}]{% endif %}
@@ -144,6 +145,21 @@ Website checked: {{ pe.domain }}
 DFPI says the tracker's entries "are based on consumer complaints" and that it "has not verified the losses reported by complainants." An entry that names something you entered is DFPI's record of a complaint, not a finding. Not being listed means only that the tracker has no entry naming it.
 {% endif %}
 {% endfor %}
+{% if platform.get("domain_age") %}
+{% set da = platform.domain_age %}
+Dates for {{ da.host }}:
+{% if da.get("error") %}
+  - Not read ({{ da.get("error") }}).
+{% else %}
+{% set r = da.registration %}
+  - Registration: {% if r.status == "found" %}{{ r.registered }}, in the registry's RDAP record for {{ r.domain }} ({{ r.server }}, read {{ r.read_on }}).{{ day_gap(da.registration_gap_days, da.paid_on) }}{% elif r.status == "no_record" %}the registry's RDAP service ({{ r.server }}) had no record of {{ r.domain }} on {{ r.read_on }}. A name is missing from the registry when it was never registered or its registration has ended.{% elif r.status == "no_service" %}IANA's list names no RDAP service for .{{ r.tld }} domains, so the date was not read.{% elif r.status == "no_date" %}the registry's RDAP record for {{ r.domain }} ({{ r.server }}, read {{ r.read_on }}) gives no registration date.{% else %}not read ({{ r.reason }}).{% endif %}
+
+{% set ct = da.certificate %}
+  - First certificate: {% if ct.status == "found" %}valid from {{ ct.first_not_before }}, the earliest of {{ plural(ct.certificates, "certificate") }} crt.sh lists for {{ ct.domain }} (crt.sh certificate {{ ct.certificate_id }}, searched {{ ct.read_on }}).{{ day_gap(da.certificate_gap_days, da.paid_on) }}{% elif ct.status == "none" %}crt.sh lists no certificate for {{ ct.domain }} (searched {{ ct.read_on }}).{% else %}not read ({{ ct.reason }}).{% endif %}
+
+{% endif %}
+These dates come from the domain's registry and from the public certificate transparency logs. Nothing was fetched from the website itself.
+{% endif %}
 {% endif %}
 {% endif %}
 
