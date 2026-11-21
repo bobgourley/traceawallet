@@ -25,7 +25,7 @@ answers 503, so a deploy without them opens nothing.
   GET    /api/v1/lookups                    signed in: my lookups
   GET    /api/v1/lookups/{id}               owner: status, chains, reports, match
   DELETE /api/v1/lookups/{id}               owner: delete (lookup_redact)
-  GET    /api/v1/lookups/{id}/report?chain= owner: one chain's report with the match
+  GET    /api/v1/lookups/{id}/report?chain= owner: one chain's report with the match and platform check
   GET    /api/v1/reports/{public_id}        signed in: a shared report (no private part)
   GET    /api/v1/me                         who the token says you are
 """
@@ -219,10 +219,12 @@ def read_lookup_report(lookup_id: str, chain: str | None = None, format: str = "
     match = found["match"]
     if match and pick["chain"] not in (match.get("matched_chain"), *(match.get("chains") or [])):
         match = None
+    platform = found.get("platform")
     if format == "text":
         return PlainTextResponse(render_text(report["data"], prior_lookups=report["prior_lookups"],
-                                             public_id=report["public_id"], sha256=report["sha256"], match=match))
-    return {"chain": pick["chain"], "report": report, "match": match}
+                                             public_id=report["public_id"], sha256=report["sha256"], match=match,
+                                             platform=platform))
+    return {"chain": pick["chain"], "report": report, "match": match, "platform": platform}
 
 
 @router.get("/reports/{public_id}", dependencies=[Depends(ready)])

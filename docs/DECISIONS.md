@@ -3,6 +3,56 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-21: DFPI Crypto Scam Tracker
+
+**What.** The owner's second pick. California DFPI's Crypto Scam Tracker is one
+public page with one table: Primary Subject, Complaint Narrative, Scam Type,
+Website, Screenshot. Read on 2026-11-21: 656 entries, 806 distinct websites.
+DFPI's Conditions of Use put it in the public domain; photographs are excluded,
+so the screenshots are not copied. The page has no date per entry and no
+publication date.
+
+**Addresses become labels only when they pass a checksum** (owner's rule).
+- Accepted: an EVM address in mixed case that passes EIP-55, a Tron base58check
+  address, a Bitcoin base58check or bech32 address.
+- An EVM address written all in one case has no checksum to pass. It is counted
+  and left out, not guessed at. On 2026-11-21: 100 distinct addresses used (68 EVM,
+  30 Bitcoin, 2 Tron), 24 without a checksum and 2 failing it left out.
+- An EVM address is labelled on every EVM chain we cover, as OFAC's are: the
+  entries rarely say which chain.
+
+**Wording in the shared report.** "named in a complaint reported to California's
+DFPI (tracker entry: "<the entry's subject>")", with the source, the first day we
+read it in the tracker (the tracker has no complaint dates, so that is the only
+date there is, and the report says so), the link, and DFPI's own caveat quoted:
+the entries "are based on consumer complaints" and DFPI "has not verified the
+losses reported by complainants". DFPI's Scam Type column is kept in the data and
+never shown. The subject is DFPI's own text, quoted.
+
+**Websites and names: private only.** They are matched against what the user
+typed, so the result goes in the user's private section, never the shared
+report:
+- the host the user typed, equal to a listed website or a subdomain of one
+  (never a looser match);
+- the name the user typed, as whole words of at least four letters or digits, in
+  an entry's subject.
+- The section says how many entries matched, quotes their subjects, repeats DFPI's
+  caveat, and says that not being listed means only that the tracker has no entry
+  naming it. The domain is shown as text, never a link. Nothing is fetched from
+  the user's website.
+- Stored on the user's own lookup row (`platform_result`, migration 0021) and
+  erased with it: `lookup_redact` now clears it too. The API returns it beside the
+  match result; it is not part of the report or its fingerprint.
+- The match job now also runs when only a platform was entered; it checks the
+  platform and stops there.
+
+**Loading.** A daily job (`dfpi_refresh`, 07:00 UTC) reads the page and stores it
+in the bucket like any raw response. When the page changed since the last load,
+the address labels are synced like any list (entries that disappear are
+withdrawn, append-only) and the websites and subjects are kept as a new load in
+`site_list_load` / `site_list_entry`, append-only. An unchanged page is skipped.
+If the table's columns change, the load stops rather than guess.
+
 ## 2026-11-21: More stablecoin freeze checks
 
 **What.** The owner's first pick from `docs/research/more-sources.md`. Freeze

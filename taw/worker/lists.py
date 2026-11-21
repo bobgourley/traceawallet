@@ -1,5 +1,5 @@
-"""Daily list refreshes: OFAC's SDN list, the exchange wallet lists, and the index of
-stablecoin blacklist events."""
+"""Daily list refreshes: OFAC's SDN list, the exchange wallet lists, California DFPI's
+Crypto Scam Tracker, and the index of stablecoin blacklist events."""
 from __future__ import annotations
 
 import datetime as dt
@@ -75,3 +75,32 @@ def refresh_blacklists(*, data_conn, raw_store, actor: str) -> str:
                 raise                          # the job is deferred to the reset
             notes.append(f"{chain}: not done ({type(exc).__name__}: {exc})")
     return "; ".join(notes)
+
+
+def refresh_dfpi(*, data_conn, raw_store, actor: str, source=None) -> str:
+    """Read DFPI's tracker page. When it changed since the last load: sync the labels
+    for the addresses it names, and keep its websites and subjects as a new load."""
+    from taw.adapters.labels import dfpi
+    loaded = (source or dfpi.DfpiTracker(raw_store, evm_chains(data_conn))).load()
+    pub = loaded.publication
+    src = store.source_id(data_conn, dfpi.SOURCE)
+    last = data_conn.execute("SELECT page_sha256 FROM site_list_load WHERE source_id = %s ORDER BY id DESC LIMIT 1",
+                             (src,)).fetchone()
+    if last and last[0].strip() == pub.raw_sha256:
+        return f"DFPI tracker unchanged ({len(loaded.entries)} entries)"
+    result = labels.load_publication(data_conn, actor, pub)
+    raw_id = store.raw_response_ids(data_conn, dfpi.SOURCE, [pub.raw_sha256])[pub.raw_sha256]
+    with store.actor_transaction(data_conn, actor):
+        load_id = data_conn.execute(
+            "INSERT INTO site_list_load (source_id, read_on, raw_response_id, page_sha256, entries)"
+            " VALUES (%s, %s, %s, %s, %s) RETURNING id",
+            (src, pub.source_date, raw_id, pub.raw_sha256, len(loaded.entries))).fetchone()[0]
+        with data_conn.cursor() as cur:
+            cur.executemany(
+                "INSERT INTO site_list_entry (load_id, position, entry_key, subject, websites, scam_types)"
+                " VALUES (%s, %s, %s, %s, %s, %s)",
+                [(load_id, e.position, e.key, e.subject, e.websites, e.scam_types) for e in loaded.entries])
+    d = pub.detail
+    return (f"DFPI tracker read {pub.source_date}: {d['entries']} entries, {d['websites']} websites; address labels "
+            f"{result.summary()}; {d['skipped_no_checksum']} address(es) without a checksum and "
+            f"{d['skipped_bad_checksum']} failing it left out")

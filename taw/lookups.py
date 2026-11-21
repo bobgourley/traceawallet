@@ -53,7 +53,8 @@ class LookupRequest:
     platform_url: str | None = None
 
     def wants_match(self) -> bool:
-        return bool(self.tx_hash or self.amount)
+        """The match job also checks the platform the user entered (taw/platform.py)."""
+        return bool(self.tx_hash or self.amount or self.platform_name or self.platform_url)
 
 
 def _tx_shape(family: str, tx: str) -> str:
@@ -158,12 +159,12 @@ def report_for(conn, actor: str, lookup_id: str, chain: str, address: str, finis
 def get(conn, actor: str, lookup_id: str, user_id: str) -> dict | None:
     """The lookup, for its owner only. None for anyone else, and for a redacted lookup."""
     row = conn.execute(
-        "SELECT id::text, family::text, submitted_address, created_at, match_result, match_checked_at"
-        " FROM lookup WHERE id = %s AND clerk_user_id = %s AND redacted_at IS NULL",
+        "SELECT id::text, family::text, submitted_address, created_at, match_result, match_checked_at,"
+        " platform_result FROM lookup WHERE id = %s AND clerk_user_id = %s AND redacted_at IS NULL",
         (lookup_id, user_id)).fetchone()
     if row is None:
         return None
-    lid, family, address, created, match, checked = row
+    lid, family, address, created, match, checked, platform_result = row
     chains = []
     progress = _progress(conn, lid)
     for chain, job_id, status, error, finished in _jobs(conn, lid):
@@ -173,7 +174,8 @@ def get(conn, actor: str, lookup_id: str, user_id: str) -> dict | None:
                            "public_id": rep["public_id"], "sha256": rep["sha256"], "as_of_block": rep["as_of_block"],
                            "as_of_time": rep["as_of_time"].astimezone(dt.timezone.utc).isoformat()}})
     return {"id": lid, "family": family, "address": address, "created_at": created.isoformat(), "chains": chains,
-            "match": match, "match_checked_at": checked.isoformat() if checked else None}
+            "match": match, "match_checked_at": checked.isoformat() if checked else None,
+            "platform": platform_result}
 
 
 class NothingToRetry(ValueError):
@@ -343,12 +345,21 @@ def run_match(conn, actor: str, lookup_id: str, *, adapter_for, raw_store) -> st
     result's status, or 'wait' while an address job is still queued or running."""
     row = conn.execute(
         "SELECT family::text, submitted_address, chain_hint, asset, amount, sent_on, sending_address, tx_hash,"
-        " redacted_at FROM lookup WHERE id = %s", (lookup_id,)).fetchone()
+        " redacted_at, platform_name, platform_url, platform_checked_at FROM lookup WHERE id = %s",
+        (lookup_id,)).fetchone()
     if row is None:
         return "no_lookup"
-    family, address, hint, asset, amount, sent_on, sender, tx, redacted = row
+    family, address, hint, asset, amount, sent_on, sender, tx, redacted, pname, purl, pchecked = row
     if redacted is not None:
         return "redacted"
+    if (pname or purl) and pchecked is None:
+        from taw import platform
+        result = platform.check(conn, pname, purl)
+        with store.actor_transaction(conn, actor):
+            conn.execute("UPDATE lookup SET platform_result = %s::jsonb, platform_checked_at = now() WHERE id = %s",
+                         (json.dumps(result, sort_keys=True, default=str), lookup_id))
+    if not (tx or amount):
+        return "platform_checked"
     rows = _jobs(conn, lookup_id)
     if any(status in ("queued", "running") for _, _, status, _, _ in rows):
         return "wait"

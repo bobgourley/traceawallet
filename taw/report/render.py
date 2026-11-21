@@ -168,12 +168,12 @@ def _env(html: bool = False) -> Environment:
 
 
 def render_text(data: dict, *, prior_lookups: str | None = None, public_id: str | None = None,
-                sha256: str | None = None, match: dict | None = None) -> str:
+                sha256: str | None = None, match: dict | None = None, platform: dict | None = None) -> str:
     """The whole report as plain text. prior_lookups: a bucket label, or None when the
-    count has not been written for this address. match: the lookup's private match
-    result, shown to its owner only; never stored in the report."""
+    count has not been written for this address. match and platform: the lookup's
+    private results, shown to its owner only; never stored in the report."""
     text = _env().get_template("report.txt.j2").render(d=data, prior_lookups=prior_lookups, public_id=public_id,
-                                                       sha256=sha256, match=match)
+                                                       sha256=sha256, match=match, platform=platform)
     lines = [ln.rstrip() for ln in text.splitlines()]
     out: list[str] = []
     for ln in lines:                                   # no runs of blank lines
@@ -254,10 +254,11 @@ def _is_heading(line: str) -> bool:
 
 
 def render_html(data: dict, *, prior_lookups: str | None = None, public_id: str | None = None,
-                sha256: str | None = None, match: dict | None = None) -> Markup:
+                sha256: str | None = None, match: dict | None = None, platform: dict | None = None) -> Markup:
     """The report as HTML: the text template, autoescaped, one element per line."""
     body = _env(html=True).get_template("report.txt.j2").render(d=data, prior_lookups=prior_lookups,
-                                                                public_id=public_id, sha256=sha256, match=match)
+                                                                public_id=public_id, sha256=sha256, match=match,
+                                                                platform=platform)
     start_marker, end_marker = str(escape(FIXED_START.split("{")[0])), str(escape(FIXED_END))
     sections: list[tuple[str | None, list[str], bool]] = [(None, [], False)]
     fixed = False

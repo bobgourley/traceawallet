@@ -68,7 +68,8 @@ def handle(job: jobs.Job, *, data_conn, raw_store_factory: Callable, adapter_for
         log(f"job {job.id}: failed, too many attempts")
         return "failed"
     list_jobs = {jobs.OFAC_REFRESH: lists.refresh_ofac, jobs.EXCHANGE_REFRESH: lists.refresh_exchanges,
-                 jobs.BLACKLIST_REFRESH: lists.refresh_blacklists, jobs.RETENTION: lists.expire_lookups}
+                 jobs.BLACKLIST_REFRESH: lists.refresh_blacklists, jobs.RETENTION: lists.expire_lookups,
+                 jobs.DFPI_REFRESH: lists.refresh_dfpi}
     if job.kind not in (jobs.LOOKUP, jobs.MATCH) and job.kind not in list_jobs:
         # During a deploy the old worker can claim a job kind only the new code knows.
         # Put it back for a newer worker instead of failing it.

@@ -324,7 +324,8 @@ def lookup_page(request: Request, lookup_id: str, api: Api = Depends(get_api)):
                     sec["quiet"] = not data["activity"]["first_activity"] and not data["summary"]["held"]
                     sec["html"] = render_html(data, prior_lookups=rep.body["report"]["prior_lookups"],
                                               public_id=rep.body["report"]["public_id"],
-                                              sha256=rep.body["report"]["sha256"], match=rep.body["match"])
+                                              sha256=rep.body["report"]["sha256"], match=rep.body["match"],
+                                              platform=rep.body.get("platform"))
                     sec["public_id"] = rep.body["report"]["public_id"]
                     cov = data["header"].get("evm_coverage")
                     if cov and not not_covered:
