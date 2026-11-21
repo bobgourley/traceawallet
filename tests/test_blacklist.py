@@ -84,6 +84,35 @@ def test_evm_scan_halves_a_range_that_hit_the_cap_and_keeps_each_event_once():
     assert result.calls == len(asked) == 5               # three for AddedBlackList, one each for the others
 
 
+def test_evm_scan_asks_in_spans_and_halves_a_range_that_timed_out():
+    import httpx
+    added = bl.USDT_EVENTS[0]
+    hi = bl.EVM_SPAN + 10
+    log = usdt_log(added, block=bl.EVM_SPAN + 5)
+    asked = []
+
+    def get(contract, topic, lo, top):
+        asked.append((topic, lo, top))
+        if topic == added.topic and (lo, top) == (bl.EVM_SPAN + 1, hi):
+            raise httpx.ReadTimeout("no answer")
+        return ([log] if topic == added.topic and lo <= bl.EVM_SPAN + 5 <= top else []), "f" * 64
+
+    result = bl.evm_scan(get, USDT_ETH, 1, hi)
+    assert [e.block_number for e in result.events] == [bl.EVM_SPAN + 5]
+    mid = (bl.EVM_SPAN + 1 + hi) // 2
+    assert [(lo, top) for t, lo, top in asked if t == added.topic] == \
+           [(1, bl.EVM_SPAN), (bl.EVM_SPAN + 1, hi), (bl.EVM_SPAN + 1, mid), (mid + 1, hi)]
+
+
+def test_a_timeout_on_a_single_block_is_not_hidden():
+    import httpx
+
+    def get(contract, topic, lo, hi):
+        raise httpx.ReadTimeout("no answer")
+    with pytest.raises(httpx.ReadTimeout):
+        bl.evm_scan(get, USDT_ETH, 7, 7)
+
+
 class FakeTron:
     """Serves events by time window, TRON_PAGE a page."""
 

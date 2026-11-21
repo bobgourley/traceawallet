@@ -29,9 +29,12 @@ import datetime as dt
 from dataclasses import dataclass
 from typing import Callable
 
+import httpx
+
 from taw.adapters.chains.tron_address import to_base58
 
 LOG_CAP = 1000                 # Blockscout and Etherscan return at most 1,000 logs a request
+EVM_SPAN = 1_000_000           # blocks per first request; a whole history at once timed out (2026-11-21)
 TRON_MAX_PAGES = 25            # 5,000 events per window before it is split
 TRON_PAGE = 200
 
@@ -116,7 +119,10 @@ class ScanResult:
 # -- Ethereum ----------------------------------------------------------------------------------
 
 def _int(v) -> int:
-    return int(v, 16) if isinstance(v, str) and v.startswith("0x") else int(v)
+    """A number from a reply, hex or decimal. Etherscan writes zero as "0x"."""
+    if isinstance(v, str) and v.startswith("0x"):
+        return int(v[2:] or "0", 16)
+    return int(v)
 
 
 def _word_address(word: str) -> str:
@@ -147,7 +153,17 @@ def evm_scan(get_logs: GetLogs, c: IndexedContract, lo: int, hi: int) -> ScanRes
     out = ScanResult([], 0, [])
 
     def walk(ev: Event, a: int, b: int) -> None:
-        logs, sha = get_logs(c.contract, ev.topic, a, b)
+        try:
+            logs, sha = get_logs(c.contract, ev.topic, a, b)
+        except httpx.TimeoutException:
+            # The provider gave up on a wide range: ask for each half instead.
+            out.calls += 1
+            if a == b:
+                raise
+            mid = (a + b) // 2
+            walk(ev, a, mid)
+            walk(ev, mid + 1, b)
+            return
         out.calls += 1
         out.responses.append(sha)
         if len(logs) >= LOG_CAP:
@@ -163,7 +179,8 @@ def evm_scan(get_logs: GetLogs, c: IndexedContract, lo: int, hi: int) -> ScanRes
             out.events.append(evm_event(c, ev, log, sha))
 
     for ev in c.events:
-        walk(ev, lo, hi)
+        for start in range(lo, hi + 1, EVM_SPAN):
+            walk(ev, start, min(start + EVM_SPAN - 1, hi))
     seen, unique = set(), []
     for e in sorted(out.events, key=lambda e: (e.block_number, e.log_index)):
         if e.key not in seen:
@@ -171,6 +188,38 @@ def evm_scan(get_logs: GetLogs, c: IndexedContract, lo: int, hi: int) -> ScanRes
             unique.append(e)
     out.events = unique
     return out
+
+
+def walk_windows(get_logs: GetLogs, contract: str, topic: str, lo: int, hi: int, save, *, span: int = 8_000,
+                 grow_after: int = 3, max_span: int = 500_000) -> int:
+    """Read blocks lo..hi oldest first in windows, calling save(a, b, logs, sha) after
+    each answered window, so a stopped run can start again after the last one saved.
+    A window that times out or reaches LOG_CAP is halved and asked again; after
+    grow_after answers in a row the window grows by half. Blockscout answered USDT
+    windows of about 4,000 to 15,000 blocks and timed out on wider ones (2026-11-21).
+    Returns the number of requests made."""
+    calls, streak, a = 0, 0, lo
+    while a <= hi:
+        b = min(a + span - 1, hi)
+        try:
+            logs, sha = get_logs(contract, topic, a, b)
+        except httpx.TimeoutException:
+            calls += 1
+            if a == b:
+                raise
+            span, streak = max(1, (b - a + 1) // 2), 0
+            continue
+        calls += 1
+        if len(logs) >= LOG_CAP:
+            if a == b:
+                raise RuntimeError(f"{contract} {topic}: {len(logs)} logs in block {a}; cannot split further")
+            span, streak = max(1, (b - a + 1) // 2), 0
+            continue
+        save(a, b, logs, sha)
+        a, streak = b + 1, streak + 1
+        if streak >= grow_after:
+            span, streak = min(max_span, span + span // 2), 0
+    return calls
 
 
 def blockscout_logs(adapter) -> GetLogs:

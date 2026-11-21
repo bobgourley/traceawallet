@@ -602,6 +602,26 @@ def test_budget_ledger_splits_worker_and_scripts(conns):
     tomorrow.before_call(20)                              # a new day starts from nothing
 
 
+def test_the_backfill_is_its_own_ledger_line_and_saves_its_progress(conns):
+    """0019: the backfill's consumer, and its saved replies."""
+    from taw import blacklist_backfill as bf
+    from taw.budget import PostgresBudget
+    data, _ = conns
+    now = lambda: dt.datetime(2026, 11, 21, 2, tzinfo=dt.timezone.utc)   # noqa: E731
+    backfill = PostgresBudget(data, "backfill", allowance=100_000, now=now)
+    backfill.before_call(20)
+    backfill.after_call(20, 60_000)
+    assert backfill.used() == {"backfill": 20}
+    parts = bf.Parts(data)
+    rows = [{"blockNumber": "0x10", "logIndex": "0x", "topics": ["0x" + "1" * 64]}]
+    parts.save(bf.OWNER_MULTISIG, "owner_executions", 100, 199, rows, "a" * 64)
+    parts.save(bf.OWNER_MULTISIG, "owner_executions", 100, 199, [], "b" * 64)          # saved once
+    parts.save(bf.OWNER_MULTISIG, "owner_executions", 200, 450, [], "c" * 64)
+    got = parts.load(bf.OWNER_MULTISIG, "owner_executions")
+    assert [(p.from_block, p.to_block, p.sha256) for p in got] == [(100, 199, "a" * 64), (200, 450, "c" * 64)]
+    assert got[0].rows == rows and parts.load(bf.OWNER_MULTISIG, "other") == []
+
+
 def test_range_store_round_trip(conns):
     from taw.budget import PostgresRangeStore
     data, _ = conns

@@ -9,6 +9,9 @@ kept apart:
   worker   the production worker. It may use the whole allowance.
   scripts  try_evm, cross_check_evm, check_cases and the like. They may use at most
            30% of the allowance, and never what the worker's 70% has not yet used.
+  backfill the Ethereum blacklist backfill only (owner's decision, 2026-11-21). It may
+           use the allowance until what is left falls to WORKER_RESERVE
+           (BLOCKSCOUT_WORKER_RESERVE, default 25,000 credits), kept for live lookups.
 
 Credits per call are estimates from Blockscout's docs (20 for an ordinary call, 30 to
 50 for some REST endpoints; REST is counted as 50 to be safe). The provider's own
@@ -27,6 +30,11 @@ from typing import Protocol
 
 PROVIDER = "blockscout"
 SCRIPT_SHARE = 0.30
+WORKER_RESERVE = 25_000          # credits the backfill leaves for the worker each day
+
+
+def backfill_reserve() -> int:
+    return int(os.environ.get("BLOCKSCOUT_WORKER_RESERVE", str(WORKER_RESERVE)))
 
 
 @dataclass(frozen=True)
@@ -86,6 +94,13 @@ def check_allowance(consumer: str, credits: int, used: dict[str, int], remaining
     if remaining - credits < 0:
         raise BudgetExhausted(f"{p.name}'s daily allowance is used up; it resets at 00:00 UTC.", resets_at, consumer,
                               p.name)
+    if consumer == "backfill":
+        reserve = backfill_reserve()
+        if remaining - credits < reserve:
+            raise BudgetExhausted(
+                f"The backfill has used what it may of {p.name}'s daily allowance today; {reserve:,} {p.unit} are "
+                "kept for the production worker. It resets at 00:00 UTC.", resets_at, consumer, p.name)
+        return
     if consumer == "scripts":
         share = int(allowance * SCRIPT_SHARE)
         worker_reserve = max(0, allowance - share - used.get("worker", 0))
@@ -102,7 +117,7 @@ class PostgresBudget:
 
     def __init__(self, conn, consumer: str, *, provider: str = PROVIDER, allowance: int | None = None,
                  now=lambda: dt.datetime.now(dt.timezone.utc)):
-        if consumer not in ("worker", "scripts"):
+        if consumer not in ("worker", "scripts", "backfill"):
             raise ValueError(consumer)
         self.conn, self.consumer, self.provider = conn, consumer, provider
         self.allowance = allowance or daily_allowance(provider)
@@ -164,9 +179,10 @@ class PostgresRangeStore:
         self.conn.execute("DELETE FROM blockscout_internal_range WHERE chain = %s", (chain,))
 
 
-def script_budget_or_exit():
+def script_budget_or_exit(consumer: str = "scripts"):
     """(budget, range_store) for a script, or exit with a plain message. Scripts may
-    only spend metered calls where the ledger is, i.e. inside Railway."""
+    only spend metered calls where the ledger is, i.e. inside Railway. consumer
+    "backfill" is for scripts/backfill_blacklist.py eth only."""
     from taw import config
     try:
         import psycopg
@@ -176,4 +192,4 @@ def script_budget_or_exit():
         sys.exit("This script spends Blockscout calls, which are metered in the database. Run it inside "
                  "Railway, e.g. railway ssh --service traceawallet-worker -- python scripts/<name>.py ...\n"
                  f"(could not open the ledger: {type(exc).__name__})")
-    return PostgresBudget(conn, "scripts"), PostgresRangeStore(conn)
+    return PostgresBudget(conn, consumer), PostgresRangeStore(conn)
