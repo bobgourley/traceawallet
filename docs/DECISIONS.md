@@ -3,6 +3,82 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-21: Ethereum blacklist backfill, two report fixes, what OKX's file covers
+
+**What happened.** After the Blockscout reset at 00:00 UTC the Ethereum backfill
+(`scripts/backfill_blacklist.py eth`) was run and stopped:
+- Blockscout's `eth_getLogs` on the USDT contract timed out for the whole range,
+  and for 1-million-block spans. Spans of about 4,000 to 15,000 blocks were
+  answered, in 10 to 70 seconds each. Its Etherscan-style `module=logs` timed
+  out on a 1-million-block span too.
+- At that rate USDT and USDC need about 15,000 requests, around 300,000 credits,
+  against 30,000 a day for scripts. The run was stopped after 380 credits;
+  nothing was written.
+
+**Owner's decision: option (a).** The backfill may use most of the daily
+Blockscout allowance until it is done, leaving the worker enough for live
+lookups. Case checks wait until it finishes. Before that, at most 30 minutes on
+whether Tether's owner contract gives every action cheaply; any result must
+match Etherscan's counts and be checked against the USDT contract, or be dropped.
+
+**The owner route works for USDT.**
+- USDT's `owner()` on Ethereum is `0xc6cde7c39eb2f0f0095f41570af89efc2c1ea828`,
+  a Gnosis MultiSigWallet (2017). Every proposal is a `submitTransaction` call
+  whose input holds the exact call to USDT; proposals are numbered in the order
+  they succeed; each one carried out emits `Execution(id)` on the multisig.
+- Read through Etherscan (free) on 2026-11-21: 17,370 multisig transactions,
+  5,872 successful proposals (equal to its `transactionCount()`), 5,512
+  executions. The executed calls to USDT give 3,243 `addBlackList`, 347
+  `removeBlackList` and 1,309 `destroyBlackFunds`: Etherscan's counts exactly.
+- Checked against USDT's own events: 4,899 of 4,899 match by transaction, log
+  position (the USDT event is the log just before `Execution`) and address. One
+  2017 `destroyBlackFunds` call was sent with its argument one byte short; read
+  as the EVM reads it (zeros on the right), it matches.
+- Destruction amounts appear only in USDT's event, so the route also reads USDT's
+  `DestroyedBlackFunds` logs in 218 windows of at most 4,000 blocks around the
+  destructions, and requires them to be exactly the destructions the owner made.
+- On Blockscout: about 18 pages of transactions, a handful of `Execution` log
+  windows, one count and about 218 destruction windows. A few hundred requests
+  instead of about 15,000.
+- USDC has no such owner; its blacklister is a plain account today but has
+  changed over time. USDC is read window by window.
+
+**How the backfill runs** (`taw/blacklist_backfill.py`, migration 0019).
+- Every reply Blockscout answers is saved in `blacklist_backfill_part` before the
+  next request. A run stopped by the allowance, a timeout or a restart carries on
+  where it stopped. `--until-done` waits for the reset and carries on by itself.
+- Windows start at 8,000 blocks, are halved on a timeout or a full page and grow
+  by half after three answers in a row.
+- Nothing reaches `blacklist_event` until the contract is finished and
+  Etherscan's events agree one by one: transaction, log position, address and,
+  for destructions, amount. The daily `blacklist_refresh` job never sees a
+  half-filled index.
+- A third ledger consumer, `backfill`, may spend the allowance until Blockscout's
+  remaining credits fall to `BLOCKSCOUT_WORKER_RESERVE` (default 25,000). Scripts
+  keep their 30%; the worker may still use everything.
+- Etherscan writes log position 0 as `"0x"`. The parser now reads it as zero; the
+  first comparison run would have stopped on it.
+
+**Report fixes.**
+- A stablecoin that does not add up was shown with the check's stored sentence:
+  "stablecoin 0xdac1...1ec7 is frozen with a zero balance, transfers in minus out
+  2137276136000". The report now words it from the numbers, with the token's name
+  and decimals: "USDT: the address is frozen and holds none, but the transfers
+  read leave 2,137,276.136 USDT unaccounted for." The stored check is unchanged.
+- Holdings showed "no price available" for ETH while Activity had dollar figures.
+  Holdings are valued at the snapshot's hour, and the worker priced only transfer
+  dates. It now also prices each asset held at the snapshot time, ahead of the
+  transfers inside the 40-bucket cap. Reports built before this keep their
+  wording; the next lookup of the address fills the price.
+
+**What OKX's file covers.** OKX's proof-of-reserves file lists OKX's own reserve
+wallets, not the deposit addresses it creates for each customer. Checked on
+2026-11-21: none of the 83 addresses the five complaints print is in it,
+including the ten the D.D.C. G.B. complaint (1:25-cv-01907) discusses in its
+paragraphs on OKX deposit accounts (¶178-186). A first-hop address that is an OKX
+customer's deposit address will therefore usually match nothing. The report
+already says that an address matching nothing may still belong to an exchange.
+
 ## 2026-11-20 (late night): Busy addresses, timeouts, and a waiting page that shows its work
 
 **What happened.** A live lookup of `bc1q8yja3gw33ngd8aunmfr4hj820adc9nlsv0syvz`
