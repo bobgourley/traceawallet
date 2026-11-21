@@ -34,7 +34,7 @@ WORKER_RESERVE = 25_000          # credits the backfill leaves for the worker ea
 
 
 def backfill_reserve() -> int:
-    return int(os.environ.get("BLOCKSCOUT_WORKER_RESERVE", str(WORKER_RESERVE)))
+    return int(os.environ.get("BLOCKSCOUT_WORKER_RESERVE") or WORKER_RESERVE)
 
 
 @dataclass(frozen=True)
