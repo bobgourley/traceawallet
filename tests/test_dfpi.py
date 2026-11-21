@@ -114,7 +114,7 @@ def test_the_private_section_states_what_matched_in_dfpis_words():
     assert "You entered: https://www.hcxz.com/login\nWebsite checked: hcxz.com\n" in section
     assert "California DFPI Crypto Scam Tracker (read 2026-11-21):\n  - Website: 1 entry lists hcxz.com.\n" in section
     assert '      "hcxz.com gptss.com" (listed website: hcxz.com)' in section
-    assert 'DFPI says they "are based on consumer complaints"' in section
+    assert 'DFPI says the tracker\'s entries "are based on consumer complaints"' in section
     for word in ("scam ", "fraud", "suspicious", "risk", "dangerous", "legitimate"):
         assert word not in section.replace("Crypto Scam Tracker", "").lower()
     assert "== The platform you entered" not in render_text(data)          # nothing entered, no section
