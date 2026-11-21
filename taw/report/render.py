@@ -107,6 +107,13 @@ def num(value) -> str:
     return ("-" if neg else "") + grouped + (f".{frac}" if frac else "")
 
 
+def sentence(value) -> str:
+    """The first letter in upper case and nothing else changed: "the USD1 issuer" ->
+    "The USD1 issuer" (Jinja's capitalize would lower the rest)."""
+    s = str(value)
+    return s[:1].upper() + s[1:]
+
+
 def when(value) -> str:
     if value is None:
         return "unknown"
@@ -153,6 +160,7 @@ def _env(html: bool = False) -> Environment:
         env.filters.update(addr=_same, txh=_same, copyable=_same, link=_same, goplus=_same)
     env.globals.update(when_span=when_span, USED_FOR_WORDS=USED_FOR_WORDS, CREDITS=CREDITS, LIST_NAMES=LIST_NAMES,
                        HISTORY_WORDS=HISTORY_WORDS, SKIP_CHECKS=SKIP_CHECKS)
+    env.filters["sentence"] = sentence
     env.globals.update(plural=plural, CHECK_TITLES=CHECK_TITLES, STATUS_WORDS=STATUS_WORDS,
                        NOT_CHECKED_WORDS=NOT_CHECKED_WORDS, NOT_READ_WORDS=NOT_READ_WORDS, RECON_WORDS=RECON_WORDS,
                        FIXED_START=FIXED_START, FIXED_END=FIXED_END)

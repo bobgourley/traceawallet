@@ -713,6 +713,7 @@
    },
    "freeze": [
     {
+     "action": "frozen",
      "block": 26458162,
      "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7",
      "date_note": "not read: the index of this contract's freeze events is not available",
@@ -720,6 +721,8 @@
      "function": "isBlackListed",
      "issuer": "Tether",
      "read_at": "2026-11-20T18:41:58Z",
+     "removal": "destroy it",
+     "shown": true,
      "since": null,
      "since_block": null,
      "since_tx": null,
@@ -727,6 +730,7 @@
      "token": "USDT"
     },
     {
+     "action": "frozen",
      "block": 26458162,
      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
      "date_note": null,
@@ -734,11 +738,132 @@
      "function": "isBlacklisted",
      "issuer": "Circle",
      "read_at": "2026-11-20T18:41:58Z",
+     "removal": null,
+     "shown": true,
      "since": null,
      "since_block": null,
      "since_tx": null,
      "status": "not_frozen",
      "token": "USDC"
+    },
+    {
+     "action": "frozen",
+     "block": null,
+     "contract": "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+     "date_note": null,
+     "destructions": [],
+     "function": "isFrozen",
+     "issuer": "Paxos",
+     "read_at": null,
+     "removal": "wipe it from the address",
+     "shown": false,
+     "since": null,
+     "since_block": null,
+     "since_tx": null,
+     "status": "not_checked",
+     "token": "PYUSD"
+    },
+    {
+     "action": "frozen",
+     "block": null,
+     "contract": "0x8e870d67f660d95d5be530380d0ec0bd388289e1",
+     "date_note": null,
+     "destructions": [],
+     "function": "isFrozen",
+     "issuer": "Paxos",
+     "read_at": null,
+     "removal": "wipe it from the address",
+     "shown": false,
+     "since": null,
+     "since_block": null,
+     "since_tx": null,
+     "status": "not_checked",
+     "token": "USDP"
+    },
+    {
+     "action": "frozen",
+     "block": null,
+     "contract": "0xe343167631d89b6ffc58b88d6b7fb0228795491d",
+     "date_note": null,
+     "destructions": [],
+     "function": "isFrozen",
+     "issuer": "Paxos",
+     "read_at": null,
+     "removal": "wipe it from the address",
+     "shown": false,
+     "since": null,
+     "since_block": null,
+     "since_tx": null,
+     "status": "not_checked",
+     "token": "USDG"
+    },
+    {
+     "action": "frozen",
+     "block": null,
+     "contract": "0xc5f0f7b66764f6ec8c8dff7ba683102295e16409",
+     "date_note": null,
+     "destructions": [],
+     "function": "frozen",
+     "issuer": "First Digital",
+     "read_at": null,
+     "removal": null,
+     "shown": false,
+     "since": null,
+     "since_block": null,
+     "since_tx": null,
+     "status": "not_checked",
+     "token": "FDUSD"
+    },
+    {
+     "action": "frozen",
+     "block": null,
+     "contract": "0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d",
+     "date_note": null,
+     "destructions": [],
+     "function": "frozen",
+     "issuer": "the USD1 issuer",
+     "read_at": null,
+     "removal": "move it to another address",
+     "shown": false,
+     "since": null,
+     "since_block": null,
+     "since_tx": null,
+     "status": "not_checked",
+     "token": "USD1"
+    },
+    {
+     "action": "paused",
+     "block": null,
+     "contract": "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+     "date_note": null,
+     "destructions": [],
+     "function": "accountPaused",
+     "issuer": "the RLUSD issuer",
+     "read_at": null,
+     "removal": null,
+     "shown": false,
+     "since": null,
+     "since_block": null,
+     "since_tx": null,
+     "status": "not_checked",
+     "token": "RLUSD"
+    },
+    {
+     "action": "frozen",
+     "block": null,
+     "contract": "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+     "date_note": null,
+     "destructions": [],
+     "function": "isBlacklisted",
+     "issuer": "Circle",
+     "read_at": null,
+     "removal": null,
+     "shown": false,
+     "since": null,
+     "since_block": null,
+     "since_tx": null,
+     "status": "not_checked",
+     "token": "EURC"
     }
    ],
    "native": {
@@ -1342,6 +1467,7 @@
    "destroyed": [],
    "frozen": [
     {
+     "action": "frozen",
      "issuer": "Tether",
      "since": null,
      "token": "USDT"
@@ -1367,5 +1493,5 @@
   },
   "summary_only": null
  },
- "sha256": "4911d2d1ea03e88836f72bd4612ba37491ad248584b0f82d31a7a76c3ef186de"
+ "sha256": "9288f532148474cd308275df3bb47af0c0510a06cdb0d58acddcdfefc4be5b80"
 }

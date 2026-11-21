@@ -26,7 +26,8 @@ class FreezeServer(FakeBlockscout):
         if request.method == "POST":
             rpc = json.loads(request.content)
             m, p = rpc["method"], rpc["params"]
-            if m == "eth_call" and p[0]["data"][:10] in ("0xe47d6060", "0xfe575a87", "0xfbac3951"):
+            if m == "eth_call" and p[0]["data"][:10] in ("0xe47d6060", "0xfe575a87", "0xfbac3951", "0xe5839836",
+                                                         "0xd0516650", "0xbc8c4b4f"):
                 self.requests.append(request)
                 self.calls.append({"rpc": m, "data": p[0]["data"], "tag": p[1]})
                 if self.status is None:
@@ -91,6 +92,68 @@ def test_tron_passes_the_address_as_the_parameter():
 
 
 def test_every_contract_is_in_a_known_source():
-    assert {c.source for c in freeze.CONTRACTS} == {"usdt-contract", "usdc-contract"}
-    assert {(c.chain, c.date_readable) for c in freeze.CONTRACTS if c.token != "USDT"} == {
-        ("eth", True), ("arbitrum", True), ("optimism", True), ("tron", False)}
+    assert {c.source for c in freeze.CONTRACTS} == {"usdt-contract", "usdc-contract", "paxos-contracts",
+                                                    "fdusd-contract", "usd1-contract", "rlusd-contract"}
+    readable = {(c.chain, c.token): c.date_readable for c in freeze.CONTRACTS}
+    assert readable == {("eth", "USDT"): False, ("eth", "USDC"): True, ("arbitrum", "USDT0"): True,
+                        ("arbitrum", "USDC"): True, ("optimism", "USDC"): True, ("eth", "PYUSD"): True,
+                        ("eth", "USDP"): True, ("eth", "USDG"): True, ("eth", "FDUSD"): True, ("eth", "USD1"): True,
+                        ("eth", "RLUSD"): False, ("eth", "EURC"): True, ("arbitrum", "PYUSD"): True,
+                        ("optimism", "USDT0"): False, ("tron", "USDT"): False, ("tron", "USDC"): False}
+    assert len({(c.chain, c.contract) for c in freeze.CONTRACTS}) == len(freeze.CONTRACTS)
+
+
+def test_the_original_tokens_are_always_shown_and_the_added_ones_only_when_they_say_something():
+    shown = {(c.chain, c.token) for c in freeze.CONTRACTS if c.always_shown}
+    assert shown == {("eth", "USDT"), ("eth", "USDC"), ("arbitrum", "USDT0"), ("arbitrum", "USDC"),
+                     ("optimism", "USDC"), ("tron", "USDT"), ("tron", "USDC")}
+
+
+def test_each_status_function_is_called_by_its_own_selector(tmp_path):
+    expected = {"PYUSD": "0xe5839836", "USDP": "0xe5839836", "USDG": "0xe5839836", "FDUSD": "0xd0516650",
+                "USD1": "0xd0516650", "RLUSD": "0xbc8c4b4f", "EURC": "0xfe575a87"}
+    for token, selector in expected.items():
+        server = FreezeServer(FALSE)
+        chk = freeze.check_evm(make(tmp_path / token, server), contract("eth", token), ADDR, 23_000_000)
+        assert chk.frozen is False
+        assert server.calls[0]["data"] == selector + "0" * 24 + ADDR[2:]
+
+
+def test_fdusd_and_usd1_find_the_account_in_the_second_topic(tmp_path):
+    # Freeze(address indexed caller, address indexed account): the frozen account is topic 2.
+    topic = "0x" + "0" * 24 + ADDR[2:]
+    usd1 = contract("eth", "USD1")
+    logs = [{"blockNumber": hex(800), "logIndex": "0x3", "topics": [usd1.events[0], "0x" + "0" * 64, topic],
+             "transactionHash": "0x" + "cd" * 32}]
+    server = FreezeServer(TRUE, logs)
+    chk = freeze.check_evm(make(tmp_path, server), usd1, ADDR, 900)
+    flt = next(c["filter"] for c in server.calls if c["rpc"] == "eth_getLogs")
+    assert flt["topics"] == [list(usd1.events), None, topic]
+    assert chk.frozen_since_block == 800
+    assert chk.claim().label == ("frozen by the USD1 issuer: the USD1 contract on Ethereum "
+                                 "(0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d) reports frozen = true for this address")
+
+
+def test_rlusd_uses_its_own_word_and_claims_no_date(tmp_path):
+    server = FreezeServer(TRUE)
+    chk = freeze.check_evm(make(tmp_path, server), contract("eth", "RLUSD"), ADDR, 900)
+    assert [c["rpc"] for c in server.calls] == ["eth_call"] and chk.frozen_since is None
+    assert chk.claim().label.startswith("paused by the RLUSD issuer: the RLUSD contract on Ethereum")
+
+
+def test_paxos_freeze_date_from_freezeaddress(tmp_path):
+    topic = "0x" + "0" * 24 + ADDR[2:]
+    pyusd = contract("eth", "PYUSD")
+    server = FreezeServer(TRUE, [{"blockNumber": hex(700), "logIndex": "0x1", "topics": [pyusd.events[0], topic]}])
+    chk = freeze.check_evm(make(tmp_path, server), pyusd, ADDR, 900)
+    flt = next(c["filter"] for c in server.calls if c["rpc"] == "eth_getLogs")
+    assert flt["topics"] == [list(pyusd.events), topic] and chk.frozen_since_block == 700
+    assert chk.claim().label.startswith("frozen by Paxos: the PYUSD contract on Ethereum")
+
+
+def test_what_each_issuer_can_do_with_a_frozen_balance():
+    removal = {(c.chain, c.token): c.removal for c in freeze.CONTRACTS}
+    assert removal[("eth", "USDT")] == removal[("tron", "USDT")] == removal[("optimism", "USDT0")] == "destroy it"
+    assert removal[("eth", "PYUSD")] == "wipe it from the address" and removal[("eth", "USD1")] == \
+        "move it to another address"
+    assert removal[("eth", "USDC")] is None and removal[("eth", "EURC")] is None   # Circle's contract cannot

@@ -37,7 +37,7 @@ This is a summary only. This address is too busy to read in detail: it has {{ d.
 No transfers of an asset we recognise were read.
 {% endfor %}
 {% for x in sm.frozen %}
-Frozen: {{ x.issuer }} has frozen this address's {{ x.token }}{% if x.since %} since {{ x.since|day }}{% endif %}. The address can no longer send {{ x.token }}.
+{{ x.action|sentence }}: {{ x.issuer }} has {{ x.action }} this address's {{ x.token }}{% if x.since %} since {{ x.since|day }}{% endif %}. The address can no longer send {{ x.token }}.
 {% endfor %}
 {% for x in sm.destroyed %}
 Destroyed: {{ x.issuer }} destroyed {{ x.amount|num }} {{ x.token }} held at this address on {{ x.time|day }}.
@@ -141,9 +141,9 @@ Share held in stablecoins the issuer can freeze: {% if hd.freezable.share_status
 {% endif %}
 
 Freeze status:
-{% for fz in hd.freeze %}
+{% for fz in hd.freeze if fz.shown %}
 {% if fz.status == "frozen" %}
-  {{ fz.token }}: frozen by {{ fz.issuer }}{% if fz.since %} since {{ fz.since|when }}{% endif %}. This address can no longer send {{ fz.token }}. A freeze does not return money to anyone; that takes legal process. {{ fz.issuer }} can later release the frozen {{ fz.token }} or destroy it.
+  {{ fz.token }}: {{ fz.action }} by {{ fz.issuer }}{% if fz.since %} since {{ fz.since|when }}{% endif %}. This address can no longer send {{ fz.token }}. A freeze does not return money to anyone; that takes legal process. {{ fz.issuer|sentence }} can later release the {{ fz.action }} {{ fz.token }}{% if fz.removal %} or {{ fz.removal }}{% endif %}.
     Detail: the {{ fz.token }} contract {{ fz.contract|copyable }} reports {{ fz.function }} = true{% if fz.block %} at block {{ fz.block|num }}{% else %} at the chain's latest block when checked{% endif %}{% if fz.since %}; frozen in block {{ fz.since_block|num }}, transaction {{ fz.since_tx|txh }}{% else %}; freeze date: {{ fz.date_note or "not found" }}{% endif %}.
 {% elif fz.status == "not_frozen" %}
   {{ fz.token }}: not frozen.
@@ -160,6 +160,10 @@ Freeze status:
 {% else %}
   No stablecoin on {{ h.chain_name }} is checked for freezes.
 {% endfor %}
+{% set others = hd.freeze|rejectattr("shown")|selectattr("status", "equalto", "not_frozen")|list %}
+{% if others %}
+  Also checked{% if others[0].block %} at block {{ others[0].block|num }}{% endif %}: {{ others|map(attribute="token")|join(", ") }}. Each token's own contract reports this address as not {{ "frozen or paused" if others|selectattr("action", "equalto", "paused")|list else "frozen" }}.
+{% endif %}
 
 OFAC sanctions list: {% if hd.ofac.listed %}this address is on it.{% for l in hd.ofac.labels %} {{ l.label }} (list dated {{ l.source_date or "unknown" }}).{% endfor %}{% else %}this address is not on OFAC's SDN list{% if hd.ofac.list_date %} as published on {{ hd.ofac.list_date }}{% endif %}.{% endif %}
 

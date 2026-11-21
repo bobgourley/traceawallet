@@ -228,13 +228,21 @@ def _freeze_status(inp: ReportInput, c: Ctx) -> dict[str, dict]:
     out = {}
     checks = {(k["source"], c.norm(k["subject"])): k for k in inp.label_checks}
     recon = {c.norm(t["contract"]): t for t in inp.snapshot.get("token_reconciliation") or []}
+    touched = {c.norm(b["contract"]) for b in inp.snapshot.get("token_balances") or [] if int(b["amount_raw"]) > 0}
+    touched |= {c.norm(t.token_contract) for t in inp.transfers if t.token_contract}
     for key, fc in c.freezable.items():
         k = checks.get((fc.source, key))
         det = (k or {}).get("detail") or {}
         t = recon.get(key) or {}
+        status = k["result"] if k else "not_checked"
         out[key] = {
             "token": fc.token, "issuer": fc.issuer, "contract": fc.contract, "function": fc.function,
-            "status": k["result"] if k else "not_checked",
+            "action": fc.action, "removal": fc.removal,
+            # A token added later is shown in full only when it says something about this
+            # address; otherwise it is named on one "also checked" line (or left out if
+            # this snapshot predates it).
+            "shown": fc.always_shown or status in ("frozen", "no_answer") or key in touched,
+            "status": status,
             "block": k.get("block") if k else None,
             "read_at": iso(k["observed_at"]) if k and isinstance(k.get("observed_at"), dt.datetime) else None,
             "since": det.get("frozen_since"), "since_block": det.get("frozen_since_block"),
@@ -645,7 +653,7 @@ def _summary(holdings: dict, activity: dict, hops: dict, lists: dict, completene
     for t in holdings["tokens"]:
         if t["recognised"] and int(t["amount_raw"]) > 0:
             held.append({"name": t["asset"] or t["symbol"], "amount": t["amount"], "freezable": t["freezable"]})
-    frozen = [{"token": f["token"], "issuer": f["issuer"], "since": f["since"]}
+    frozen = [{"token": f["token"], "issuer": f["issuer"], "since": f["since"], "action": f["action"]}
               for f in holdings["freeze"] if f["status"] == "frozen"]
     destroyed = [{"token": f["token"], "issuer": f["issuer"], "amount": x["amount"], "time": x["time"]}
                  for f in holdings["freeze"] for x in f["destructions"]]

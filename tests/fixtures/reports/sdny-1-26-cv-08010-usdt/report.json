@@ -959,6 +959,7 @@
    },
    "freeze": [
     {
+     "action": "frozen",
      "block": null,
      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
      "date_note": "from the last freeze event for this address (transaction 5ad88ed4d8d52bb95b3494cf7bdc1a80be6453e7207dd4b40fc01f5a86eb885e) in the index of the contract's freeze events, complete to block 88,173,787",
@@ -966,6 +967,8 @@
      "function": "isBlackListed",
      "issuer": "Tether",
      "read_at": "2026-11-20T18:42:29Z",
+     "removal": "destroy it",
+     "shown": true,
      "since": "2025-07-26T10:52:15+00:00",
      "since_block": 74289511,
      "since_tx": "5ad88ed4d8d52bb95b3494cf7bdc1a80be6453e7207dd4b40fc01f5a86eb885e",
@@ -973,6 +976,7 @@
      "token": "USDT"
     },
     {
+     "action": "frozen",
      "block": null,
      "contract": "TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8",
      "date_note": null,
@@ -980,6 +984,8 @@
      "function": "isBlacklisted",
      "issuer": "Circle",
      "read_at": "2026-11-20T18:42:29Z",
+     "removal": null,
+     "shown": true,
      "since": null,
      "since_block": null,
      "since_tx": null,
@@ -4357,6 +4363,7 @@
    "destroyed": [],
    "frozen": [
     {
+     "action": "frozen",
      "issuer": "Tether",
      "since": "2025-07-26T10:52:15+00:00",
      "token": "USDT"
@@ -4387,5 +4394,5 @@
   },
   "summary_only": null
  },
- "sha256": "72009f800e85f5213c448ba961d524686b07f0ace04e4cb60f207fe6b92e18b4"
+ "sha256": "bfd9dc2dd16215ca82aae5e8a5590dfaeac69b021150cbfe4c5a7ea4b6d04d25"
 }

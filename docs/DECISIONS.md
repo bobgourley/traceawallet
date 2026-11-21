@@ -3,6 +3,63 @@
 Choices made while building, and why. Newest first. A later decision that
 reverses an earlier one says so; nothing here is edited away.
 
+## 2026-11-21: More stablecoin freeze checks
+
+**What.** The owner's first pick from `docs/research/more-sources.md`. Freeze
+status is now read for PYUSD, USDP, USDG, FDUSD, USD1, RLUSD and EURC on
+Ethereum, PYUSD on Arbitrum One and USDT0 on OP Mainnet, the same way as USDT
+and USDC: the contract's own status function at the snapshot block, a date only
+where it is cheap, a label worded as the issuer's action.
+
+**How each was confirmed (2026-11-21).**
+- The function and event names come from the verified ABI of the implementation
+  behind each proxy (Etherscan's free API).
+- Each status function was called at the latest block. It answered false for an
+  unused address, and true for an address taken from that token's own recent
+  freeze events. Arbitrum PYUSD has never frozen an address; its function answers.
+- FDUSD and USD1 emit `Freeze(caller, account)` with both indexed. The frozen
+  account is the second topic; reading the first would date the issuer's own
+  operator. The date search puts the address in topic position 2 for these.
+- RLUSD's `AccountPaused` does not index the address, so no date is read.
+- USDT0 on OP Mainnet: Etherscan's free tier does not cover OP Mainnet, and the
+  public OP endpoint limits log searches to 10,000 blocks, so its event layout
+  was not confirmed. Its status is read; no date is claimed.
+
+**Wording.**
+- Each label names the issuer and the contract's function: "frozen by Paxos: the
+  PYUSD contract on Ethereum (...) reports isFrozen = true for this address".
+  RLUSD's contract calls it a pause, so its label says "paused by the RLUSD
+  issuer".
+- USD1 and RLUSD contracts name no company we have confirmed as the issuer, so
+  the wording is "the USD1 issuer" and "the RLUSD issuer". A sentence that starts
+  with one gets a capital (filter `sentence`).
+- "Can later release the frozen X or destroy it" now names only what each
+  contract allows: destroy (Tether's contracts), wipe it from the address
+  (Paxos's `wipeFrozenAddress`), move it to another address (USD1's
+  `FrozenFundsReallocated`), otherwise release only. This corrects the USDC line:
+  Circle's contract has no function that destroys a frozen balance.
+
+**Reports stay short.** USDT and USDC keep their full lines. An added token gets
+full lines only when it is frozen, gave no answer, or the address held or moved
+it; the rest share one line: "Also checked at block N: PYUSD, USDP, ... Each
+token's own contract reports this address as not frozen (or paused)." Reports
+built before this change don't mention the added tokens at all.
+
+**Sources (migration 0020).** `paxos-contracts` (PYUSD, USDP, USDG),
+`fdusd-contract`, `usd1-contract`, `rlusd-contract`; EURC joins `usdc-contract`
+(renamed "Circle USDC and EURC contract state") and OP USDT0 joins
+`usdt-contract`.
+
+**Cost.** Each Ethereum lookup makes seven more `eth_call`s (about 140 credits),
+Arbitrum one more and OP Mainnet one more.
+
+**Not changed.** RLUSD (Ethereum) and USDT0 (OP Mainnet) were not added to the
+list of stablecoins whose balance is always read: that changes the requests the
+recorded replays expect, and re-recording spends Blockscout credits. Their
+balances are read when they are among the address's most-used tokens. The
+research's USDC rows for Base, Polygon and Avalanche wait until those chains are
+covered.
+
 ## 2026-11-21: Ethereum blacklist backfill, two report fixes, what OKX's file covers
 
 **What happened.** After the Blockscout reset at 00:00 UTC the Ethereum backfill

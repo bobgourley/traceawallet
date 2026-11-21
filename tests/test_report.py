@@ -301,7 +301,8 @@ def test_token_names_carry_the_warning_and_never_form_a_link():
 def test_summary_from_the_data():
     _, data = built("sdny-1-26-cv-08010-usdt")
     sm = data["summary"]
-    assert sm["frozen"] == [{"token": "USDT", "issuer": "Tether", "since": "2025-07-26T10:52:15+00:00"}]
+    assert sm["frozen"] == [{"token": "USDT", "issuer": "Tether", "since": "2025-07-26T10:52:15+00:00",
+                             "action": "frozen"}]
     assert sm["largest_destination"]["address"] == "TWzSiPtNaievW4n7ibFNkVK2ZSPkKBqchq"
     assert sm["largest_destination"]["share_percent"] == "84.8"
     assert (sm["history"], sm["list_matches"], sm["checked"]) == ("complete", 0, 193)
@@ -454,3 +455,62 @@ def test_the_private_section_is_only_rendered_with_a_match():
     from taw.report.render import render_html
     _, data = built("wdpa-2-26-cv-00087-usdt")
     assert "Your transaction" not in str(render_html(data))
+
+
+# -- more freezable stablecoins (2026-11-21) -----------------------------------------------------
+
+def _freeze_entry(data, token):
+    return next(f for f in data["holdings"]["freeze"] if f["token"] == token)
+
+
+def test_tokens_added_later_stay_out_of_reports_built_before_them():
+    text = render_text(built("wdpa-2-26-cv-00087-usdt")[1])
+    assert "PYUSD" not in text and "Also checked" not in text
+
+
+def test_quiet_added_tokens_share_one_line():
+    _, data = built("wdpa-2-26-cv-00087-usdt")
+    for token in ("PYUSD", "USDP", "RLUSD"):
+        _freeze_entry(data, token).update(status="not_frozen", block=26_460_149)
+    text = render_text(data)
+    assert ("  Also checked at block 26,460,149: PYUSD, USDP, RLUSD. Each token's own contract reports this address "
+            "as not frozen or paused.\n") in text
+    assert "PYUSD: not frozen" not in text
+
+
+def test_a_frozen_added_token_gets_its_own_lines_in_its_issuers_words():
+    _, data = built("wdpa-2-26-cv-00087-usdt")
+    usd1 = _freeze_entry(data, "USD1")
+    usd1.update(status="frozen", shown=True, block=26_460_149)
+    rlusd = _freeze_entry(data, "RLUSD")
+    rlusd.update(status="frozen", shown=True, block=26_460_149)
+    data["summary"]["frozen"] = [{"token": "RLUSD", "issuer": "the RLUSD issuer", "since": None, "action": "paused"}]
+    text = render_text(data)
+    assert ("USD1: frozen by the USD1 issuer. This address can no longer send USD1. A freeze does not return money to "
+            "anyone; that takes legal process. The USD1 issuer can later release the frozen USD1 or move it to another "
+            "address.") in text
+    assert "RLUSD: paused by the RLUSD issuer." in text and "release the paused RLUSD." in text
+    assert "Paused: the RLUSD issuer has paused this address's RLUSD. The address can no longer send RLUSD." in text
+
+
+def test_circle_is_not_said_to_destroy_frozen_usdc():
+    _, data = built("wdpa-2-26-cv-00087-usdt")
+    _freeze_entry(data, "USDC").update(status="frozen", block=1)
+    text = render_text(data)
+    assert "Circle can later release the frozen USDC." in text and "frozen USDC or destroy it" not in text
+
+
+def test_an_added_token_the_address_holds_is_shown_in_full():
+    from taw.report.build import build
+    inp, _ = built("wdpa-2-26-cv-00087-usdt")
+    inp.snapshot["token_balances"] = list(inp.snapshot["token_balances"]) + [
+        {"contract": "0x6c3ea9036406852006290770bedfcaba0e23a0e8", "amount_raw": 5_000_000, "decimals": 6,
+         "symbol": "PYUSD"}]
+    data = build(inp)
+    assert _freeze_entry(data, "PYUSD")["shown"] is True and _freeze_entry(data, "USDP")["shown"] is False
+    assert "PYUSD: not checked for this report." in render_text(data)
+
+
+def test_sentence_capitalises_only_the_first_letter():
+    from taw.report.render import sentence
+    assert sentence("the USD1 issuer") == "The USD1 issuer" and sentence("Paxos") == "Paxos" and sentence("") == ""

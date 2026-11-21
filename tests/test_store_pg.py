@@ -622,6 +622,17 @@ def test_the_backfill_is_its_own_ledger_line_and_saves_its_progress(conns):
     assert got[0].rows == rows and parts.load(bf.OWNER_MULTISIG, "other") == []
 
 
+def test_every_freeze_contract_has_its_source_row(conns):
+    """0020: the added stablecoins' sources exist, each worded as the issuer's action."""
+    from taw.adapters.labels import freeze
+    data, _ = conns
+    rows = dict(data.execute("SELECT slug, attribution FROM source").fetchall())
+    for c in freeze.CONTRACTS:
+        assert c.source in rows, c
+    assert rows["paxos-contracts"] == "frozen by Paxos" and rows["rlusd-contract"] == "paused by the RLUSD issuer"
+    assert count(data, "SELECT count(*) FROM source WHERE slug = 'usdc-contract' AND name LIKE '%EURC%'") == 1
+
+
 def test_range_store_round_trip(conns):
     from taw.budget import PostgresRangeStore
     data, _ = conns
