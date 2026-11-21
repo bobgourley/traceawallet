@@ -450,7 +450,9 @@ def test_every_source_shown_to_users_has_its_terms_checked(conns):
                  "ofac-sdn", "nbctf"):
         assert rows[slug] == dt.date(2026, 11, 19), slug
     resale = {s for (s,) in data.execute("SELECT slug FROM source WHERE resale_permitted")}
-    assert resale <= {"ofac-sdn", "usdt-contract", "usdc-contract"}
+    # Public chain state and US government work only (the freeze contracts added 2026-11-21 included).
+    assert resale <= {"ofac-sdn", "usdt-contract", "usdc-contract", "paxos-contracts", "fdusd-contract",
+                      "usd1-contract", "rlusd-contract"}
     assert count(data, "SELECT count(*) FROM event_log WHERE actor = 'migration:0006_source_terms'") == 8
 
 
@@ -630,7 +632,7 @@ def test_every_freeze_contract_has_its_source_row(conns):
     for c in freeze.CONTRACTS:
         assert c.source in rows, c
     assert rows["paxos-contracts"] == "frozen by Paxos" and rows["rlusd-contract"] == "paused by the RLUSD issuer"
-    assert count(data, "SELECT count(*) FROM source WHERE slug = 'usdc-contract' AND name LIKE '%EURC%'") == 1
+    assert count(data, "SELECT count(*) FROM source WHERE slug = 'usdc-contract' AND position('EURC' in name) > 0") == 1
 
 
 def test_range_store_round_trip(conns):
