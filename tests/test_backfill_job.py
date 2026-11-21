@@ -106,6 +106,7 @@ pg = pytest.mark.skipif(not ADMIN_URL, reason="TEST_DATABASE_URL not set")
 def test_slices_carry_on_after_a_restart_and_finish_when_etherscan_agrees(conns):
     from taw.worker import lists
     data, _ = conns
+    _replies_saved(data)
     chain = history()
     assert lists.backfill_needed(data) and jobs.ensure_backfill(data, needed=True)
     assert not jobs.ensure_backfill(data, needed=True)                  # one at a time
@@ -132,6 +133,7 @@ def test_slices_carry_on_after_a_restart_and_finish_when_etherscan_agrees(conns)
 def test_providers_that_differ_write_nothing_and_fail_the_job(conns):
     from taw.worker import lists
     data, _ = conns
+    _replies_saved(data)
     chain = history()
     with pytest.raises(RuntimeError, match="NOT written, providers differ: USDT"):
         lists.run_backfill(data_conn=data, raw_store=None, actor=ACTOR, scout=FakeScout(chain),
@@ -164,3 +166,9 @@ def _stop_after(scout, n):
                 return target(*a, **k)
             return wrapped
     return Stopping()
+
+
+def _replies_saved(data):
+    """raw_response rows for the fakes' replies, as the bucket store would have written (rule 3)."""
+    from tests.test_report_pg import seed_raw
+    seed_raw(data, "blockscout", ["l" * 64, "t" * 64, "u" * 64, "c" * 64, "h" * 64])
