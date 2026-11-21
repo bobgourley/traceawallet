@@ -175,3 +175,10 @@ def test_the_platform_check_asks_for_dates_only_for_a_website():
     assert c.asked == [("app.hcxz.com", dt.date(2025, 4, 16))] and out["domain_age"] == {"host": "app.hcxz.com"}
     assert "domain_age" not in platform.check(Conn(), "Noel Crypto", None, domain_age=c)
     assert json.dumps(out)                                                       # stored as JSON
+
+
+def test_long_gaps_also_say_years():
+    checker, _, _ = net({"hcxz.com": record("2009-02-04T20:19:24Z")}, CERTS)
+    text, _, _ = section(checker.check("app.hcxz.com", dt.date(2026, 3, 10)))
+    assert "2009-02-04, in the registry's RDAP record for hcxz.com" in text
+    assert "That is 6,243 days (about 17 years) before the payment date you entered (2026-03-10)." in text
